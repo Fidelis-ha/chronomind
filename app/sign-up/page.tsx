@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-export default async function SignInPage() {
+export default async function SignUpPage() {
   const cookieStore = cookies()
   const session = await auth({ cookieStore })
   // redirect to home if user is already logged in

@@ -513,4 +513,4 @@ Das Projekt ist bewusst so gebaut, dass es erweiterbar bleibt:
 ---
 
 *Zuletzt aktualisiert: 2026-04-05*  
-*Claude Code: Aktualisiere Datum und Status nach jeder abgeschlossenen Phase.*
+*Claude Code: Aktualisiere Datum und Status nach jeder abgeschlossenen Teil-Aufgabe.*

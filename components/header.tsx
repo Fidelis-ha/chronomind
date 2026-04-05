@@ -48,7 +48,7 @@ export async function Header() {
             <UserMenu user={session.user} />
           ) : (
             <Button variant="link" asChild className="-ml-2">
-              <Link href="/sign-in">Login</Link>
+              <Link href="/sign-in">Anmelden</Link>
             </Button>
           )}
         </div>
