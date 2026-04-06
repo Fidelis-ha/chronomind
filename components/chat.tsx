@@ -1,6 +1,6 @@
 'use client'
 
-import { useChat, type Message } from 'ai/react'
+import { useChat, type UIMessage, Chat as AIChat } from '@ai-sdk/react'
 
 import { cn } from '@/lib/utils'
 import { ChatList } from '@/components/chat-list'
@@ -23,7 +23,7 @@ import { toast } from 'react-hot-toast'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
-  initialMessages?: Message[]
+  initialMessages?: UIMessage[]
   id?: string
 }
 
@@ -34,20 +34,42 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   )
   const [previewTokenDialog, setPreviewTokenDialog] = useState(IS_PREVIEW)
   const [previewTokenInput, setPreviewTokenInput] = useState(previewToken ?? '')
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      initialMessages,
-      id,
-      body: {
-        id,
-        previewToken
-      },
-      onResponse(response) {
-        if (response.status === 401) {
-          toast.error(response.statusText)
+
+  const chatInstance = new AIChat({
+    id,
+    messages: initialMessages,
+    onError: (error) => {
+      console.error('Chat error:', error)
+    }
+  })
+
+  const { messages, sendMessage, stop, status } = useChat({ chat: chatInstance })
+
+  const [input, setInput] = useState('')
+  const isLoading = status === 'streaming' || status === 'submitted'
+
+  const append = async (message: { id?: string; content: string; role: 'user' }) => {
+    await sendMessage({
+      role: 'user',
+      parts: [{ type: 'text', text: message.content }] as any
+    })
+  }
+
+  const reload = async () => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage.role === 'user') {
+        const textPart = lastMessage.parts.find((p: any) => p.type === 'text') as any
+        if (textPart?.text) {
+          await sendMessage({
+            role: 'user',
+            parts: [{ type: 'text', text: textPart.text }] as any
+          })
         }
       }
-    })
+    }
+  }
+
   return (
     <>
       <div className={cn('pb-[200px] pt-4 md:pt-10', className)}>

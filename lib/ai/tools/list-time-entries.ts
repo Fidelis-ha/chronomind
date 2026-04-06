@@ -1,22 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 import { type Database } from '@/lib/db_types'
+import { zodSchema } from 'ai'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { auth } from '@/auth'
 
 // Schema für Tool-Parameter
-export const listTimeEntriesParams = z.object({
+const listTimeEntriesParamsSchema = z.object({
   date: z.string().optional().describe('Datum im ISO Format (YYYY-MM-DD), Standard: heute'),
   limit: z.number().optional().describe('Maximale Anzahl an Einträgen, Standard: 20')
 })
 
-export type ListTimeEntriesParams = z.infer<typeof listTimeEntriesParams>
+export type ListTimeEntriesParams = z.infer<typeof listTimeEntriesParamsSchema>
 
-// Tool Definition für Vercel AI SDK
+// Tool Definition für Vercel AI SDK v6
 export const listTimeEntriesTool = {
   name: 'list_time_entries',
   description: 'Listet Zeiteinträge auf. Nutze dieses Tool um die bisherigen Einträge anzuzeigen oder zu überprüfen.',
-  parameters: listTimeEntriesParams,
+  inputSchema: zodSchema(listTimeEntriesParamsSchema),
   execute: async (params: ListTimeEntriesParams) => {
     return await listTimeEntries(params)
   }

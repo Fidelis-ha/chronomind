@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { type Database } from '@/lib/db_types'
+import { zodSchema } from 'ai'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { auth } from '@/auth'
 
 // Schema für Tool-Parameter
-export const updateTimeEntryParams = z.object({
+const updateTimeEntryParamsSchema = z.object({
   id: z.string().describe('ID des zu aktualisierenden Eintrags'),
   title: z.string().optional().describe('Neue Bezeichnung'),
   category: z.string().optional().describe('Neue Kategorie'),
@@ -14,13 +15,13 @@ export const updateTimeEntryParams = z.object({
   ended_at: z.string().optional().describe('Neue Endzeit als ISO 8601 String, optional')
 })
 
-export type UpdateTimeEntryParams = z.infer<typeof updateTimeEntryParams>
+export type UpdateTimeEntryParams = z.infer<typeof updateTimeEntryParamsSchema>
 
-// Tool Definition für Vercel AI SDK
+// Tool Definition für Vercel AI SDK v6
 export const updateTimeEntryTool = {
   name: 'update_time_entry',
   description: 'Aktualisiert einen bestehenden Zeiteintrag. Nutze dieses Tool wenn der Benutzer einen bestehenden Eintrag bearbeiten möchte.',
-  parameters: updateTimeEntryParams,
+  inputSchema: zodSchema(updateTimeEntryParamsSchema),
   execute: async (params: UpdateTimeEntryParams) => {
     return await updateTimeEntry(params)
   }

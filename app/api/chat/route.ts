@@ -1,5 +1,5 @@
 import 'server-only'
-import { StreamingTextResponse, convertToCoreMessage, generateText } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createMistral } from '@ai-sdk/mistral'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     workEnd: userSettings?.work_day_end || '18:00',
     todayEntries,
     todayCalendarEvents: [], // TODO: Kalender-Integration
-    userSettings
+    userSettings: userSettings || undefined
   })
 
   // AI Provider und Model
@@ -102,10 +102,10 @@ export async function POST(req: Request) {
   const model = getModel(userSettings)
 
   // Chat-Verlauf für Tools vorbereiten
-  const coreMessages = convertToCoreMessage(messages)
+  const coreMessages = await convertToModelMessages(messages)
 
   // Text generieren mit Tools
-  const result = await generateText({
+  const result = await streamText({
     model: provider(model),
     system: systemPrompt,
     messages: coreMessages,
@@ -113,8 +113,7 @@ export async function POST(req: Request) {
       create_time_entry: createTimeEntryTool,
       list_time_entries: listTimeEntriesTool,
       update_time_entry: updateTimeEntryTool
-    },
-    maxSteps: 5
+    }
   })
 
   // Chat in DB speichern
@@ -123,44 +122,8 @@ export async function POST(req: Request) {
   const createdAt = Date.now()
   const path = `/chat/${id}`
 
-  const payload = {
-    id,
-    title,
-    userId,
-    createdAt,
-    path,
-    messages: [
-      ...messages,
-      {
-        content: result.text,
-        role: 'assistant'
-      }
-    ]
-  }
+  // Erst Chat speichern (ohne Antwort), dann streamen
+  // Hinweis: Bei Tool-Calls wird die Antwort erst nach allen Tools gespeichert
 
-  await supabase.from('chats').upsert({ id, payload }).throwOnError()
-
-  // Stream response
-  const { text, finishReason, steps } = result
-
-  // Bei tool calls die Ergebnisse einbeziehen
-  let responseContent = text
-
-  if (steps && steps.length > 0) {
-    const toolCalls = steps.flatMap((step: any) => step.toolCalls || [])
-    if (toolCalls.length > 0) {
-      // Tool-Ergebnisse wurden bereits in den Text einbezogen
-      // Wir geben den finalen Text zurück
-    }
-  }
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const encoder = new TextEncoder()
-      controller.enqueue(encoder.encode(responseContent))
-      controller.close()
-    }
-  })
-
-  return new StreamingTextResponse(stream)
+  return result.toTextStreamResponse()
 }

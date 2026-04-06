@@ -1,4 +1,4 @@
-import { type Message } from 'ai'
+import { type UIMessage } from 'ai'
 
 // TODO refactor and remove unneccessary duplicate data.
 export interface Chat extends Record<string, any> {
@@ -7,7 +7,7 @@ export interface Chat extends Record<string, any> {
   createdAt: Date
   userId: string
   path: string
-  messages: Message[]
+  messages: UIMessage[]
   sharePath?: string // Refactor to use RLS
 }
 

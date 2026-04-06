@@ -291,15 +291,20 @@ Deine Aufgaben:
 
 ```typescript
 // lib/ai/tools/create-time-entry.ts
+import { zodSchema } from 'ai'
+import { z } from 'zod'
+
+const inputSchema = z.object({
+  title: z.string().describe('Bezeichnung der Tätigkeit'),
+  category: z.string().optional().describe('Kategorie z.B. Arbeit, Meeting, Pause'),
+  started_at: z.string().describe('Startzeit als ISO 8601'),
+  ended_at: z.string().optional().describe('Endzeit als ISO 8601, optional wenn noch aktiv'),
+  description: z.string().optional(),
+})
+
 export const createTimeEntryTool = {
   description: 'Erstellt einen neuen Zeiteintrag in der Datenbank',
-  parameters: z.object({
-    title: z.string().describe('Bezeichnung der Tätigkeit'),
-    category: z.string().optional().describe('Kategorie z.B. Arbeit, Meeting, Pause'),
-    started_at: z.string().describe('Startzeit als ISO 8601'),
-    ended_at: z.string().optional().describe('Endzeit als ISO 8601, optional wenn noch aktiv'),
-    description: z.string().optional(),
-  }),
+  inputSchema: zodSchema(inputSchema),
   execute: async (params) => {
     // Supabase insert
   }
@@ -411,35 +416,35 @@ export function exportAsJSON(entries: TimeEntry[]): string {
 > Claude Code: Arbeite eine Phase vollständig ab, bevor du zur nächsten gehst.
 > Hake erledigte Punkte ab und update den Status unten.
 
-### ✅/☐ Phase 1 – Foundation
+### ✅ Phase 1 – Foundation
 **Branch**: `feature/phase-1-foundation`  
 **Tag nach Abschluss**: `phase-1-complete`
 
-- [ ] Basis-Repo klonen: `github.com/supabase-community/vercel-ai-chatbot`
-- [ ] `.env.example` mit allen Variablen anlegen
-- [ ] `README.md` mit Setup-Anleitung schreiben
-- [ ] `.github/ISSUE_TEMPLATE/` anlegen
-- [ ] Supabase Migration `002_time_tracking.sql` ausführen
-- [ ] Auth-Seiten (Login, Register) anpassen/übersetzen
-- [ ] Manuelle Zeiterfassung: `EntryForm.tsx` + `TimeEntryCard.tsx`
-- [ ] Eintrags-Liste mit Datumsfilter: `app/(app)/entries/page.tsx`
-- [ ] Today-Dashboard: `app/(app)/page.tsx`
-- [ ] `useTimeEntries.ts` Hook (CRUD + Realtime)
-- [ ] Settings-Seite: Zeitzone, Arbeitszeiten
+- [x] Basis-Repo klonen: `github.com/supabase-community/vercel-ai-chatbot`
+- [x] `.env.example` mit allen Variablen anlegen
+- [x] `README.md` mit Setup-Anleitung schreiben
+- [x] `.github/ISSUE_TEMPLATE/` anlegen
+- [x] Supabase Migration `002_time_tracking.sql` ausführen
+- [x] Auth-Seiten (Login, Register) anpassen/übersetzen
+- [x] Manuelle Zeiterfassung: `EntryForm.tsx` + `TimeEntryCard.tsx`
+- [x] Eintrags-Liste mit Datumsfilter: `app/(app)/entries/page.tsx`
+- [x] Today-Dashboard: `app/(app)/page.tsx`
+- [x] `useTimeEntries.ts` Hook (CRUD + Realtime)
+- [x] Settings-Seite: Zeitzone, Arbeitszeiten
 
-### ☐ Phase 2 – KI-Chat + Sprache
+### ✅ Phase 2 – KI-Chat + Sprache
 **Branch**: `feature/phase-2-ai-chat`  
 **Tag nach Abschluss**: `phase-2-complete`
 
-- [ ] System-Prompt Builder (`lib/ai/system-prompt.ts`)
-- [ ] Tool: `create_time_entry`
-- [ ] Tool: `update_time_entry`
-- [ ] Tool: `list_time_entries` (KI kann Kontext abfragen)
-- [ ] Chat-Route anpassen: Tools + System-Prompt einbinden
-- [ ] `VoiceInputButton.tsx` mit Web Speech API
-- [ ] `useVoiceInput.ts` Hook
-- [ ] routerlab.ch Provider einbinden
-- [ ] AI-Provider-Auswahl in Settings
+- [x] System-Prompt Builder (`lib/ai/system-prompt.ts`)
+- [x] Tool: `create_time_entry`
+- [x] Tool: `update_time_entry`
+- [x] Tool: `list_time_entries` (KI kann Kontext abfragen)
+- [x] Chat-Route anpassen: Tools + System-Prompt einbinden
+- [x] `VoiceInputButton.tsx` mit Web Speech API
+- [x] `useVoiceInput.tsx` Hook
+- [x] routerlab.ch Provider einbinden
+- [x] AI-Provider-Auswahl in Settings
 
 ### ☐ Phase 3 – Kalender + Auswertung + Export
 **Branch**: `feature/phase-3-calendar-analytics`  
@@ -503,13 +508,14 @@ Das Projekt ist bewusst so gebaut, dass es erweiterbar bleibt:
 
 ## Aktueller Status
 
-**Aktuelle Phase**: Phase 2 – abgeschlossen
-**Letzter Commit**: 4b29e28 feat: Phase 1 - Auth, Manual Entry, Dashboard
-**Phase 2 abgeschlossen**: System-Prompt Builder, create/update/list_time_entries Tools, Chat API mit Mistral/routerlab, VoiceInputButton
+**Aktuelle Phase**: Phase 2 – abgeschlossen (getestet)
+**Letzter Commit**: 6ded9ae feat: Phase 2 - KI-Chat + Sprache
+**Phase 1 abgeschlossen**: Auth, Manual Entry, Dashboard
+**Phase 2 abgeschlossen**: System-Prompt Builder, create/update/list_time_entries Tools, Chat API mit Mistral/routerlab, VoiceInputButton, AI SDK v6 Migration
 
 **Offene Blocker**: keine
 
 ---
 
-*Zuletzt aktualisiert: 2026-04-05*  
+*Zuletzt aktualisiert: 2026-04-06*  
 *Claude Code: Aktualisiere Datum und Status nach jeder abgeschlossenen Teil-Aufgabe.*

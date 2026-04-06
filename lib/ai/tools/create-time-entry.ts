@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { type Database } from '@/lib/db_types'
+import { zodSchema } from 'ai'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { auth } from '@/auth'
 
 // Schema für Tool-Parameter
-export const createTimeEntryParams = z.object({
+const createTimeEntryParamsSchema = z.object({
   title: z.string().describe('Bezeichnung der Tätigkeit'),
   category: z.string().optional().describe('Kategorie z.B. Arbeit, Meeting, Pause, Privat'),
   description: z.string().optional().describe('Optionale Beschreibung'),
@@ -13,13 +14,13 @@ export const createTimeEntryParams = z.object({
   ended_at: z.string().optional().describe('Endzeit als ISO 8601 String, optional wenn noch aktiv')
 })
 
-export type CreateTimeEntryParams = z.infer<typeof createTimeEntryParams>
+export type CreateTimeEntryParams = z.infer<typeof createTimeEntryParamsSchema>
 
-// Tool Definition für Vercel AI SDK
+// Tool Definition für Vercel AI SDK v6
 export const createTimeEntryTool = {
   name: 'create_time_entry',
   description: 'Erstellt einen neuen Zeiteintrag in der Datenbank. Nutze dieses Tool wenn der Benutzer einen neuen Zeiteintrag erstellen möchte.',
-  parameters: createTimeEntryParams,
+  inputSchema: zodSchema(createTimeEntryParamsSchema),
   execute: async (params: CreateTimeEntryParams) => {
     return await createTimeEntry(params)
   }
