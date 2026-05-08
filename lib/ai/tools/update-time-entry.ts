@@ -38,7 +38,7 @@ export async function updateTimeEntry(params: UpdateTimeEntryParams): Promise<{ 
     const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    ) as any
 
     // Prüfen ob der Eintrag existiert und dem User gehört
     const { data: existing, error: fetchError } = await supabase

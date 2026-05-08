@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { auth } from '@/auth'
-import { cookies } from 'next/headers'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -31,11 +29,12 @@ export default function EntriesPage() {
 
   useEffect(() => {
     const getSession = async () => {
-      const cookieStore = cookies()
-      const session = await auth({ cookieStore })
-      if (session?.user) {
-        setUserId(session.user.id)
-        loadEntries(session.user.id)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        loadEntries(user.id)
+      } else {
+        setLoading(false)
       }
     }
     getSession()

@@ -51,7 +51,7 @@ export async function createTimeEntry(params: CreateTimeEntryParams): Promise<{ 
 
     const { data, error } = await supabase
       .from('time_entries')
-      .insert(entryData)
+      .insert(entryData as any)
       .select()
       .single()
 

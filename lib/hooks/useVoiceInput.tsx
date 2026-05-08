@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Loader2 } from 'lucide-react'

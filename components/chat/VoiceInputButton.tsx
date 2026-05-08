@@ -16,10 +16,10 @@ export function useVoiceInput({
 }: UseVoiceInputOptions) {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     setIsSupported(!!SpeechRecognitionAPI)
 
     return () => {
@@ -32,7 +32,7 @@ export function useVoiceInput({
   const startRecording = useCallback(() => {
     if (!isSupported) return
 
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognitionAPI()
 
     recognition.lang = language
@@ -47,17 +47,18 @@ export function useVoiceInput({
       setIsListening(false)
     }
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error)
       setIsListening(false)
     }
 
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
+    recognition.onresult = (event: any) => {
+      const results = event.results as any[][]
+      const transcript = Array.from(results)
+        .map((result: any[]) => result[0].transcript)
         .join('')
 
-      if (event.results[0].isFinal && transcript.trim()) {
+      if (results[0]?.[0]?.isFinal && transcript.trim()) {
         onResult(transcript.trim())
       }
     }
@@ -101,12 +102,4 @@ export function VoiceInputButton({ onResult, className }: VoiceInputButtonProps)
       )}
     </Button>
   )
-}
-
-// Typ-Deklaration für Web Speech API
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
-  }
 }

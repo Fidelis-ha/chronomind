@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { auth } from '@/auth'
-import { cookies } from 'next/headers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,11 +34,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const getSession = async () => {
-      const cookieStore = cookies()
-      const session = await auth({ cookieStore })
-      if (session?.user) {
-        setUserId(session.user.id)
-        loadSettings(session.user.id)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        loadSettings(user.id)
+      } else {
+        setLoading(false)
       }
     }
     getSession()
