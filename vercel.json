@@ -1,0 +1,3 @@
+{
+  "installCommand": "npm install ai@2.2.36 && npm install"
+}

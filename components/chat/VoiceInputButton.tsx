@@ -19,7 +19,7 @@ export function useVoiceInput({
   const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     setIsSupported(!!SpeechRecognitionAPI)
 
     return () => {
@@ -32,7 +32,7 @@ export function useVoiceInput({
   const startRecording = useCallback(() => {
     if (!isSupported) return
 
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognitionAPI()
 
     recognition.lang = language
@@ -57,7 +57,7 @@ export function useVoiceInput({
         .map((result: any) => result[0].transcript)
         .join('')
 
-      if (event.results[0].isFinal && transcript.trim()) {
+      if (results[0]?.[0]?.isFinal && transcript.trim()) {
         onResult(transcript.trim())
       }
     }
