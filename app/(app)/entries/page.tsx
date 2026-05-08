@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -19,43 +18,23 @@ function formatTotalDuration(entries: TimeEntry[]): string {
 }
 
 export default function EntriesPage() {
-  const [userId, setUserId] = useState<string | null>(null)
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [showForm, setShowForm] = useState(false)
 
-  const supabase = createClientComponentClient()
-
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUserId(session.user.id)
-        loadEntries(session.user.id)
-      }
-    }
-    getSession()
-  }, [])
+    loadEntries()
+  }, [date])
 
-  const loadEntries = async (uid: string) => {
+  const loadEntries = async () => {
     setLoading(true)
     try {
-      const startOfDay = new Date(date)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(date)
-      endOfDay.setHours(23, 59, 59, 999)
-
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', uid)
-        .gte('started_at', startOfDay.toISOString())
-        .lte('started_at', endOfDay.toISOString())
-        .order('started_at', { ascending: false })
-
-      if (error) throw error
-      setEntries(data || [])
+      const res = await fetch(`/api/entries?date=${date}`)
+      const data = await res.json()
+      if (res.ok) {
+        setEntries(data.entries || [])
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -63,23 +42,18 @@ export default function EntriesPage() {
     }
   }
 
-  useEffect(() => {
-    if (userId) {
-      loadEntries(userId)
-    }
-  }, [date, userId])
-
   const handleDelete = async (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
 
-    const { error } = await supabase.from('time_entries').delete().eq('id', id)
-    if (!error) {
+    const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
+    if (res.ok) {
       setEntries(prev => prev.filter(e => e.id !== id))
     }
   }
 
   const handleSuccess = () => {
-    if (userId) loadEntries(userId)
+    setShowForm(false)
+    loadEntries()
   }
 
   return (
@@ -91,9 +65,9 @@ export default function EntriesPage() {
         </Button>
       </div>
 
-      {showForm && userId && (
+      {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
-          <EntryForm userId={userId} onSuccess={handleSuccess} />
+          <EntryForm userId="" onSuccess={handleSuccess} />
         </div>
       )}
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,7 +15,7 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-export function EntryForm({ userId, onSuccess }: EntryFormProps) {
+export function EntryForm({ onSuccess }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -25,8 +24,6 @@ export function EntryForm({ userId, onSuccess }: EntryFormProps) {
     started_at: '',
     ended_at: ''
   })
-
-  const supabase = createClientComponentClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,17 +34,22 @@ export function EntryForm({ userId, onSuccess }: EntryFormProps) {
 
     setLoading(true)
     try {
-      const { error } = await supabase.from('time_entries').insert({
-        user_id: userId,
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category || null,
-        started_at: formData.started_at,
-        ended_at: formData.ended_at || null,
-        source: 'manual'
+      const res = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: {
+            title: formData.title,
+            description: formData.description || null,
+            category: formData.category || null,
+            started_at: formData.started_at,
+            ended_at: formData.ended_at || null,
+            source: 'manual'
+          }
+        })
       })
 
-      if (error) throw error
+      if (!res.ok) throw new Error('Fehler')
 
       toast.success('Eintrag erstellt')
       setFormData({

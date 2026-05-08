@@ -1,8 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-
 import { Button } from '@/components/ui/button'
 import { IconSpinner } from '@/components/ui/icons'
 import { Input } from './ui/input'
@@ -22,58 +20,49 @@ export function LoginForm({
 }: LoginFormProps) {
   const [isLoading, setIsLoading] = React.useState(false)
   const router = useRouter()
-  // Create a Supabase client configured to use cookies
-  const supabase = createClientComponentClient()
 
-  const [formState, setFormState] = React.useState<{
-    email: string
-    password: string
-  }>({
+  const [formState, setFormState] = React.useState({
     email: '',
     password: ''
   })
 
-  const signIn = async () => {
-    const { email, password } = formState
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    return error
-  }
-
-  const signUp = async () => {
-    const { email, password } = formState
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${location.origin}/api/auth/callback` }
-    })
-
-    if (!error && !data.session)
-      toast.success('Bestätigungslink an deine E-Mail gesendet!')
-    return error
-  }
-
-  const handleOnSubmit: React.FormEventHandler<HTMLFormElement> = async e => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    const error = action === 'sign-in' ? await signIn() : await signUp()
+    const endpoint = action === 'sign-in' ? '/api/auth/sign-in' : '/api/auth/sign-up'
 
-    if (error) {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formState)
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Ein Fehler ist aufgetreten')
+        return
+      }
+
+      if (action === 'sign-up' && !data.session) {
+        toast.success('Registrierung erfolgreich! Bitte melde dich an.')
+        router.push('/sign-in')
+        return
+      }
+
+      router.refresh()
+    } catch (err) {
+      toast.error('Ein Fehler ist aufgetreten')
+    } finally {
       setIsLoading(false)
-      toast.error(error.message)
-      return
     }
-
-    setIsLoading(false)
-    router.refresh()
   }
 
   return (
     <div {...props}>
-      <form onSubmit={handleOnSubmit}>
+      <form onSubmit={handleSubmit}>
         <fieldset className="flex flex-col gap-y-4">
           <div className="flex flex-col gap-y-1">
             <Label>E-Mail</Label>

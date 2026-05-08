@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -26,30 +25,18 @@ export default function DashboardClient({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
-  const supabase = createClientComponentClient()
-
   useEffect(() => {
-    loadEntries(userId)
+    loadEntries()
   }, [userId])
 
-  const loadEntries = async (uid: string) => {
+  const loadEntries = async () => {
     setLoading(true)
     try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', uid)
-        .gte('started_at', today.toISOString())
-        .lt('started_at', tomorrow.toISOString())
-        .order('started_at', { ascending: false })
-
-      if (error) throw error
-      setEntries(data || [])
+      const res = await fetch('/api/entries')
+      const data = await res.json()
+      if (res.ok) {
+        setEntries(data.entries || [])
+      }
     } catch (err) {
       console.error(err)
     } finally {
@@ -60,15 +47,15 @@ export default function DashboardClient({ userId }: { userId: string }) {
   const handleDelete = async (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
 
-    const { error } = await supabase.from('time_entries').delete().eq('id', id)
-    if (!error) {
+    const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
+    if (res.ok) {
       setEntries(prev => prev.filter(e => e.id !== id))
     }
   }
 
   const handleSuccess = () => {
     setShowForm(false)
-    loadEntries(userId)
+    loadEntries()
   }
 
   return (

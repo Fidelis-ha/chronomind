@@ -1,11 +1,21 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { type TimeEntry } from '@/lib/types'
 
+interface EntryInput {
+  title: string
+  description: string | null
+  category: string | null
+  tags: string[] | null
+  started_at: string
+  ended_at: string | null
+  source: 'ai_chat' | 'manual' | 'voice' | 'calendar'
+  calendar_event_id: string | null
+  metadata: Record<string, unknown> | null
+}
+
 export function useTimeEntries() {
-  const supabase = createClientComponentClient()
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -14,33 +24,16 @@ export function useTimeEntries() {
     setLoading(true)
     setError(null)
     try {
-      let query = supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', userId)
-        .order('started_at', { ascending: false })
-
-      if (date) {
-        const startOfDay = new Date(date)
-        startOfDay.setHours(0, 0, 0, 0)
-        const endOfDay = new Date(date)
-        endOfDay.setHours(23, 59, 59, 999)
-
-        query = query
-          .gte('started_at', startOfDay.toISOString())
-          .lte('started_at', endOfDay.toISOString())
-      }
-
-      const { data, error: fetchError } = await query
-
-      if (fetchError) throw fetchError
-      setEntries(data || [])
+      const res = await fetch(`/api/entries?userId=${userId}${date ? `&date=${date}` : ''}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setEntries(data.entries || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden')
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   const createEntry = useCallback(async (
     userId: string,
@@ -49,70 +42,53 @@ export function useTimeEntries() {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: insertError } = await supabase
-        .from('time_entries')
-        .insert({
-          user_id: userId,
-          title: entry.title,
-          description: entry.description,
-          category: entry.category,
-          tags: entry.tags,
-          started_at: entry.started_at,
-          ended_at: entry.ended_at,
-          source: entry.source,
-          calendar_event_id: entry.calendar_event_id,
-          metadata: entry.metadata
-        })
-        .select()
-        .single()
-
-      if (insertError) throw insertError
-      if (data) {
-        setEntries(prev => [data, ...prev])
-      }
-      return data
+      const res = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, entry })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setEntries(prev => [data.entry, ...prev])
+      return data.entry
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Erstellen')
       throw err
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   const updateEntry = useCallback(async (id: string, updates: Partial<TimeEntry>) => {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: updateError } = await supabase
-        .from('time_entries')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
-      if (data) {
-        setEntries(prev => prev.map(e => e.id === id ? data : e))
-      }
-      return data
+      const res = await fetch(`/api/entries/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setEntries(prev => prev.map(e => e.id === id ? data.entry : e))
+      return data.entry
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren')
       throw err
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   const deleteEntry = useCallback(async (id: string) => {
     setLoading(true)
     setError(null)
     try {
-      const { error: deleteError } = await supabase
-        .from('time_entries')
-        .delete()
-        .eq('id', id)
-
-      if (deleteError) throw deleteError
+      const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error)
+      }
       setEntries(prev => prev.filter(e => e.id !== id))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen')
@@ -120,7 +96,7 @@ export function useTimeEntries() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   return {
     entries,

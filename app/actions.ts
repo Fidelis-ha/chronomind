@@ -1,113 +1,86 @@
 'use server'
 import 'server-only'
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/lib/db_types'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth/session'
+import { localDb } from '@/lib/db/local'
+import type { Chat } from '@/lib/types'
 
-import { type Chat } from '@/lib/types'
+export async function getChats() {
+  const session = await getSession()
+  if (!session?.id) return []
 
-export async function getChats(userId?: string | null) {
-  if (!userId) {
-    return []
-  }
   try {
-    const cookieStore = cookies()
-    const supabase = createServerActionClient<Database>({
-      cookies: () => cookieStore
-    })
-    const { data } = await supabase
-      .from('chats')
-      .select('payload')
-      .order('payload->createdAt', { ascending: false })
-      .eq('user_id', userId)
-      .throwOnError()
-
-    return (data?.map(entry => entry.payload) as Chat[]) ?? []
-  } catch (error) {
+    const chats = await localDb.chats.findByUser(session.id)
+    return chats.map(c => c.payload as Chat)
+  } catch {
     return []
   }
 }
 
 export async function getChat(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerActionClient<Database>({
-    cookies: () => cookieStore
-  })
-  const { data } = await supabase
-    .from('chats')
-    .select('payload')
-    .eq('id', id)
-    .maybeSingle()
+  const session = await getSession()
+  if (!session?.id) return null
 
-  return (data?.payload as Chat) ?? null
+  try {
+    const [chat] = await localDb.chats.findById(id)
+    if (!chat || chat.userId !== session.id) return null
+    return chat.payload as Chat
+  } catch {
+    return null
+  }
+}
+
+export async function getSharedChat(id: string) {
+  return null
 }
 
 export async function removeChat({ id, path }: { id: string; path: string }) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerActionClient<Database>({
-      cookies: () => cookieStore
-    })
-    await supabase.from('chats').delete().eq('id', id).throwOnError()
+    const session = await getSession()
+    if (!session?.id) return { error: 'Unauthorized' }
 
+    const [chat] = await localDb.chats.findById(id)
+    if (!chat || chat.userId !== session.id) return { error: 'Unauthorized' }
+
+    await localDb.chats.delete(id)
     revalidatePath('/')
     return revalidatePath(path)
-  } catch (error) {
-    return {
-      error: 'Unauthorized'
-    }
+  } catch {
+    return { error: 'Unauthorized' }
   }
 }
 
 export async function clearChats() {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerActionClient<Database>({
-      cookies: () => cookieStore
-    })
-    await supabase.from('chats').delete().throwOnError()
+    const session = await getSession()
+    if (!session?.id) return { error: 'Unauthorized' }
+
+    await localDb.chats.deleteAll(session.id)
     revalidatePath('/')
     return redirect('/')
-  } catch (error) {
-    console.log('clear chats error', error)
-    return {
-      error: 'Unauthorized'
+  } catch {
+    return { error: 'Unauthorized' }
+  }
+}
+
+export async function saveChat(chat: Chat) {
+  const session = await getSession()
+  if (!session?.id) return null
+
+  try {
+    const [existing] = await localDb.chats.findById(chat.id)
+    if (existing) {
+      await localDb.chats.update(chat.id, { payload: chat })
+    } else {
+      await localDb.chats.create({
+        id: chat.id,
+        userId: session.id,
+        payload: chat
+      })
     }
+    return chat
+  } catch {
+    return null
   }
-}
-
-export async function getSharedChat(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerActionClient<Database>({
-    cookies: () => cookieStore
-  })
-  const { data } = await supabase
-    .from('chats')
-    .select('payload')
-    .eq('id', id)
-    .not('payload->sharePath', 'is', null)
-    .maybeSingle()
-
-  return (data?.payload as Chat) ?? null
-}
-
-export async function shareChat(chat: Chat) {
-  const payload = {
-    ...chat,
-    sharePath: `/share/${chat.id}`
-  }
-
-  const cookieStore = cookies()
-  const supabase = createServerActionClient<Database>({
-    cookies: () => cookieStore
-  })
-  await supabase
-    .from('chats')
-    .update({ payload: payload as any })
-    .eq('id', chat.id)
-    .throwOnError()
-
-  return payload
 }

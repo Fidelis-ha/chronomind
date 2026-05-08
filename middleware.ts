@@ -1,24 +1,30 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
-
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
+
+const COOKIE_NAME = 'chronomind-session'
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'chronomind-local-secret-change-in-production'
+)
+
+async function verifyToken(token: string): Promise<boolean> {
+  try {
+    await jwtVerify(token, JWT_SECRET)
+    return true
+  } catch {
+    return false
+  }
+}
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient({ req, res })
+  const token = req.cookies.get(COOKIE_NAME)?.value
+  const isValid = token ? await verifyToken(token) : false
 
-  // Refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-  const {
-    data: { session }
-  } = await supabase.auth.getSession()
-
-  // OPTIONAL: this forces users to be logged in to use the chatbot.
-  // If you want to allow anonymous users, simply remove the check below.
   if (
-    !session &&
+    !isValid &&
     !req.url.includes('/sign-in') &&
     !req.url.includes('/sign-up')
   ) {
@@ -33,14 +39,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - share (publicly shared chats)
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!share|api|_next/static|_next/image|favicon.ico).*)'
   ]
 }
