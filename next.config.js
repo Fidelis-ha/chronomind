@@ -2,9 +2,7 @@
 module.exports = {
   reactStrictMode: true,
   experimental: {
-    serverActions: {
-      allowedOrigins: ['chronomind.vercel.app', 'localhost']
-    }
+    serverActions: true
   },
   images: {
     remotePatterns: [
