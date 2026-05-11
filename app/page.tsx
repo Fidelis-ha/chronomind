@@ -7,7 +7,7 @@ export default async function IndexPage() {
   const session = await auth({ cookieStore })
 
   if (session?.user) {
-    redirect('/')
+    redirect('/app_main')
   }
 
   return (
