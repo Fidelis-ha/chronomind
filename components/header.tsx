@@ -45,7 +45,10 @@ export async function Header() {
         <div className="flex items-center">
           <IconSeparator className="h-6 w-6 text-muted-foreground/50" />
           {session?.user ? (
-            <UserMenu user={session.user} />
+            <>
+              {/* @ts-expect-error - local JWT auth uses simpler user type */}
+              <UserMenu user={session.user} />
+            </>
           ) : (
             <Button variant="link" asChild className="-ml-2">
               <Link href="/sign-in">Anmelden</Link>

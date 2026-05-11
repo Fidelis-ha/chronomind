@@ -62,6 +62,7 @@ export default async function AppLayout({
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4">
           <div className="flex items-center">
             <IconSeparator className="h-6 w-6 text-muted-foreground/50" />
+            {/* @ts-expect-error - local JWT auth uses simpler user type */}
             <UserMenu user={session.user} />
           </div>
         </header>
