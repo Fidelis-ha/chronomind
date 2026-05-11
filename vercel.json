@@ -1,3 +1,4 @@
 {
-  "installCommand": "npm install ai@2.2.36 && npm install"
+  "framework": "nextjs",
+  "installCommand": "npm install ai@2.2.34 --save-exact && npm install"
 }

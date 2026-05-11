@@ -1,5 +1,5 @@
 import 'server-only'
-import { StreamingTextResponse, MistralStream } from 'ai'
+import { StreamingTextResponse } from 'ai'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/db_types'
@@ -36,6 +36,43 @@ async function getUserSettings(supabase: any, userId: string): Promise<UserSetti
     .single()
 
   return data
+}
+
+// Simple passthrough stream that converts SSE data chunks to text
+function mistralToTextStream(response: Response): ReadableStream<string> {
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read()
+      if (done) {
+        controller.close()
+        return
+      }
+      const chunk = decoder.decode(value, { stream: true })
+      // Mistral sends SSE data lines: data: {"choices":[{"delta":{"content":"..."}}]}
+      const lines = chunk.split('\n')
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6)
+          if (jsonStr === '[DONE]') {
+            controller.close()
+            return
+          }
+          try {
+            const data = JSON.parse(jsonStr)
+            const content = data.choices?.[0]?.delta?.content
+            if (content) {
+              controller.enqueue(content)
+            }
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
+    }
+  })
 }
 
 export async function POST(req: Request) {
@@ -91,7 +128,7 @@ export async function POST(req: Request) {
     return new Response(`Mistral API Error: ${error}`, { status: 500 })
   }
 
-  const stream = MistralStream(response as any)
+  const stream = mistralToTextStream(response)
 
   const id = json.id ?? nanoid()
   const title = messages[0]?.content?.substring(0, 100) || 'Neuer Chat'
