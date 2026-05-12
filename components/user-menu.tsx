@@ -32,7 +32,7 @@ function getUserInitials(name?: string, email?: string) {
   return '??'
 }
 
-function getDisplayName(user?: JwtUser) {
+function getDisplayName(user?: JwtUser | null) {
   return user?.user_metadata?.name ?? user?.name ?? user?.email ?? '👋🏼'
 }
 

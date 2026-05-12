@@ -46,7 +46,6 @@ export async function Header() {
           <IconSeparator className="h-6 w-6 text-muted-foreground/50" />
           {session?.user ? (
             <>
-              {/* @ts-expect-error - local JWT auth uses simpler user type */}
               <UserMenu user={session.user} />
             </>
           ) : (
