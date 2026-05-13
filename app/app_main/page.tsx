@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState, useEffect, useCallback } from 'react'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -19,63 +18,69 @@ function formatTotalDuration(entries: TimeEntry[]): string {
 }
 
 export default function DashboardPage() {
-  const [userId, setUserId] = useState<string | null>(null)
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
-  const supabase = createClientComponentClient()
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        loadEntries(user.id)
-      } else {
-        setLoading(false)
-      }
+  const loadSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/session')
+      const data = await res.json()
+      return data.user ?? null
+    } catch {
+      return null
     }
-    getSession()
   }, [])
 
-  const loadEntries = async (uid: string) => {
+  const loadEntries = useCallback(async (uid: string) => {
     setLoading(true)
     try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', uid)
-        .gte('started_at', today.toISOString())
-        .lt('started_at', tomorrow.toISOString())
-        .order('started_at', { ascending: false })
-
-      if (error) throw error
-      setEntries(data || [])
+      const res = await fetch('/api/entries')
+      if (!res.ok) return
+      const data = await res.json()
+      setEntries(data.entries || [])
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const init = async () => {
+      const u = await loadSession()
+      setUser(u)
+      if (u) {
+        await loadEntries(u.id)
+      } else {
+        setLoading(false)
+      }
+    }
+    init()
+  }, [loadSession, loadEntries])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
 
-    const { error } = await supabase.from('time_entries').delete().eq('id', id)
-    if (!error) {
+    const res = await fetch(`/api/entries?id=${id}`, { method: 'DELETE' })
+    if (res.ok) {
       setEntries(prev => prev.filter(e => e.id !== id))
     }
   }
 
   const handleSuccess = () => {
     setShowForm(false)
-    if (userId) loadEntries(userId)
+    if (user) loadEntries(user.id)
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto max-w-3xl py-8 px-4 text-center">
+        <p className="text-muted-foreground mb-4">Bitte zuerst anmelden.</p>
+        <Button asChild><Link href="/sign-in">Anmelden</Link></Button>
+      </div>
+    )
   }
 
   return (
@@ -92,9 +97,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {showForm && userId && (
+      {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
-          <EntryForm userId={userId} onSuccess={handleSuccess} />
+          <EntryForm userId={user.id} onSuccess={handleSuccess} />
         </div>
       )}
 

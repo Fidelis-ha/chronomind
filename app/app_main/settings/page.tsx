@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,7 +20,7 @@ const TIMEZONES = [
 ]
 
 export default function SettingsPage() {
-  const [userId, setUserId] = useState<string | null>(null)
+  const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<Partial<UserSettings>>({
@@ -30,36 +29,27 @@ export default function SettingsPage() {
     work_day_end: '18:00'
   })
 
-  const supabase = createClientComponentClient()
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        loadSettings(user.id)
-      } else {
-        setLoading(false)
-      }
+  const loadSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/session')
+      const data = await res.json()
+      return data.user ?? null
+    } catch {
+      return null
     }
-    getSession()
   }, [])
 
-  const loadSettings = async (uid: string) => {
+  const loadSettings = useCallback(async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', uid)
-        .single()
-
-      if (error && error.code !== 'PGRST116') throw error
-      if (data) {
+      const res = await fetch('/api/settings')
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.settings) {
         setSettings({
-          timezone: data.timezone,
-          work_day_start: data.work_day_start,
-          work_day_end: data.work_day_end
+          timezone: data.settings.timezone,
+          work_day_start: data.settings.work_day_start,
+          work_day_end: data.settings.work_day_end
         })
       }
     } catch (err) {
@@ -67,23 +57,30 @@ export default function SettingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const init = async () => {
+      const u = await loadSession()
+      setUser(u)
+      if (u) await loadSettings()
+      else setLoading(false)
+    }
+    init()
+  }, [loadSession, loadSettings])
 
   const handleSave = async () => {
-    if (!userId) return
+    if (!user) return
 
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: userId,
-          timezone: settings.timezone,
-          work_day_start: settings.work_day_start,
-          work_day_end: settings.work_day_end
-        }, { onConflict: 'user_id' })
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
 
-      if (error) throw error
+      if (!res.ok) throw new Error('Save failed')
       toast.success('Einstellungen gespeichert')
     } catch (err) {
       toast.error('Fehler beim Speichern')
@@ -95,6 +92,14 @@ export default function SettingsPage() {
 
   if (loading) {
     return <div className="container py-8">Wird geladen...</div>
+  }
+
+  if (!user) {
+    return (
+      <div className="container py-8 text-center">
+        <p className="text-muted-foreground mb-4">Bitte zuerst anmelden.</p>
+      </div>
+    )
   }
 
   return (

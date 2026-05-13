@@ -7,6 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'chronomind-local-secret-change-in-production'
 )
 
+// Shared in-memory user store (resets on cold start — demo only)
 declare global {
   // eslint-disable-next-line novar
   var __USERS__: Record<string, { password: string; id: string; name: string }> | undefined
@@ -27,7 +28,7 @@ function getUsers() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json()
+    const { email, password, name } = await req.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -37,25 +38,32 @@ export async function POST(req: NextRequest) {
     }
 
     const users = getUsers()
-    const user = users[email]
-
-    if (!user || user.password !== password) {
+    if (users[email]) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
+        { error: 'User already exists' },
+        { status: 409 }
       )
     }
 
+    const userId = `user-${Date.now()}`
+    users[email] = {
+      password,
+      id: userId,
+      name: name || email.split('@')[0]
+    }
+
+    // Create JWT token
     const token = await new SignJWT({
-      sub: user.id,
+      sub: userId,
       email,
-      name: user.name
+      name: users[email].name
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
       .sign(JWT_SECRET)
 
+    // Set cookie
     const cookieStore = cookies()
     cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user: { id: user.id, email, name: user.name }
+      user: { id: userId, email, name: users[email].name }
     })
   } catch (error) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
-import { type Database } from '@/lib/db_types'
+import 'server-only'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
+import { updateTimeEntry } from '@/lib/data-store'
 
 // Schema für Tool-Parameter
 export const updateTimeEntryParams = z.object({
@@ -22,11 +22,11 @@ export const updateTimeEntryTool = {
   description: 'Aktualisiert einen bestehenden Zeiteintrag. Nutze dieses Tool wenn der Benutzer einen bestehenden Eintrag bearbeiten möchte.',
   parameters: updateTimeEntryParams,
   execute: async (params: UpdateTimeEntryParams) => {
-    return await updateTimeEntry(params)
+    return await updateTimeEntryAction(params)
   }
 }
 
-export async function updateTimeEntry(params: UpdateTimeEntryParams): Promise<{ success: boolean; entry?: any; error?: string }> {
+export async function updateTimeEntryAction(params: UpdateTimeEntryParams): Promise<{ success: boolean; entry?: any; error?: string }> {
   try {
     const cookieStore = cookies()
     const session = await auth({ cookieStore })
@@ -35,44 +35,19 @@ export async function updateTimeEntry(params: UpdateTimeEntryParams): Promise<{ 
       return { success: false, error: 'Nicht authentifiziert' }
     }
 
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ) as any
+    const entry = updateTimeEntry(session.user.id, params.id, {
+      title: params.title,
+      category: params.category,
+      description: params.description,
+      started_at: params.started_at,
+      ended_at: params.ended_at
+    })
 
-    // Prüfen ob der Eintrag existiert und dem User gehört
-    const { data: existing, error: fetchError } = await supabase
-      .from('time_entries')
-      .select('id')
-      .eq('id', params.id)
-      .eq('user_id', session.user.id)
-      .single()
-
-    if (fetchError || !existing) {
+    if (!entry) {
       return { success: false, error: 'Eintrag nicht gefunden oder keine Berechtigung' }
     }
 
-    // Update-Objekt erstellen (nur übergebene Felder)
-    const updateData: Record<string, any> = {}
-    if (params.title !== undefined) updateData.title = params.title
-    if (params.category !== undefined) updateData.category = params.category
-    if (params.description !== undefined) updateData.description = params.description
-    if (params.started_at !== undefined) updateData.started_at = params.started_at
-    if (params.ended_at !== undefined) updateData.ended_at = params.ended_at
-
-    const { data, error } = await supabase
-      .from('time_entries')
-      .update(updateData)
-      .eq('id', params.id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Database error:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, entry: data }
+    return { success: true, entry }
   } catch (err) {
     console.error('Update time entry error:', err)
     return { success: false, error: 'Fehler beim Aktualisieren des Eintrags' }

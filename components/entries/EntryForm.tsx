@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,8 +25,6 @@ export function EntryForm({ userId, onSuccess }: EntryFormProps) {
     ended_at: ''
   })
 
-  const supabase = createClientComponentClient()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title || !formData.started_at) {
@@ -37,30 +34,29 @@ export function EntryForm({ userId, onSuccess }: EntryFormProps) {
 
     setLoading(true)
     try {
-      const { error } = await supabase.from('time_entries').insert({
-        user_id: userId,
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category || null,
-        started_at: formData.started_at,
-        ended_at: formData.ended_at || null,
-        source: 'manual'
+      const res = await fetch('/api/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description || undefined,
+          category: formData.category || undefined,
+          started_at: formData.started_at,
+          ended_at: formData.ended_at || undefined,
+          source: 'manual'
+        })
       })
 
-      if (error) throw error
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Fehler')
+      }
 
       toast.success('Eintrag erstellt')
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-        started_at: '',
-        ended_at: ''
-      })
+      setFormData({ title: '', description: '', category: '', started_at: '', ended_at: '' })
       onSuccess?.()
     } catch (err) {
-      toast.error('Fehler beim Erstellen')
-      console.error(err)
+      toast.error(err instanceof Error ? err.message : 'Fehler beim Erstellen')
     } finally {
       setLoading(false)
     }

@@ -1,12 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-
 import { Button } from '@/components/ui/button'
 import { IconSpinner } from '@/components/ui/icons'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -22,58 +20,41 @@ export function LoginForm({
 }: LoginFormProps) {
   const [isLoading, setIsLoading] = React.useState(false)
   const router = useRouter()
-  // Create a Supabase client configured to use cookies
-  const supabase = createClientComponentClient()
 
-  const [formState, setFormState] = React.useState<{
-    email: string
-    password: string
-  }>({
+  const [formState, setFormState] = React.useState({
     email: '',
     password: ''
   })
 
-  const signIn = async () => {
-    const { email, password } = formState
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    return error
-  }
-
-  const signUp = async () => {
-    const { email, password } = formState
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${location.origin}/api/auth/callback` }
-    })
-
-    if (!error && !data.session)
-      toast.success('Bestätigungslink an deine E-Mail gesendet!')
-    return error
-  }
-
-  const handleOnSubmit: React.FormEventHandler<HTMLFormElement> = async e => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    const error = action === 'sign-in' ? await signIn() : await signUp()
+    try {
+      const res = await fetch('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formState)
+      })
 
-    if (error) {
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'Anmeldung fehlgeschlagen')
+        return
+      }
+
+      router.refresh()
+    } catch {
+      toast.error('Netzwerkfehler')
+    } finally {
       setIsLoading(false)
-      toast.error(error.message)
-      return
     }
-
-    setIsLoading(false)
-    router.refresh()
   }
 
   return (
     <div {...props}>
-      <form onSubmit={handleOnSubmit}>
+      <form onSubmit={handleSubmit}>
         <fieldset className="flex flex-col gap-y-4">
           <div className="flex flex-col gap-y-1">
             <Label>E-Mail</Label>
@@ -82,10 +63,7 @@ export function LoginForm({
               type="email"
               value={formState.email}
               onChange={e =>
-                setFormState(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))
+                setFormState(prev => ({ ...prev, email: e.target.value }))
               }
             />
           </div>
@@ -96,17 +74,14 @@ export function LoginForm({
               type="password"
               value={formState.password}
               onChange={e =>
-                setFormState(prev => ({
-                  ...prev,
-                  password: e.target.value
-                }))
+                setFormState(prev => ({ ...prev, password: e.target.value }))
               }
             />
           </div>
         </fieldset>
 
         <div className="mt-4 flex items-center">
-          <Button disabled={isLoading}>
+          <Button disabled={isLoading} type="submit">
             {isLoading && <IconSpinner className="mr-2 animate-spin" />}
             {action === 'sign-in' ? 'Anmelden' : 'Registrieren'}
           </Button>

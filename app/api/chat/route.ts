@@ -1,42 +1,14 @@
 import 'server-only'
 import { StreamingTextResponse } from 'ai'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import { Database } from '@/lib/db_types'
 
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
 import { nanoid } from '@/lib/utils'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
-import { type UserSettings, type TimeEntry } from '@/lib/types'
+import { getTimeEntries, getUserSettings } from '@/lib/data-store'
+import { type UserSettings } from '@/lib/types'
 
 export const runtime = 'edge'
-
-async function getTodayEntries(supabase: any, userId: string): Promise<TimeEntry[]> {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  const { data } = await supabase
-    .from('time_entries')
-    .select('*')
-    .eq('user_id', userId)
-    .gte('started_at', today.toISOString())
-    .lt('started_at', tomorrow.toISOString())
-    .order('started_at', { ascending: false })
-
-  return data || []
-}
-
-async function getUserSettings(supabase: any, userId: string): Promise<UserSettings | null> {
-  const { data } = await supabase
-    .from('user_settings')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
-
-  return data
-}
 
 // Simple passthrough stream that converts SSE data chunks to text
 function mistralToTextStream(response: Response): ReadableStream<string> {
@@ -51,7 +23,6 @@ function mistralToTextStream(response: Response): ReadableStream<string> {
         return
       }
       const chunk = decoder.decode(value, { stream: true })
-      // Mistral sends SSE data lines: data: {"choices":[{"delta":{"content":"..."}}]}
       const lines = chunk.split('\n')
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -77,12 +48,6 @@ function mistralToTextStream(response: Response): ReadableStream<string> {
 
 export async function POST(req: Request) {
   const cookieStore = cookies()
-  const supabase = createRouteHandlerClient<Database>({
-    cookies: () => cookieStore
-  })
-  const json = await req.json()
-  const { messages } = json
-
   const session = await auth({ cookieStore })
 
   if (!session?.user) {
@@ -90,9 +55,12 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id
+  const json = await req.json()
+  const { messages } = json
 
-  const userSettings = await getUserSettings(supabase, userId)
-  const todayEntries = await getTodayEntries(supabase, userId)
+  // Fetch user data from in-memory store
+  const userSettings = getUserSettings(userId) as UserSettings | null
+  const todayEntries = getTimeEntries(userId)
 
   const systemPrompt = buildSystemPrompt({
     now: new Date(),
@@ -129,14 +97,5 @@ export async function POST(req: Request) {
   }
 
   const stream = mistralToTextStream(response)
-
-  const id = json.id ?? nanoid()
-  const title = messages[0]?.content?.substring(0, 100) || 'Neuer Chat'
-
-  ;(supabase as any).from('chats').upsert({
-    id,
-    payload: { id, title, userId, createdAt: Date.now(), path: `/chat/${id}`, messages }
-  }).throwOnError()
-
   return new StreamingTextResponse(stream)
 }

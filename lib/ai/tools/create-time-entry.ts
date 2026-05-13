@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
-import { type Database } from '@/lib/db_types'
+import 'server-only'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
+import { createTimeEntry } from '@/lib/data-store'
 
 // Schema für Tool-Parameter
 export const createTimeEntryParams = z.object({
@@ -21,11 +21,11 @@ export const createTimeEntryTool = {
   description: 'Erstellt einen neuen Zeiteintrag in der Datenbank. Nutze dieses Tool wenn der Benutzer einen neuen Zeiteintrag erstellen möchte.',
   parameters: createTimeEntryParams,
   execute: async (params: CreateTimeEntryParams) => {
-    return await createTimeEntry(params)
+    return await createTimeEntryAction(params)
   }
 }
 
-export async function createTimeEntry(params: CreateTimeEntryParams): Promise<{ success: boolean; entry?: any; error?: string }> {
+export async function createTimeEntryAction(params: CreateTimeEntryParams): Promise<{ success: boolean; entry?: any; error?: string }> {
   try {
     const cookieStore = cookies()
     const session = await auth({ cookieStore })
@@ -34,33 +34,19 @@ export async function createTimeEntry(params: CreateTimeEntryParams): Promise<{ 
       return { success: false, error: 'Nicht authentifiziert' }
     }
 
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const entryData = {
-      user_id: session.user.id,
+    const entry = createTimeEntry(session.user.id, {
       title: params.title,
       category: params.category || null,
       description: params.description || null,
       started_at: params.started_at,
       ended_at: params.ended_at || null,
-      source: 'ai_chat'
-    }
+      source: 'ai_chat',
+      tags: null,
+      calendar_event_id: null,
+      metadata: null
+    })
 
-    const { data, error } = await supabase
-      .from('time_entries')
-      .insert(entryData as any)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Database error:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, entry: data }
+    return { success: true, entry }
   } catch (err) {
     console.error('Create time entry error:', err)
     return { success: false, error: 'Fehler beim Erstellen des Eintrags' }
