@@ -15,7 +15,7 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-export function EntryForm({ userId, onSuccess }: EntryFormProps) {
+export function EntryForm({ onSuccess }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -38,25 +38,31 @@ export function EntryForm({ userId, onSuccess }: EntryFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: formData.title,
-          description: formData.description || undefined,
-          category: formData.category || undefined,
-          started_at: formData.started_at,
-          ended_at: formData.ended_at || undefined,
-          source: 'manual'
+          entry: {
+            title: formData.title,
+            description: formData.description || null,
+            category: formData.category || null,
+            started_at: formData.started_at,
+            ended_at: formData.ended_at || null,
+            source: 'manual'
+          }
         })
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Fehler')
-      }
+      if (!res.ok) throw new Error('Fehler')
 
       toast.success('Eintrag erstellt')
-      setFormData({ title: '', description: '', category: '', started_at: '', ended_at: '' })
+      setFormData({
+        title: '',
+        description: '',
+        category: '',
+        started_at: '',
+        ended_at: ''
+      })
       onSuccess?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Fehler beim Erstellen')
+      toast.error('Fehler beim Erstellen')
+      console.error(err)
     } finally {
       setLoading(false)
     }

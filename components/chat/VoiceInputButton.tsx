@@ -53,9 +53,8 @@ export function useVoiceInput({
     }
 
     recognition.onresult = (event: any) => {
-      const results = event.results as any[][]
-      const transcript = Array.from(results)
-        .map((result: any[]) => result[0].transcript)
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
         .join('')
 
       if (results[0]?.[0]?.isFinal && transcript.trim()) {
@@ -102,4 +101,12 @@ export function VoiceInputButton({ onResult, className }: VoiceInputButtonProps)
       )}
     </Button>
   )
+}
+
+// Web Speech API Typ-Deklaration (vereinfacht)
+declare global {
+  interface Window {
+    SpeechRecognition: any
+    webkitSpeechRecognition: any
+  }
 }

@@ -2,7 +2,8 @@
 module.exports = {
   reactStrictMode: true,
   experimental: {
-    serverActions: true
+    serverActions: true,
+    serverComponentsExternalPackages: ['better-sqlite3', 'drizzle-orm']
   },
   images: {
     remotePatterns: [

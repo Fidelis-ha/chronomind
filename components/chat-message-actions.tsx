@@ -1,6 +1,6 @@
 'use client'
 
-import { type Message } from 'ai'
+import { type UIMessage, isTextUIPart } from 'ai'
 
 import { Button } from '@/components/ui/button'
 import { IconCheck, IconCopy } from '@/components/ui/icons'
@@ -8,7 +8,15 @@ import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {
-  message: Message
+  message: UIMessage
+}
+
+// Helper to extract text content from UIMessage
+function getMessageText(message: UIMessage): string {
+  return message.parts
+    .filter(isTextUIPart)
+    .map(part => part.text)
+    .join('')
 }
 
 export function ChatMessageActions({
@@ -20,7 +28,7 @@ export function ChatMessageActions({
 
   const onCopy = () => {
     if (isCopied) return
-    copyToClipboard(message.content)
+    copyToClipboard(getMessageText(message))
   }
 
   return (

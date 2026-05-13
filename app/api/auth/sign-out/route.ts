@@ -1,11 +1,7 @@
-import 'server-only'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-
-const COOKIE_NAME = 'chronomind-session'
+import { deleteSession } from '@/lib/auth/session'
 
 export async function POST() {
-  const cookieStore = cookies()
-  cookieStore.delete(COOKIE_NAME)
+  await deleteSession()
   return NextResponse.json({ success: true })
 }

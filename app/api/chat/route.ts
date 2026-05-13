@@ -1,66 +1,91 @@
 import 'server-only'
-import { StreamingTextResponse } from 'ai'
-import { cookies } from 'next/headers'
-
-import { auth } from '@/lib/auth'
+import { streamText, convertToModelMessages } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createMistral } from '@ai-sdk/mistral'
+import { auth } from '@/auth'
 import { nanoid } from '@/lib/utils'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
-import { getTimeEntries, getUserSettings } from '@/lib/data-store'
-import { type UserSettings } from '@/lib/types'
+import { createTimeEntryTool } from '@/lib/ai/tools/create-time-entry'
+import { listTimeEntriesTool } from '@/lib/ai/tools/list-time-entries'
+import { updateTimeEntryTool } from '@/lib/ai/tools/update-time-entry'
+import { localDb } from '@/lib/db/local'
+import type { UserSettings, TimeEntry } from '@/lib/types'
 
-export const runtime = 'edge'
-
-// Simple passthrough stream that converts SSE data chunks to text
-function mistralToTextStream(response: Response): ReadableStream<string> {
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-
-  return new ReadableStream({
-    async pull(controller) {
-      const { done, value } = await reader.read()
-      if (done) {
-        controller.close()
-        return
-      }
-      const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const jsonStr = line.slice(6)
-          if (jsonStr === '[DONE]') {
-            controller.close()
-            return
-          }
-          try {
-            const data = JSON.parse(jsonStr)
-            const content = data.choices?.[0]?.delta?.content
-            if (content) {
-              controller.enqueue(content)
-            }
-          } catch {
-            // skip malformed lines
-          }
-        }
-      }
-    }
+function getAIProvider(userSettings: UserSettings | null) {
+  if (userSettings?.ai_provider === 'routerlab') {
+    return createOpenAI({
+      baseURL: userSettings.routerlab_base_url || process.env.ROUTERLAB_BASE_URL,
+      apiKey: userSettings?.ai_api_key_routerlab || process.env.ROUTERLAB_API_KEY
+    })
+  }
+  return createMistral({
+    apiKey: userSettings?.ai_api_key_mistral || process.env.MISTRAL_API_KEY
   })
 }
 
-export async function POST(req: Request) {
-  const cookieStore = cookies()
-  const session = await auth({ cookieStore })
+function getModel(userSettings: UserSettings | null): string {
+  return userSettings?.ai_model || 'mistral-large-latest'
+}
 
-  if (!session?.user) {
-    return new Response('Unauthorized', { status: 401 })
+async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const entries = await localDb.timeEntries.findByUserAndDate(userId, today)
+
+  return entries.map(e => ({
+    id: e.id,
+    user_id: e.userId,
+    title: e.title,
+    description: e.description,
+    category: e.category,
+    tags: (e.tags || null) as string[] | null,
+    started_at: e.startedAt,
+    ended_at: e.endedAt,
+    duration_seconds: e.durationSeconds,
+    source: e.source as TimeEntry['source'],
+    calendar_event_id: e.calendarEventId,
+    metadata: (e.metadata || null) as Record<string, unknown> | null,
+    created_at: e.createdAt ? new Date(e.createdAt).toISOString() : new Date().toISOString()
+  }))
+}
+
+async function getUserSettings(userId: string): Promise<UserSettings | null> {
+  const [settings] = await localDb.settings.findByUserId(userId)
+
+  if (!settings) return null
+
+  return {
+    user_id: settings.userId,
+    ai_provider: settings.aiProvider as UserSettings['ai_provider'],
+    ai_model: settings.aiModel,
+    ai_api_key_mistral: settings.aiApiKeyMistral,
+    ai_api_key_routerlab: settings.aiApiKeyRouterlab,
+    routerlab_base_url: settings.routerlabBaseUrl,
+    timezone: settings.timezone,
+    work_day_start: settings.workDayStart,
+    work_day_end: settings.workDayEnd,
+    backup_provider: settings.backupProvider,
+    backup_config: (settings.backupConfig || null) as UserSettings['backup_config']
   }
+}
 
-  const userId = session.user.id
+export async function POST(req: Request) {
   const json = await req.json()
   const { messages } = json
 
-  // Fetch user data from in-memory store
-  const userSettings = getUserSettings(userId) as UserSettings | null
-  const todayEntries = getTimeEntries(userId)
+  const { user } = (await auth()) || {}
+
+  if (!user) {
+    return new Response('Unauthorized', {
+      status: 401
+    })
+  }
+
+  const userId = user.id
+
+  const userSettings = await getUserSettings(userId)
+  const todayEntries = await getTodayEntries(userId)
 
   const systemPrompt = buildSystemPrompt({
     now: new Date(),
@@ -69,33 +94,24 @@ export async function POST(req: Request) {
     workEnd: userSettings?.work_day_end || '18:00',
     todayEntries,
     todayCalendarEvents: [],
-    userSettings: userSettings ?? undefined
+    userSettings: userSettings || undefined
   })
 
-  const model = userSettings?.ai_model || 'mistral-large-latest'
-  const apiKey = userSettings?.ai_api_key_mistral || process.env.MISTRAL_API_KEY
+  const provider = getAIProvider(userSettings)
+  const model = getModel(userSettings)
 
-  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map((m: any) => ({ role: m.role, content: m.content }))
-      ],
-      stream: true
-    })
+  const coreMessages = await convertToModelMessages(messages)
+
+  const result = await streamText({
+    model: provider(model),
+    system: systemPrompt,
+    messages: coreMessages,
+    tools: {
+      create_time_entry: createTimeEntryTool,
+      list_time_entries: listTimeEntriesTool,
+      update_time_entry: updateTimeEntryTool
+    }
   })
 
-  if (!response.ok) {
-    const error = await response.text()
-    return new Response(`Mistral API Error: ${error}`, { status: 500 })
-  }
-
-  const stream = mistralToTextStream(response)
-  return new StreamingTextResponse(stream)
+  return result.toTextStreamResponse()
 }

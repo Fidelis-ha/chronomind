@@ -1,37 +1,39 @@
-import { UseChatHelpers } from 'ai/react'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from '@/components/external-link'
 import { IconArrowRight } from '@/components/ui/icons'
 
 const exampleMessages = [
   {
-    heading: 'Zeit eintragen',
-    message: 'Ich habe von 9 bis 11 Uhr an dem Projekt gearbeitet'
+    heading: 'Zeit erfassen',
+    message: `Erfasse 2 Stunden Projektarbeit von 9:00 bis 11:00 Uhr`
   },
   {
-    heading: 'Tagesübersicht',
-    message: 'Was habe ich heute alles gearbeitet?'
+    heading: 'Einträge anzeigen',
+    message: 'Was habe ich heute schon gemacht?'
   },
   {
-    heading: 'Statistik',
-    message: 'Wie viel Zeit habe ich diese Woche mit Meetings verbracht?'
+    heading: 'Eintrag bearbeiten',
+    message: 'Ändere den letzten Eintrag auf "Meeting Vorbereitung"'
   }
 ]
 
-export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
+interface EmptyScreenProps {
+  setInput: (input: string) => void
+}
+
+export function EmptyScreen({ setInput }: EmptyScreenProps) {
   return (
     <div className="mx-auto max-w-2xl px-4">
       <div className="rounded-lg border bg-background p-8">
         <h1 className="mb-2 text-lg font-semibold">
-          Willkommen bei ChronoMind!
+          ChronoMind – KI-gestützte Zeiterfassung
         </h1>
         <p className="mb-2 leading-normal text-muted-foreground">
-          ChronoMind hilft dir, deine Zeit zu erfassen und den Überblick zu behalten.{' '}
-          Beschreibe einfach, was du gemacht hast — der KI-Assistent erstellt daraus
-          Zeiteinträge.
+          Ich helfe dir bei der Zeiterfassung. Beschreibe einfach was du gemacht
+          hast und ich erstelle den Eintrag für dich.
         </p>
         <p className="leading-normal text-muted-foreground">
-          Starte ein Gespräch oder probiere folgende Beispiele:
+          Probiere diese Beispiele aus:
         </p>
         <div className="mt-4 flex flex-col items-start space-y-2">
           {exampleMessages.map((message, index) => (

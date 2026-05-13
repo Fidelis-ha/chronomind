@@ -1,6 +1,5 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
 import { Sidebar } from '@/components/sidebar'
 import { SidebarFooter } from '@/components/sidebar-footer'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -13,10 +12,9 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = cookies()
-  const session = await auth({ cookieStore })
+  const { user } = (await auth()) || {}
 
-  if (!session?.user) {
+  if (!user) {
     redirect('/sign-in')
   }
 
@@ -62,7 +60,7 @@ export default async function AppLayout({
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-background px-4">
           <div className="flex items-center">
             <IconSeparator className="h-6 w-6 text-muted-foreground/50" />
-            <UserMenu user={session.user} />
+            <UserMenu user={user} />
           </div>
         </header>
         <main className="flex-1">{children}</main>

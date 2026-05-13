@@ -1,75 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { SignJWT } from 'jose'
-import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
+import { verifyPassword } from '@/lib/auth/password'
+import { createSession } from '@/lib/auth/session'
+import { COOKIE_NAME } from '@/lib/auth/session'
 
-const COOKIE_NAME = 'chronomind-session'
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'chronomind-local-secret-change-in-production'
-)
-
-declare global {
-  // eslint-disable-next-line novar
-  var __USERS__: Record<string, { password: string; id: string; name: string }> | undefined
-}
-
-function getUsers() {
-  if (!global.__USERS__) {
-    global.__USERS__ = {
-      'demo@chronomind.app': {
-        password: 'demo123',
-        id: 'user-demo-001',
-        name: 'Demo User'
-      }
-    }
-  }
-  return global.__USERS__
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const { email, password } = await req.json()
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'E-Mail und Passwort erforderlich' },
         { status: 400 }
       )
     }
 
-    const users = getUsers()
-    const user = users[email]
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
 
-    if (!user || user.password !== password) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'Ungültige Anmeldedaten' },
         { status: 401 }
       )
     }
 
-    const token = await new SignJWT({
-      sub: user.id,
-      email,
-      name: user.name
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('7d')
-      .sign(JWT_SECRET)
+    const valid = await verifyPassword(password, user.passwordHash)
+    if (!valid) {
+      return NextResponse.json(
+        { error: 'Ungültige Anmeldedaten' },
+        { status: 401 }
+      )
+    }
 
-    const cookieStore = cookies()
-    cookieStore.set(COOKIE_NAME, token, {
+    const token = await createSession(user.id)
+
+    const response = NextResponse.json({
+      success: true,
+      user: { id: user.id, email: user.email }
+    })
+
+    response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/'
     })
 
-    return NextResponse.json({
-      success: true,
-      user: { id: user.id, email, name: user.name }
-    })
+    return response
   } catch (error) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error('Sign in error:', error)
+    return NextResponse.json(
+      { error: 'Fehler bei der Anmeldung' },
+      { status: 500 }
+    )
   }
 }

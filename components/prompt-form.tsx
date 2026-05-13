@@ -1,7 +1,6 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Textarea from 'react-textarea-autosize'
-import { UseChatHelpers } from 'ai/react'
 
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
 import { cn } from '@/lib/utils'
@@ -12,9 +11,11 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import { IconArrowElbow, IconPlus } from '@/components/ui/icons'
+import { VoiceInputButton } from '@/components/chat/VoiceInputButton'
 
-export interface PromptProps
-  extends Pick<UseChatHelpers, 'input' | 'setInput'> {
+export interface PromptProps {
+  input: string
+  setInput: (input: string) => void
   onSubmit: (value: string) => Promise<void>
   isLoading: boolean
 }
@@ -73,7 +74,8 @@ export function PromptForm({
           spellCheck={false}
           className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
         />
-        <div className="absolute right-0 top-4 sm:right-4">
+        <div className="absolute right-0 top-4 sm:right-4 flex gap-2">
+          <VoiceInputButton onResult={(text) => setInput(input + text)} />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

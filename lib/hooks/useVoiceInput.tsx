@@ -18,7 +18,7 @@ export function useVoiceInput({
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -54,15 +54,15 @@ export function useVoiceInput({
       setIsListening(false)
     }
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error)
       setError(event.error)
       setIsListening(false)
     }
 
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: any) => {
       const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
+        .map((result: any) => result[0].transcript)
         .join('')
 
       if (event.results[0].isFinal) {
@@ -134,10 +134,10 @@ export function VoiceInputButton({ onResult, className }: VoiceInputButtonProps)
   )
 }
 
-// Typ-Deklaration für Web Speech API
+// Web Speech API Typ-Deklaration (vereinfacht)
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
+    SpeechRecognition: any
+    webkitSpeechRecognition: any
   }
 }

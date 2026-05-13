@@ -1,4 +1,4 @@
-import { type Message } from 'ai'
+import { type UIMessage } from 'ai'
 
 // TODO refactor and remove unneccessary duplicate data.
 export interface Chat extends Record<string, any> {
@@ -7,7 +7,7 @@ export interface Chat extends Record<string, any> {
   createdAt: Date
   userId: string
   path: string
-  messages: Message[]
+  messages: UIMessage[]
   sharePath?: string // Refactor to use RLS
 }
 
@@ -61,12 +61,22 @@ export interface CalendarEvent {
 
 export interface UserSettings {
   user_id: string
-  ai_provider: 'mistral' | 'routerlab'
-  ai_model: string
+  ai_provider: 'mistral' | 'routerlab' | null
+  ai_model: string | null
   ai_api_key_mistral: string | null
   ai_api_key_routerlab: string | null
-  routerlab_base_url: string
-  timezone: string
-  work_day_start: string
-  work_day_end: string
+  routerlab_base_url: string | null
+  timezone: string | null
+  work_day_start: string | null
+  work_day_end: string | null
+  backup_provider: string | null
+  backup_config: BackupConfig | null
+}
+
+export interface BackupConfig {
+  s3_bucket?: string
+  s3_region?: string
+  aws_access_key_id?: string
+  aws_secret_access_key?: string
+  webdav_url?: string
 }

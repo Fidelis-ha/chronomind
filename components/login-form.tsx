@@ -3,8 +3,8 @@
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { IconSpinner } from '@/components/ui/icons'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -30,8 +30,10 @@ export function LoginForm({
     e.preventDefault()
     setIsLoading(true)
 
+    const endpoint = action === 'sign-in' ? '/api/auth/sign-in' : '/api/auth/sign-up'
+
     try {
-      const res = await fetch('/api/auth/sign-in', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formState)
@@ -40,13 +42,19 @@ export function LoginForm({
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(data.error || 'Anmeldung fehlgeschlagen')
+        toast.error(data.error || 'Ein Fehler ist aufgetreten')
+        return
+      }
+
+      if (action === 'sign-up' && !data.session) {
+        toast.success('Registrierung erfolgreich! Bitte melde dich an.')
+        router.push('/sign-in')
         return
       }
 
       router.refresh()
-    } catch {
-      toast.error('Netzwerkfehler')
+    } catch (err) {
+      toast.error('Ein Fehler ist aufgetreten')
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +71,10 @@ export function LoginForm({
               type="email"
               value={formState.email}
               onChange={e =>
-                setFormState(prev => ({ ...prev, email: e.target.value }))
+                setFormState(prev => ({
+                  ...prev,
+                  email: e.target.value
+                }))
               }
             />
           </div>
@@ -74,14 +85,17 @@ export function LoginForm({
               type="password"
               value={formState.password}
               onChange={e =>
-                setFormState(prev => ({ ...prev, password: e.target.value }))
+                setFormState(prev => ({
+                  ...prev,
+                  password: e.target.value
+                }))
               }
             />
           </div>
         </fieldset>
 
         <div className="mt-4 flex items-center">
-          <Button disabled={isLoading} type="submit">
+          <Button disabled={isLoading}>
             {isLoading && <IconSpinner className="mr-2 animate-spin" />}
             {action === 'sign-in' ? 'Anmelden' : 'Registrieren'}
           </Button>

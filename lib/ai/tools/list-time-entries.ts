@@ -1,36 +1,42 @@
-import 'server-only'
+import { zodSchema } from 'ai'
 import { z } from 'zod'
-import { cookies } from 'next/headers'
-import { auth } from '@/lib/auth'
-import { getTimeEntries } from '@/lib/data-store'
+import { getSession } from '@/lib/auth/session'
+import { localDb } from '@/lib/db/local'
 
-// Schema für Tool-Parameter
-export const listTimeEntriesParams = z.object({
-  date: z.string().optional().describe('Datum im ISO Format (YYYY-MM-DD), Standard: heute')
+const listTimeEntriesParamsSchema = z.object({
+  date: z.string().optional().describe('Datum im ISO Format (YYYY-MM-DD), Standard: heute'),
+  limit: z.number().optional().describe('Maximale Anzahl an Einträgen, Standard: 20')
 })
 
-export type ListTimeEntriesParams = z.infer<typeof listTimeEntriesParams>
+export type ListTimeEntriesParams = z.infer<typeof listTimeEntriesParamsSchema>
 
-// Tool Definition für Vercel AI SDK
 export const listTimeEntriesTool = {
   name: 'list_time_entries',
   description: 'Listet Zeiteinträge auf. Nutze dieses Tool um die bisherigen Einträge anzuzeigen oder zu überprüfen.',
-  parameters: listTimeEntriesParams,
+  inputSchema: zodSchema(listTimeEntriesParamsSchema),
   execute: async (params: ListTimeEntriesParams) => {
-    return await listTimeEntriesAction(params)
+    return await listTimeEntries(params)
   }
 }
 
-export async function listTimeEntriesAction(params: ListTimeEntriesParams): Promise<{ success: boolean; entries?: any[]; error?: string }> {
+export async function listTimeEntries(params: ListTimeEntriesParams): Promise<{ success: boolean; entries?: any[]; error?: string }> {
   try {
-    const cookieStore = cookies()
-    const session = await auth({ cookieStore })
+    const session = await getSession()
 
-    if (!session?.user) {
+    if (!session?.id) {
       return { success: false, error: 'Nicht authentifiziert' }
     }
 
-    const entries = getTimeEntries(session.user.id, params.date)
+    const targetDate = params.date
+      ? new Date(params.date)
+      : new Date()
+    targetDate.setHours(0, 0, 0, 0)
+
+    const nextDay = new Date(targetDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+
+    const entries = await localDb.timeEntries.findByUserAndDate(session.id, targetDate)
+
     return { success: true, entries }
   } catch (err) {
     console.error('List time entries error:', err)
