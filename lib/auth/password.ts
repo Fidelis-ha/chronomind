@@ -21,5 +21,9 @@ export async function verifyPassword(
   const derivedKey = (await scryptAsync(password, salt, KEY_LENGTH)) as Buffer
   const storedKey = Buffer.from(hash, 'hex')
 
-  return timingSafeEqual(derivedKey, storedKey)
+  // Use Uint8Array views to satisfy ArrayBufferView constraint
+  return timingSafeEqual(
+    new Uint8Array(derivedKey.buffer, derivedKey.byteOffset, derivedKey.byteLength),
+    new Uint8Array(storedKey.buffer, storedKey.byteOffset, storedKey.byteLength)
+  )
 }

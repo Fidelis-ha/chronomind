@@ -134,10 +134,4 @@ export function VoiceInputButton({ onResult, className }: VoiceInputButtonProps)
   )
 }
 
-// Web Speech API Typ-Deklaration (vereinfacht)
-declare global {
-  interface Window {
-    SpeechRecognition: any
-    webkitSpeechRecognition: any
-  }
-}
+// Web Speech API types are declared in components/chat/VoiceInputButton.tsx
