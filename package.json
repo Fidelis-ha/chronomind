@@ -17,7 +17,7 @@
   "dependencies": {
     "@ai-sdk/mistral": "^3.0.28",
     "@ai-sdk/openai": "^3.0.50",
-    "@ai-sdk/react": "^3.0.148",
+    "@ai-sdk/react": "^3.0.182",
     "@libsql/client": "^0.14.0",
     "@radix-ui/react-alert-dialog": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.4",
