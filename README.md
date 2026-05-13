@@ -23,33 +23,20 @@
 
 ### 1. Umgebungsvariablen
 
-Kopiere `.env.example` nach `.env.local` und fülle die Werte aus:
+In Vercel projekt settings eintragen:
 
-```bash
-cp .env.example .env.local
+- `JWT_SECRET` – ein starker Secret-String für JWT-Signierung
+- `MISTRAL_API_KEY` – von [console.mistral.ai](https://console.mistral.ai)
+- `NEXT_PUBLIC_MISTRAL_API_KEY` – (optional, wird in User Settings gespeichert)
+
+### 2. Demo-Login
+
+```
+E-Mail:    demo@chronomind.app
+Passwort:  demo123
 ```
 
-Benötigte Variablen:
-- `NEXT_PUBLIC_SUPABASE_URL` – aus Supabase Dashboard
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` – aus Supabase Dashboard
-- `MISTRAL_API_KEY` – von [console.mistral.ai](https://console.mistral.ai)
-- `ROUTERLAB_API_KEY` – von routerlab.ch (optional)
-
-### 2. Supabase einrichten
-
-1. Neues Supabase-Projekt erstellen
-2. Migration ausführen:
-   ```bash
-   npx supabase db push
-   ```
-   Oder die SQL-Datei manuell im Supabase SQL Editor ausführen:
-   - `supabase/migrations/002_time_tracking.sql`
-
-### 3. Auth konfigurieren
-
-Im Supabase Dashboard unter **Auth > URL configuration**:
-- Site URL setzen (z.B. `http://localhost:3000`)
-
+Eigene Nutzer können sich über /sign-up registrieren (Daten werden In-Memory gespeichert — für Demo-Zwecke).
 Optional: GitHub OAuth aktivieren unter **Auth > Providers > GitHub**
 
 ### 4. Dependencies installieren
@@ -68,13 +55,11 @@ App läuft auf [http://localhost:3000](http://localhost:3000)
 
 ## Entwicklung
 
-### Datenbank-Migrationen
+### Architektur
 
-Neue Tabellen/Spalten immer als neue Migration hinzufügen:
-
-```bash
-npx supabase migration new <name>
-```
+**Auth**: JWT-basierte Sessions (jose) — Cookie: `chronomind-session`
+**Storage**: In-Memory Store (Demo) — für Production bitte durch echte DB ersetzen
+**Zeiterfassung**: `/api/entries` API-Routen
 
 ### Branch-Strategie
 
@@ -99,8 +84,8 @@ git commit -m "docs: dokumentation aktualisiert"
 | Framework | Next.js 14 (App Router) |
 | Sprache | TypeScript |
 | UI | shadcn/ui + Tailwind CSS |
-| DB | Supabase (PostgreSQL) |
-| Auth | Supabase Auth |
+| DB | In-Memory (Demo) |
+| Auth | JWT (jose) |
 | KI | Vercel AI SDK + Mistral |
 | Charts | recharts |
 
