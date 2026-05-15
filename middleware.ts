@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { decodeJwt } from 'jose'
 
 const COOKIE_NAME = 'chronomind-session'
 
-// Decode JWT without signature verification for Edge Runtime compatibility
-// Full verification happens in API routes via jwtVerify (Node.js runtime)
-// Edge Runtime jose jwtVerify has compatibility issues with certain Node.js crypto features
+// Manually decode JWT payload for Edge Runtime compatibility
+// decodeJwt from jose can have issues in Edge Runtime with certain token formats
 function isValidToken(token: string): boolean {
   try {
-    const payload = decodeJwt(token)
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+    const payloadStr = Buffer.from(parts[1], 'base64url').toString('utf-8')
+    const payload = JSON.parse(payloadStr)
     if (!payload || !payload.sessionId) return false
     // Check expiration
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return false
