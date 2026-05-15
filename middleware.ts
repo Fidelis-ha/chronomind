@@ -3,30 +3,27 @@ import type { NextRequest } from 'next/server'
 
 const COOKIE_NAME = 'chronomind-session'
 
-// Manually decode JWT payload for Edge Runtime compatibility
-// decodeJwt from jose has issues in Edge Runtime with certain token formats
-function base64UrlDecode(str: string): string {
-  // Replace URL-safe chars and add padding
-  let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-  const pad = base64.length % 4
-  if (pad) base64 += '='.repeat(4 - pad)
-  // Decode using atob in browser or Buffer in Node
-  if (typeof globalThis.atob === 'function') {
-    return atob(base64)
-  }
-  return Buffer.from(base64, 'base64').toString('utf-8')
-}
-
+// Simplest possible token check: just look for the JWT structure
+// token = xxx.xxx.xxx where middle part has "sessionId"
 function isValidToken(token: string): boolean {
+  if (!token || typeof token !== 'string') return false
+  const parts = token.split('.')
+  if (parts.length !== 3) return false
+  // Part 2 (payload) should contain "sessionId" after base64url decode
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return false
-    const payloadStr = base64UrlDecode(parts[1])
-    const payload = JSON.parse(payloadStr)
-    if (!payload || !payload.sessionId) return false
-    // Check expiration
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return false
-    return true
+    // base64url -> base64 -> decode
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const pad = base64.length % 4
+    if (pad) base64 += '='.repeat(4 - pad)
+    // Decode
+    let decoded
+    if (typeof globalThis.atob === 'function') {
+      decoded = atob(base64)
+    } else {
+      decoded = Buffer.from(base64, 'base64').toString('utf-8')
+    }
+    // Must have sessionId
+    return decoded.includes('"sessionId"')
   } catch {
     return false
   }

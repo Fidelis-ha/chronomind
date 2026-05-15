@@ -98,4 +98,35 @@ export async function setSessionCookie(token: string) {
   })
 }
 
+export async function debugSession(): Promise<any> {
+  const cookieStore = cookies()
+  const token = cookieStore.get(COOKIE_NAME)?.value
+  
+  if (!token) return { hasCookie: false }
+  
+  // Decode without verification to inspect
+  const parts = token.split('.')
+  let payload: any = null
+  let decodeError: string | null = null
+  
+  if (parts.length === 3) {
+    try {
+      let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+      const pad = base64.length % 4
+      if (pad) base64 += '='.repeat(4 - pad)
+      const decoded = Buffer.from(base64, 'base64').toString('utf-8')
+      payload = JSON.parse(decoded)
+    } catch (e: any) {
+      decodeError = e.message
+    }
+  }
+  
+  return {
+    hasCookie: true,
+    tokenLength: token.length,
+    payload,
+    decodeError
+  }
+}
+
 export { COOKIE_NAME }
