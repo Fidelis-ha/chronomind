@@ -53,6 +53,7 @@ export function LoginForm({
       }
 
       if (action === 'sign-in') {
+        console.log('Sign-in successful, redirecting to /app_main')
         router.push('/app_main')
         return
       }
