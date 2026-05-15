@@ -32,12 +32,12 @@ export async function POST(req: Request) {
     const passwordHash = await hashPassword(password)
     console.log('Password hashed, length:', passwordHash.length)
 
-    const result = await db.insert(users).values({
+    await db.insert(users).values({
       id,
       email,
       passwordHash,
       createdAt: Math.floor(Date.now() / 1000)
-    }).returning()
+    })
 
     return NextResponse.json({ success: true, userId: id })
   } catch (error) {

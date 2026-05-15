@@ -4,20 +4,19 @@ import { users } from '@/lib/db/schema'
 
 export async function GET() {
   try {
-    const allUsers = await db.select().from(users).limit(10)
-    const testId = 'test-' + Date.now()
-    try {
-      await db.insert(users).values({
-        id: testId,
-        email: testId + '@test.com',
-        passwordHash: 'testhash',
-        createdAt: Math.floor(Date.now() / 1000)
-      })
-      return NextResponse.json({ success: true, count: allUsers.length, inserted: testId })
-    } catch (insertErr: any) {
-      return NextResponse.json({ success: false, count: allUsers.length, insertError: insertErr?.message, insertCode: insertErr?.code })
-    }
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message, code: err?.code })
+    const id = crypto.randomUUID()
+    const email = `debug-${Date.now()}@example.com`
+    const passwordHash = 'test:test'
+    
+    await db.insert(users).values({
+      id,
+      email,
+      passwordHash,
+      createdAt: Math.floor(Date.now() / 1000)
+    })
+    
+    return NextResponse.json({ success: true, id, email })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Unknown error' }, { status: 500 })
   }
 }
