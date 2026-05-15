@@ -1,11 +1,9 @@
 import 'server-only'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { auth } from '@/lib/auth'
+import { auth } from '@/auth'
 
 export async function GET() {
-  const cookieStore = cookies()
-  const session = await auth({ cookieStore })
+  const session = await auth()
 
   if (!session?.user) {
     return NextResponse.json({ user: null })

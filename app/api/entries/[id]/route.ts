@@ -35,7 +35,7 @@ export async function PATCH(
       source: updated.source,
       calendar_event_id: updated.calendarEventId,
       metadata: updated.metadata,
-      created_at: updated.createdAt?.toISOString()
+      created_at: updated.createdAt ? new Date(updated.createdAt * 1000).toISOString() : null
     }
 
     return NextResponse.json({ entry: mapped })

@@ -4,13 +4,13 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+  createdAt: integer('created_at').notNull().$type<number>()
 })
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
+  expiresAt: integer('expires_at').notNull().$type<number>()
 })
 
 export const chats = sqliteTable('chats', {
@@ -32,7 +32,7 @@ export const timeEntries = sqliteTable('time_entries', {
   source: text('source').default('manual'),
   calendarEventId: text('calendar_event_id'),
   metadata: text('metadata', { mode: 'json' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+  createdAt: integer('created_at').notNull().$type<number>()
 })
 
 export const calendars = sqliteTable('calendars', {
@@ -43,7 +43,7 @@ export const calendars = sqliteTable('calendars', {
   color: text('color'),
   autoSuggest: integer('auto_suggest', { mode: 'boolean' }).default(true),
   lastSyncedAt: text('last_synced_at'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+  createdAt: integer('created_at').notNull().$type<number>()
 })
 
 export const calendarEvents = sqliteTable('calendar_events', {

@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       source: e.source,
       calendar_event_id: e.calendarEventId,
       metadata: e.metadata,
-      created_at: e.createdAt?.toISOString()
+      created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : null
     }))
 
     return NextResponse.json({ entries: mapped })
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       source: entry.source,
       calendarEventId: entry.calendar_event_id,
       metadata: entry.metadata,
-      createdAt: new Date()
+      createdAt: Math.floor(Date.now() / 1000)
     })
 
     const [created] = await localDb.timeEntries.findById(id)
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       source: created.source,
       calendar_event_id: created.calendarEventId,
       metadata: created.metadata,
-      created_at: created.createdAt?.toISOString()
+      created_at: created.createdAt ? new Date(created.createdAt * 1000).toISOString() : null
     }
 
     return NextResponse.json({ entry: mapped })

@@ -40,7 +40,7 @@ export async function createTimeEntry(params: CreateTimeEntryParams): Promise<{ 
       startedAt: params.started_at,
       endedAt: params.ended_at || null,
       source: 'ai_chat',
-      createdAt: new Date()
+      createdAt: Math.floor(Date.now() / 1000)
     }
 
     await localDb.timeEntries.create(entryData)

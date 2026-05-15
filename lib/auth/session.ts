@@ -19,7 +19,7 @@ export interface SessionUser {
 
 export async function createSession(userId: string): Promise<string> {
   const sessionId = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + SESSION_DURATION * 1000)
+  const expiresAt = Math.floor((Date.now() + SESSION_DURATION * 1000) / 1000)
 
   await db.insert(sessions).values({
     id: sessionId,
@@ -51,7 +51,7 @@ export async function getSession(): Promise<SessionUser | null> {
       .where(eq(sessions.id, sessionId))
       .limit(1)
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt * 1000 < Date.now()) {
       if (session) {
         await db.delete(sessions).where(eq(sessions.id, sessionId))
       }

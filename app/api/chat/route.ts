@@ -46,7 +46,7 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
     source: e.source as TimeEntry['source'],
     calendar_event_id: e.calendarEventId,
     metadata: (e.metadata || null) as Record<string, unknown> | null,
-    created_at: e.createdAt ? new Date(e.createdAt).toISOString() : new Date().toISOString()
+    created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString()
   }))
 }
 

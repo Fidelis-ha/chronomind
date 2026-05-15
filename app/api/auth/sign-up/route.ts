@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       id,
       email,
       passwordHash,
-      createdAt: new Date()
+      createdAt: Math.floor(Date.now() / 1000)
     }).returning()
 
     return NextResponse.json({ success: true, userId: id })
