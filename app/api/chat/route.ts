@@ -1,4 +1,5 @@
 import 'server-only'
+import { NextResponse } from 'next/server'
 import { streamText, convertToModelMessages } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createMistral } from '@ai-sdk/mistral'
@@ -25,6 +26,19 @@ function getAIProvider(userSettings: UserSettings | null) {
 
 function getModel(userSettings: UserSettings | null): string {
   return userSettings?.ai_model || 'mistral-large-latest'
+}
+
+function getAIErrorMessage(userSettings: UserSettings | null): string | null {
+  if (userSettings?.ai_provider === 'routerlab') {
+    if (!userSettings?.ai_api_key_routerlab && !process.env.ROUTERLAB_API_KEY) {
+      return 'RouterLab API Key nicht konfiguriert. Bitte in den Einstellungen eintragen.'
+    }
+  } else {
+    if (!userSettings?.ai_api_key_mistral && !process.env.MISTRAL_API_KEY) {
+      return 'Mistral API Key nicht konfiguriert. Bitte in den Einstellungen eintragen.'
+    }
+  }
+  return null
 }
 
 async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
@@ -99,6 +113,11 @@ export async function POST(req: Request) {
 
   const provider = getAIProvider(userSettings)
   const model = getModel(userSettings)
+
+  const aiError = getAIErrorMessage(userSettings)
+  if (aiError) {
+    return NextResponse.json({ error: aiError }, { status: 400 })
+  }
 
   const coreMessages = await convertToModelMessages(messages)
 
