@@ -52,6 +52,11 @@ export function LoginForm({
         return
       }
 
+      if (action === 'sign-in') {
+        router.push('/app_main')
+        return
+      }
+
       router.refresh()
     } catch (err) {
       toast.error('Ein Fehler ist aufgetreten')
