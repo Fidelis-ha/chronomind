@@ -1,42 +1,27 @@
-# ChronoMind — Projekt Plan
+# ChronoMind — Projekt Dokumentation
 
-## Vision
+## Aktueller Stand (2026-05-15)
 
-ChronoMind ist eine **KI-gestützte Zeiterfassungs-App**, die auf dem Gerät des Nutzers läuft (local-first). Kalendereinträge und Zeiteinträge werden lokal gespeichert. Optional kann der Nutzer eine eigene Cloud (S3/WebDAV) für Backups konfigurieren.
-
-**Plattformen:** iOS, Android, Web (同一 Codebasis)
-
----
-
-## Warum Expo + Capacitor
-
-| Anforderung | Lösung |
-|---|---|
-| Lokale SQLite-DB | `expo-sqlite` (native SQLite) |
-| Kalender-Zugriff | `expo-calendar` |
-| Kamera für OCR | `expo-camera` |
-| Push-Benachrichtigungen | `expo-notifications` + FCM/APNS |
-| Social Sharing | `@capacitor/share` |
-| iOS + Android | Capacitor 7 (Wrapper) |
-| Offline-first | expo-sqlite |
+**Architektur:** Next.js 14 (App Router) + Vercel AI SDK v6 + better-sqlite3 (Drizzle ORM)
+**Deployment:** https://chronomind-expo.vercel.app (produktiv)
+**GitHub:** https://github.com/Fidelis-ha/chronomind (main branch → Vercel GitHub Integration → chronomind-fidelis projekt)
+**Datenbank:** SQLite (lokale Datei `/tmp/chronomind.db` auf Vercel, `chronomind.db` lokal)
+**Authentifizierung:** JWT-basierte Sessions mit Cookies (7 Tage Gültigkeit)
 
 ---
 
 ## Technologie-Stack
 
 ```
-Framework:       Expo SDK 54 + Capacitor 7
-Sprache:        TypeScript
-Datenbank:      expo-sqlite + Drizzle ORM
-AI:             OpenAI-kompatibles API (Mistral)
-AI-SDK:         Vercel AI SDK (AI SDK v6)
-Kalender:       expo-calendar
-Kamera:         expo-camera
-Benachrichtigungen: expo-notifications
-Teilen:         @capacitor/share
-Build:          EAS Build (iOS), Android Studio (Android)
-Web-Preview:    Vercel
-API-Key:        Mistral: ME5YHYhXGcRYw2uMt0LdJQ
+Framework:       Next.js 14 (App Router)
+Sprache:         TypeScript
+Datenbank:       better-sqlite3 + Drizzle ORM
+AI:              Mistral API (OpenAI-kompatibel)
+AI-SDK:          Vercel AI SDK v6 (@ai-sdk/react, ai@6.0.180)
+Auth:            JWT (jose library) + bcrypt
+Styling:         Tailwind CSS + shadcn/ui Komponenten
+Kalender:        WebDAV (iCloud-calendars, Nextcloud)
+Deployment:      Vercel (GitHub Integration)
 ```
 
 ---
@@ -44,50 +29,48 @@ API-Key:        Mistral: ME5YHYhXGcRYw2uMt0LdJQ
 ## Projekt-Struktur
 
 ```
-chronomind-expo/
-├── app/                        # expo-router Pages
-│   ├── _layout.tsx             # Root Layout mit Auth-Provider
-│   ├── (auth)/
-│   │   └── sign-in.tsx
-│   ├── (app)/
-│   │   ├── _layout.tsx         # Geschützter Bereich
-│   │   ├── index.tsx           # Dashboard / Today
-│   │   ├── entries/
-│   │   │   ├── _layout.tsx
-│   │   │   ├── index.tsx       # Einträge-Liste
-│   │   │   └── new.tsx        # Neuer Eintrag
-│   │   ├── chat.tsx            # AI Chat
-│   │   ├── calendar.tsx        # Kalender-Übersicht
-│   │   └── settings.tsx
-│   └── +html.tsx
+chronomind/
+├── app/                          # Next.js App Router
+│   ├── (app)/                    # Geschützte Routes (Dashboard, Entries, etc.)
+│   │   ├── layout.tsx
+│   │   ├── page.tsx              # Dashboard (Today)
+│   │   ├── entries/              # Zeiteinträge
+│   │   │   ├── page.tsx         # Liste
+│   │   │   └── [id]/page.tsx    # Einzelansicht
+│   │   ├── chat.tsx             # KI Chat Interface
+│   │   ├── calendar.tsx         # Kalender Integration
+│   │   └── settings.tsx         # Einstellungen
+│   ├── (auth)/                   # Öffentliche Routes
+│   │   ├── sign-in/page.tsx
+│   │   └── sign-up/page.tsx
+│   └── api/                      # API Routes
+│       ├── auth/
+│       │   ├── sign-in/route.ts
+│       │   ├── sign-up/route.ts
+│       │   └── session/route.ts
+│       ├── entries/
+│       │   ├── route.ts         # GET (Liste), POST (Erstellen)
+│       │   └── [id]/route.ts   # GET (einzeln), PUT, DELETE
+│       ├── chat/route.ts
+│       ├── settings/route.ts
+│       └── backup/route.ts
+├── components/                   # React Komponenten
+│   ├── login-form.tsx
+│   ├── entry-form.tsx
+│   └── ...
 ├── lib/
 │   ├── db/
-│   │   ├── schema.ts           # Drizzle Schema
-│   │   ├── index.ts            # DB Instance
-│   │   └── queries.ts          # CRUD Funktionen
+│   │   ├── index.ts             # Drizzle + better-sqlite3 Instance
+│   │   ├── schema.ts            # Tabellendefinitionen (users, sessions, time_entries, etc.)
+│   │   └── local.ts             # Datenbank-Helper (CRUD Funktionen)
 │   ├── auth/
-│   │   ├── session.ts           # JWT Session
-│   │   └── password.ts         # Password Hashing
-│   ├── ai/
-│   │   ├── index.tsx           # AI SDK Setup
-│   │   ├── tools.ts            # AI Tools (create-entry, etc.)
-│   │   └── prompts.tsx         # System Prompts
-│   ├── calendar/
-│   │   └── index.ts            # Kalender-Zugriff
-│   ├── backup/
-│   │   └── index.ts            # S3 / WebDAV Backup
-│   └── mistral.ts              # Mistral API Client
-├── components/
-│   ├── ui/                     # shadcn/ui Komponenten
-│   ├── EntryForm.tsx
-│   ├── EntryList.tsx
-│   ├── AIChat.tsx
-│   └── CalendarView.tsx
-├── capacitor.config.ts
-├── app.json
-├── babel.config.js
-├── drizzle.config.ts
-├── eas.json
+│   │   ├── session.ts           # JWT Token Erstellung/Validierung
+│   │   ├── password.ts          # bcrypt Hashing
+│   │   └── index.ts             # Auth Helper
+│   └── ai/
+│       ├── index.tsx            # AI SDK Setup (Mistral)
+│       └── tools/               # AI Tools (create-time-entry, etc.)
+├── middleware.ts                 # Auth-Middleware
 └── package.json
 ```
 
@@ -100,7 +83,7 @@ chronomind-expo/
 |---|---|---|
 | id | TEXT (UUID) | Primärschlüssel |
 | email | TEXT | Unique |
-| password_hash | TEXT | scrypt hash |
+| password_hash | TEXT | bcrypt hash |
 | created_at | INTEGER | Unix timestamp |
 
 ### sessions
@@ -108,7 +91,6 @@ chronomind-expo/
 |---|---|---|
 | id | TEXT (UUID) | Primärschlüssel |
 | user_id | TEXT | FK → users |
-| token | TEXT | JWT |
 | expires_at | INTEGER | Unix timestamp |
 
 ### time_entries
@@ -117,230 +99,158 @@ chronomind-expo/
 | id | TEXT (UUID) | Primärschlüssel |
 | user_id | TEXT | FK → users |
 | title | TEXT | Projekt/Task Name |
+| description | TEXT | Notizen |
 | category | TEXT | Kategorie |
-| started_at | INTEGER | Unix timestamp |
-| ended_at | INTEGER | Unix timestamp (null wenn aktiv) |
-| notes | TEXT | Notizen |
+| tags | TEXT (JSON) | Array von Tags |
+| started_at | TEXT | ISO timestamp |
+| ended_at | TEXT | ISO timestamp (null wenn aktiv) |
+| duration_seconds | INTEGER | Berechnete Dauer |
+| source | TEXT | 'manual', 'ai_chat', 'calendar' |
+| calendar_event_id | TEXT | Referenz zum Kalender-Event |
+| metadata | TEXT (JSON) | Zusätzliche Metadaten |
+| created_at | INTEGER | Unix timestamp |
+
+### calendars
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| id | TEXT (UUID) | Primärschlüssel |
+| user_id | TEXT | FK → users |
+| name | TEXT | Kalender Name |
+| webcal_url | TEXT | WebDAV URL |
+| color | TEXT | Anzeigefarbe |
+| auto_suggest | INTEGER | Boolean (1/0) |
+| last_synced_at | TEXT | ISO timestamp |
 | created_at | INTEGER | Unix timestamp |
 
 ### calendar_events
 | Feld | Typ | Beschreibung |
 |---|---|---|
 | id | TEXT (UUID) | Primärschlüssel |
+| calendar_id | TEXT | FK → calendars |
 | user_id | TEXT | FK → users |
-| external_id | TEXT | ID vom nativen Kalender |
+| external_id | TEXT | ID vom externen Kalender |
 | title | TEXT | Titel |
-| start_date | INTEGER | Unix timestamp |
-| end_date | INTEGER | Unix timestamp |
-| source | TEXT | 'local' oder Kalender-ID |
+| description | TEXT | Beschreibung |
+| started_at | TEXT | ISO timestamp |
+| ended_at | TEXT | ISO timestamp |
+| location | TEXT | Ort |
+| raw_ical | TEXT | Original iCal Daten |
 
 ### user_settings
 | Feld | Typ | Beschreibung |
 |---|---|---|
 | user_id | TEXT | Primärschlüssel, FK → users |
-| timezone | TEXT | z.B. 'Europe/Berlin' |
-| backup_provider | TEXT | '', 's3', 'webdav' |
-| backup_config | TEXT | JSON mit Zugangsdaten |
+| ai_provider | TEXT | 'mistral' |
+| ai_model | TEXT | 'mistral-large-latest' |
+| ai_api_key_mistral | TEXT | API Key (verschlüsselt) |
+| ai_api_key_routerlab | TEXT | Backup API Key |
+| routerlab_base_url | TEXT | 'https://routerlab.ch/v1' |
+| timezone | TEXT | 'Europe/Berlin' |
+| work_day_start | TEXT | '08:00' |
+| work_day_end | TEXT | '18:00' |
+| backup_provider | TEXT | 's3', 'webdav', oder leer |
+| backup_config | TEXT (JSON) | Zugangsdaten |
+
+### chats
+| Feld | Typ | Beschreibung |
+|---|---|---|
+| id | TEXT (UUID) | Primärschlüssel |
+| user_id | TEXT | FK → users |
+| payload | TEXT (JSON) | Chat-Historie |
 
 ---
 
-## Phasen
+## API-Endpunkte
 
-### PHASE 1: Expo Setup (Basis)
+### Auth
+- `POST /api/auth/sign-up` — Registrierung (email, password)
+- `POST /api/auth/sign-in` — Login (email, password) → setzt Cookie
+- `GET /api/auth/session` — Aktuelle Session (benötigt Cookie)
 
-**Ziel:** Laufende App auf Gerät/Web mit Login-Screen
+### Entries
+- `GET /api/entries?date=YYYY-MM-DD` — Zeiteinträge für Datum
+- `POST /api/entries` — Neuer Eintrag
+- `GET /api/entries/[id]` — Einzelner Eintrag
+- `PUT /api/entries/[id]` — Aktualisieren
+- `DELETE /api/entries/[id]` — Löschen
 
-1. `npx create-expo-app@latest chronomind --template blank-typescript` in `/opt/data/`
-2. `npx cap init` (App ID: com.chronomind.app)
-3. `npx cap add ios` + `npx cap add android`
-4. Routing: `npx expo install expo-router` (file-based)
-5. UI: Login-Screen, Dashboard, Zeiteinträge-Liste (mock data)
-6. Auth: JWT in AsyncStorage (kein Backend nötig)
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-npx expo export       → funktioniert
-```
-
-**Deploy:** Vercel Preview → URL an Marc
+### Sonstige
+- `GET /api/chat` — Chat-Historie
+- `POST /api/chat` — Neue Nachricht (mit AI)
+- `GET /api/settings` — Benutzereinstellungen
+- `PUT /api/settings` — Einstellungen aktualisieren
+- `GET /api/backup` — Backup erstellen/herunterladen
 
 ---
 
-### PHASE 2: Lokale Datenbank
+## Environment Variables (Vercel)
 
-**Ziel:** SQLite-DB funktioniert, Auth + CRUD für Zeiteinträge
-
-1. `npx expo install expo-sqlite`
-2. Drizzle ORM: `npx expo install drizzle-orm`
-3. Schema erstellen (users, sessions, time_entries, user_settings)
-4. Auth: Login/Registrierung/Logout
-5. CRUD für time_entries
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Deploy:** Vercel Preview → URL an Marc
-
----
-
-### PHASE 3: Kalender-Integration
-
-**Ziel:** Kalender lesen und schreiben
-
-1. `npx expo install expo-calendar`
-2. Permissions (iOS Info.plist, Android Manifest)
-3. Kalender-Liste laden
-4. Events lesen und anzeigen
-5. Zeiteintrag → Kalender-Event erstellen
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Deploy:** Vercel Preview → URL an Marc
-
----
-
-### PHASE 4: AI-Chat mit Mistral
-
-**Ziel:** Chat-Interface mit KI, die Zeiteinträge erstellen kann
-
-1. AI SDK: `npx expo install ai` (Vercel AI SDK)
-2. Mistral Client: OpenAI-kompatibles API
-3. Chat-UI (Nachrichten-Historie, Streaming)
-4. AI Tools: create_time_entry, list_time_entries, update_time_entry
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Deploy:** Vercel Preview → URL an Marc
-
----
-
-### PHASE 5: Kamera + OCR
-
-**Ziel:** Kalenderblatt fotografieren, KI extrahiert Termine
-
-1. `npx expo install expo-camera`
-2. Foto aufnehmen / Galerie
-3. Mistral OCR (oder Pixtral Vision)
-4. Extrahierte Termine → Vorschläge
-5. Nutzer bestätigt → Eintrag wird erstellt
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Deploy:** Vercel Preview → URL an Marc
-
----
-
-### PHASE 6: Push-Benachrichtigungen
-
-**Ziel:** Erinnerungen und Alarme
-
-1. `npx expo install expo-notifications`
-2. FCM für Android, APNS für iOS
-3. Erinnerung für aktive Zeiteinträge
-4. Tägliche Zusammenfassung
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Test:** APK auf Android installieren, Benachrichtigung erhalten
-
----
-
-### PHASE 7: Social Features + Cloud-Sync
-
-**Ziel:** Teilen und Backup
-
-1. `@capacitor/share` für native Share-Dialoge
-2. lib/backup/index.ts anpassen
-3. S3 / WebDAV Konfiguration in Settings
-4. Manueller Backup-Trigger
-
-**Qualitäts-Gate:**
-```
-npm run lint          → 0 Errors
-npx tsc --noEmit     → 0 Errors
-npm run build         → erfolgreich
-```
-
-**Deploy:** Vercel Preview → URL an Marc
-
----
-
-## API-Keys (nur Expo/Local)
-
-| Service | Key |
+| Variable | Wert |
 |---|---|
-| Mistral | `ME5YHYhXGcRYw2uMt0LdJQ` |
+| JWT_SECRET | chronomind-super-secret-jwt-key-2026 |
+| DATABASE_PATH | /tmp/chronomind.db (Vercel), ./chronomind.db (lokal) |
+| MISTRAL_API_KEY | (via Vercel dashboard) |
+| ROUTERLAB_BASE_URL | https://routerlab.ch/v1 |
 
-In `.env.local`:
+---
+
+## Lokale Entwicklung
+
+```bash
+cd /opt/data/chronomind
+
+# Dependencies installieren
+npm install
+
+# Development Server starten
+npm run dev
+
+# Build (erfolgreich mit exit code 0)
+npm run build
+
+# TypeScript Check
+npx tsc --noEmit
+
+# Production deploy (Vercel CLI)
+VERCEL_TOKEN=$(cat .vercel_token) npx vercel deploy --prod
 ```
-EXPO_PUBLIC_MISTRAL_API_KEY=ME5YHYhXGcRYw2uMt0LdJQ
-```
 
 ---
 
-## Deploy-Ziele
+## Wichtige Dateien
 
-| Umgebung | Ziel |
-|---|---|
-| Vercel Preview | Nach jeder Phase (Web) |
-| GitHub | `git@github.com:Fidelis-ha/chronomind.git` |
-| Branch | `fidelis/expo-migration` → PR auf `main` |
-
----
-
-## Testing-Protokoll
-
-1. **Lokaler Test:** `npm run build` + `npx expo start`
-2. **Typecheck:** `npx tsc --noEmit`
-3. **Lint:** `npm run lint`
-4. **Web-Preview:** Vercel Preview deployen
-5. **Link teilen:** Erst wenn alle Gates grün
-
-**Marc wird NUR informiert wenn alle Tests bestanden sind.** Er muss nicht vor jedem nächsten Schritt freigeben — ich arbeite selbstständig weiter.
+- `middleware.ts` — Auth-Check für geschützte Routes
+- `lib/auth/session.ts` — JWT Token handling (7 Tage, cookie-basiert)
+- `lib/db/index.ts` — Database Instance + auto-initialisierung
+- `lib/db/schema.ts` — Drizzle Schema Definitionen
+- `lib/ai/index.tsx` — Mistral AI Setup mit Vercel AI SDK
 
 ---
 
-## Bestehende Ressourcen
+## Bekannte Probleme und Lösungen
 
-- **Alter Code:** `/opt/data/chronomind/` (Next.js, nicht mehr verwenden für neue Features)
-- **Backup-Logik:** `/opt/data/chronomind/lib/backup/index.ts`
-- **DB-Schema:** `/opt/data/chronomind/lib/db/schema.ts`
-- **AI-Tools:** `/opt/data/chronomind/lib/ai/index.tsx`
+1. **TypeScript Schema-Mismatch:** `createdAt` in Schema ist `integer` (Unix timestamp), aber im Code wurde `Date` übergeben. Lösung: `Math.floor(Date.now() / 1000)` statt `new Date()`.
+
+2. **Vercel CLI Auth-Probleme:** VERCEL_TOKEN wird nicht korrekt erkannt. Workaround: GitHub Integration nutzen → push to main triggers deployment.
+
+3. **SQLite auf Vercel:** Serverless Functions haben `/tmp` als beschreibbares Verzeichnis. Database Path muss auf `/tmp/chronomind.db` gesetzt werden.
 
 ---
 
-## Context7 nutzen
+## Deployment
 
-Für alle Framework-spezifischen Fragen: Context7 MCP Server nutzen.
+1. **GitHub push (main branch)** → Vercel GitHub Integration → automatischer Build
+2. **Manuell via CLI:** `npx vercel deploy --prod` (funktioniert nur mit korrektem token)
+3. **Aktuelle Produktion:** https://chronomind-expo.vercel.app
 
-Beispiele:
-- "Nutze Context7: expo-sqlite CRUD operations"
-- "Nutze Context7: expo-calendar permission handling"
-- "Nutze Context7: capacitor push notifications setup"
+---
+
+## Nächste Schritte (Review)
+
+- [ ] Sign-up API testen (500 error behoben?)
+- [ ] Sign-in mit frischem User testen
+- [ ] Session-Cookie funktioniert?
+- [ ] Entries API mit auth testen
+- [ ] KI Chat funktioniert?
+- [ ] Kalender-WebDAV-Sync testen
+- [ ] Settings Page funktioniert?
