@@ -8,9 +8,11 @@ import { existsSync } from 'fs'
 
 // On Vercel serverless, use /tmp for writable filesystem
 const isVercel = process.env.VERCEL === '1'
-const DB_PATH = process.env.DATABASE_PATH || (
-  isVercel ? '/tmp/chronomind.db' : join(process.cwd(), 'chronomind.db')
-)
+// On Vercel, always use /tmp regardless of env var (env var not reliably accessible)
+// On local, use DATABASE_PATH or default to project root
+const DB_PATH = isVercel
+  ? '/tmp/chronomind.db'
+  : (process.env.DATABASE_PATH || join(process.cwd(), 'chronomind.db'))
 
 // Singleton database instance
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null
