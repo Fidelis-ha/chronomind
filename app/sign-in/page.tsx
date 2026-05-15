@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { LoginForm } from '@/components/login-form'
-import { Separator } from '@/components/separator'
+import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { IconSpinner } from '@/components/ui/icons'
 import Link from 'next/link'
