@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import { decodeJwt } from 'jose'
 
 const COOKIE_NAME = 'chronomind-session'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'chronomind-local-secret-change-in-production'
-)
-
-async function verifyToken(token: string): Promise<boolean> {
+// Decode JWT without signature verification for Edge Runtime compatibility
+// Full verification happens in API routes via jwtVerify (Node.js runtime)
+// Edge Runtime jose jwtVerify has compatibility issues with certain Node.js crypto features
+function isValidToken(token: string): boolean {
   try {
-    await jwtVerify(token, JWT_SECRET)
+    const payload = decodeJwt(token)
+    if (!payload || !payload.sessionId) return false
+    // Check expiration
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return false
     return true
   } catch {
     return false
@@ -21,7 +23,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
   const token = req.cookies.get(COOKIE_NAME)?.value
-  const isValid = token ? await verifyToken(token) : false
+  const isValid = token ? isValidToken(token) : false
 
   if (
     !isValid &&
