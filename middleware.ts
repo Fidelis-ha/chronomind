@@ -4,12 +4,24 @@ import type { NextRequest } from 'next/server'
 const COOKIE_NAME = 'chronomind-session'
 
 // Manually decode JWT payload for Edge Runtime compatibility
-// decodeJwt from jose can have issues in Edge Runtime with certain token formats
+// decodeJwt from jose has issues in Edge Runtime with certain token formats
+function base64UrlDecode(str: string): string {
+  // Replace URL-safe chars and add padding
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+  const pad = base64.length % 4
+  if (pad) base64 += '='.repeat(4 - pad)
+  // Decode using atob in browser or Buffer in Node
+  if (typeof globalThis.atob === 'function') {
+    return atob(base64)
+  }
+  return Buffer.from(base64, 'base64').toString('utf-8')
+}
+
 function isValidToken(token: string): boolean {
   try {
     const parts = token.split('.')
     if (parts.length !== 3) return false
-    const payloadStr = Buffer.from(parts[1], 'base64url').toString('utf-8')
+    const payloadStr = base64UrlDecode(parts[1])
     const payload = JSON.parse(payloadStr)
     if (!payload || !payload.sessionId) return false
     // Check expiration
