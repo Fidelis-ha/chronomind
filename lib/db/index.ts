@@ -3,6 +3,8 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as schema from './schema'
 import { join } from 'path'
 import { ensureDbInitialized } from './init'
+import { mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
 
 // On Vercel serverless, use /tmp for writable filesystem
 const isVercel = process.env.VERCEL === '1'
@@ -16,6 +18,38 @@ let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null
 // Lazy initialization with automatic table creation
 function getDb() {
   if (!dbInstance) {
+    // Ensure /tmp directory exists on Vercel
+    const fs = require('fs')
+    if (isVercel && !fs.existsSync('/tmp')) {
+      console.error('/tmp does not exist!')
+    }
+    
+    // Ensure the parent directory exists
+    const dbDir = isVercel ? '/tmp' : process.cwd()
+    if (!fs.existsSync(dbDir)) {
+      console.error(`Database directory does not exist: ${dbDir}`)
+    }
+    
+    // On Vercel, ensure we use the correct path and create parent dirs
+    const dbParentDir = isVercel ? '/tmp' : process.cwd()
+    if (isVercel && !fs.existsSync(dbParentDir)) {
+      console.error(`Vercel /tmp directory missing: ${dbParentDir}`)
+    }
+    
+    // Ensure the database file itself exists (create empty file if not)
+    // This is needed because better-sqlite3 may fail on first open if file doesn't exist
+    if (isVercel && !fs.existsSync(DB_PATH)) {
+      console.log('Creating database file at:', DB_PATH)
+      // Ensure parent directory exists
+      const parentDir = require('path').dirname(DB_PATH)
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true })
+      }
+      // Create empty file
+      const handle = require('fs').openSync(DB_PATH, 'w')
+      require('fs').closeSync(handle)
+    }
+    
     // Ensure tables exist before creating drizzle instance
     const sqlite = new Database(DB_PATH)
     sqlite.pragma('journal_mode = WAL')
