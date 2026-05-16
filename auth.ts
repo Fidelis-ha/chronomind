@@ -1,8 +1,13 @@
-import 'server-only'
-import { getSession } from '@/lib/auth/session'
+// Auth disabled — localStorage-based auth
+export interface User {
+  id: string
+  email: string
+}
 
-export const auth = async () => {
-  const session = await getSession()
-  if (!session) return null
-  return { session, user: session }
+export interface Session {
+  user: User
+}
+
+export async function auth(): Promise<Session | null> {
+  return null
 }

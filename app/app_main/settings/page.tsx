@@ -1,23 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
-import { Switch } from '@/components/ui/switch'
-import { type UserSettings } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 const TIMEZONES = [
-  'Europe/Berlin',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Zurich',
-  'America/New_York',
-  'America/Los_Angeles',
-  'Asia/Tokyo',
-  'Asia/Shanghai'
+  'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
+  'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Shanghai'
 ]
 
 const BACKUP_PROVIDERS = [
@@ -26,93 +19,105 @@ const BACKUP_PROVIDERS = [
   { id: 'webdav', label: 'WebDAV' }
 ]
 
-export default function SettingsPage() {
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [settings, setSettings] = useState<Partial<UserSettings & { backup_provider: string; backup_s3_bucket: string; backup_s3_region: string; backup_webdav_url: string }>>({
-    timezone: 'Europe/Berlin',
-    work_day_start: '08:00',
-    work_day_end: '18:00',
-    backup_provider: ''
-  })
+const STORAGE_KEY = 'chronomind_settings'
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/settings')
-      const data = await res.json()
-      if (res.ok && data.settings) {
-        const s = data.settings
-        setSettings({
-          timezone: s.timezone || 'Europe/Berlin',
-          work_day_start: s.work_day_start || '08:00',
-          work_day_end: s.work_day_end || '18:00',
-          ai_provider: s.ai_provider,
-          ai_model: s.ai_model,
-          ai_api_key_mistral: s.ai_api_key_mistral,
-          ai_api_key_routerlab: s.ai_api_key_routerlab,
-          routerlab_base_url: s.routerlab_base_url,
-          backup_provider: s.backup_provider || '',
-          backup_s3_bucket: s.backup_config?.s3_bucket || '',
-          backup_s3_region: s.backup_config?.s3_region || 'eu-central-1',
-          backup_webdav_url: s.backup_config?.webdav_url || ''
-        })
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+function loadSettings() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
   }
+}
 
-  const handleSave = async () => {
+function saveSettings(settings: any) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+}
+
+const DEFAULT_SETTINGS = {
+  timezone: 'Europe/Berlin',
+  work_day_start: '08:00',
+  work_day_end: '18:00',
+  backup_provider: '',
+  backup_s3_bucket: '',
+  backup_s3_region: 'eu-central-1',
+  backup_webdav_url: '',
+  aws_access_key_id: '',
+  aws_secret_access_key: ''
+}
+
+export default function SettingsPage() {
+  const saved = loadSettings()
+  const [settings, setSettings] = useState<any>({
+    ...DEFAULT_SETTINGS,
+    ...(saved || {})
+  })
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = () => {
     setSaving(true)
     try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
-
-      if (!res.ok) throw new Error('Speichern fehlgeschlagen')
+      saveSettings(settings)
       toast.success('Einstellungen gespeichert')
-    } catch (err) {
+    } catch {
       toast.error('Fehler beim Speichern')
-      console.error(err)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleBackupNow = async () => {
-    try {
-      const res = await fetch('/api/backup', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Backup fehlgeschlagen')
-      toast.success('Backup erstellt!')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Backup fehlgeschlagen')
-    }
+  const handleExport = () => {
+    const entries = localStorage.getItem('chronomind_entries') || '[]'
+    const data = JSON.stringify({ entries: JSON.parse(entries), settings }, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chronomind-backup-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Export erstellt')
   }
 
-  if (loading) {
-    return <div className="container py-8">Wird geladen...</div>
+  const handleImport = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      try {
+        const text = await file.text()
+        const data = JSON.parse(text)
+        if (data.entries) {
+          localStorage.setItem('chronomind_entries', JSON.stringify(data.entries))
+          toast.success(`Importiert: ${Array.isArray(data.entries) ? data.entries.length : 0} Einträge`)
+        }
+      } catch {
+        toast.error('Import fehlgeschlagen')
+      }
+    }
+    input.click()
   }
 
   return (
     <div className="container mx-auto max-w-xl py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Einstellungen</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Einstellungen</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleImport}>Import</Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>Export</Button>
+        </div>
+      </div>
 
       <div className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="timezone">Zeitzone</Label>
           <Select
-            value={settings.timezone || 'Europe/Berlin'}
-            onValueChange={value => setSettings(prev => ({ ...prev, timezone: value }))}
+            value={settings.timezone}
+            onValueChange={value => setSettings((prev: any) => ({ ...prev, timezone: value }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -131,8 +136,8 @@ export default function SettingsPage() {
             <Input
               id="work_start"
               type="time"
-              value={settings.work_day_start || '08:00'}
-              onChange={e => setSettings(prev => ({ ...prev, work_day_start: e.target.value }))}
+              value={settings.work_day_start}
+              onChange={e => setSettings((prev: any) => ({ ...prev, work_day_start: e.target.value }))}
             />
           </div>
           <div className="space-y-2">
@@ -140,8 +145,8 @@ export default function SettingsPage() {
             <Input
               id="work_end"
               type="time"
-              value={settings.work_day_end || '18:00'}
-              onChange={e => setSettings(prev => ({ ...prev, work_day_end: e.target.value }))}
+              value={settings.work_day_end}
+              onChange={e => setSettings((prev: any) => ({ ...prev, work_day_end: e.target.value }))}
             />
           </div>
         </div>
@@ -153,8 +158,8 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="backup_provider">Backup Anbieter</Label>
               <Select
-                value={settings.backup_provider || ''}
-                onValueChange={value => setSettings(prev => ({ ...prev, backup_provider: value }))}
+                value={settings.backup_provider}
+                onValueChange={value => setSettings((prev: any) => ({ ...prev, backup_provider: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Backup auswählen..." />
@@ -173,15 +178,8 @@ export default function SettingsPage() {
                   <Label htmlFor="s3_bucket">S3 Bucket Name</Label>
                   <Input
                     id="s3_bucket"
-                    value={settings.backup_s3_bucket || ''}
-                    onChange={e => setSettings(prev => ({
-                      ...prev,
-                      backup_s3_bucket: e.target.value,
-                      backup_config: {
-                        ...prev.backup_config as any,
-                        s3_bucket: e.target.value
-                      }
-                    }))}
+                    value={settings.backup_s3_bucket}
+                    onChange={e => setSettings((prev: any) => ({ ...prev, backup_s3_bucket: e.target.value }))}
                     placeholder="mein-backup-bucket"
                   />
                 </div>
@@ -189,15 +187,8 @@ export default function SettingsPage() {
                   <Label htmlFor="s3_region">AWS Region</Label>
                   <Input
                     id="s3_region"
-                    value={settings.backup_s3_region || 'eu-central-1'}
-                    onChange={e => setSettings(prev => ({
-                      ...prev,
-                      backup_s3_region: e.target.value,
-                      backup_config: {
-                        ...prev.backup_config as any,
-                        s3_region: e.target.value
-                      }
-                    }))}
+                    value={settings.backup_s3_region}
+                    onChange={e => setSettings((prev: any) => ({ ...prev, backup_s3_region: e.target.value }))}
                     placeholder="eu-central-1"
                   />
                 </div>
@@ -206,14 +197,8 @@ export default function SettingsPage() {
                   <Input
                     id="aws_access_key"
                     type="password"
-                    value={settings.backup_config?.aws_access_key_id || ''}
-                    onChange={e => setSettings(prev => ({
-                      ...prev,
-                      backup_config: {
-                        ...prev.backup_config as any,
-                        aws_access_key_id: e.target.value
-                      }
-                    }))}
+                    value={settings.aws_access_key_id}
+                    onChange={e => setSettings((prev: any) => ({ ...prev, aws_access_key_id: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -221,14 +206,8 @@ export default function SettingsPage() {
                   <Input
                     id="aws_secret_key"
                     type="password"
-                    value={settings.backup_config?.aws_secret_access_key || ''}
-                    onChange={e => setSettings(prev => ({
-                      ...prev,
-                      backup_config: {
-                        ...prev.backup_config as any,
-                        aws_secret_access_key: e.target.value
-                      }
-                    }))}
+                    value={settings.aws_secret_access_key}
+                    onChange={e => setSettings((prev: any) => ({ ...prev, aws_secret_access_key: e.target.value }))}
                   />
                 </div>
               </>
@@ -239,24 +218,11 @@ export default function SettingsPage() {
                 <Label htmlFor="webdav_url">WebDAV URL</Label>
                 <Input
                   id="webdav_url"
-                  value={settings.backup_webdav_url || ''}
-                  onChange={e => setSettings(prev => ({
-                    ...prev,
-                    backup_webdav_url: e.target.value,
-                    backup_config: {
-                      ...prev.backup_config as any,
-                      webdav_url: e.target.value
-                    }
-                  }))}
+                  value={settings.backup_webdav_url}
+                  onChange={e => setSettings((prev: any) => ({ ...prev, backup_webdav_url: e.target.value }))}
                   placeholder="https://dav.example.com/backup/"
                 />
               </div>
-            )}
-
-            {settings.backup_provider && (
-              <Button onClick={handleBackupNow} variant="outline">
-                Backup jetzt erstellen
-              </Button>
             )}
           </div>
         </div>

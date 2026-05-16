@@ -6,6 +6,7 @@ import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { nanoid } from '@/lib/utils'
 
 function formatTotalDuration(entries: TimeEntry[]): string {
   const totalSeconds = entries.reduce(
@@ -20,42 +21,45 @@ function formatTotalDuration(entries: TimeEntry[]): string {
   return `${minutes}m`
 }
 
-export default function DashboardClient({ userId }: { userId: string }) {
+const STORAGE_KEY = 'chronomind_entries'
+
+function loadEntries(): TimeEntry[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveEntries(entries: TimeEntry[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+}
+
+export default function DashboardClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    loadEntries()
-  }, [userId])
+    setEntries(loadEntries())
+    setLoading(false)
+  }, [])
 
-  const loadEntries = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/entries')
-      const data = await res.json()
-      if (res.ok) {
-        setEntries(data.entries || [])
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
-
-    const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setEntries(prev => prev.filter(e => e.id !== id))
-    }
+    const updated = entries.filter(e => e.id !== id)
+    setEntries(updated)
+    saveEntries(updated)
   }
 
-  const handleSuccess = () => {
+  const handleCreate = (entry: TimeEntry) => {
+    const updated = [entry, ...entries]
+    setEntries(updated)
+    saveEntries(updated)
     setShowForm(false)
-    loadEntries()
   }
 
   return (
@@ -64,7 +68,7 @@ export default function DashboardClient({ userId }: { userId: string }) {
         <h1 className="text-2xl font-bold">Heute</h1>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/entries">Alle Einträge</Link>
+            <Link href="/app_main/entries">Alle Einträge</Link>
           </Button>
           <Button onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Abbrechen' : '+ Eintrag'}
@@ -74,7 +78,7 @@ export default function DashboardClient({ userId }: { userId: string }) {
 
       {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
-          <EntryForm userId={userId} onSuccess={handleSuccess} />
+          <EntryForm onCreate={handleCreate} />
         </div>
       )}
 

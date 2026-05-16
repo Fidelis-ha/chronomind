@@ -1,8 +1,6 @@
-import { auth } from '@/auth'
-import { redirect } from 'next/navigation'
 import { Header } from '@/components/header'
 
-export function AppLayout({ user, children }: { user: { id: string; email?: string }; children: React.ReactNode }) {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />

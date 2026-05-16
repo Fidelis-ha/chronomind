@@ -7,15 +7,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
+import { type TimeEntry } from '@/lib/types'
+import { nanoid } from '@/lib/utils'
 
 interface EntryFormProps {
-  userId: string
-  onSuccess?: () => void
+  onCreate: (entry: TimeEntry) => void
 }
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-export function EntryForm({ onSuccess }: EntryFormProps) {
+export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -34,24 +35,33 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entry: {
-            title: formData.title,
-            description: formData.description || null,
-            category: formData.category || null,
-            started_at: formData.started_at,
-            ended_at: formData.ended_at || null,
-            source: 'manual'
-          }
-        })
-      })
+      const now = new Date()
+      const startedAt = new Date(formData.started_at)
+      const endedAt = formData.ended_at ? new Date(formData.ended_at) : null
 
-      if (!res.ok) throw new Error('Fehler')
+      const duration_seconds = endedAt
+        ? Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
+        : null
 
+      const entry: TimeEntry = {
+        id: nanoid(),
+        user_id: 'local-user',
+        title: formData.title,
+        description: formData.description || null,
+        category: formData.category || null,
+        tags: null,
+        started_at: startedAt.toISOString(),
+        ended_at: endedAt ? endedAt.toISOString() : null,
+        duration_seconds,
+        source: 'manual',
+        calendar_event_id: null,
+        metadata: null,
+        created_at: now.toISOString()
+      }
+
+      onCreate(entry)
       toast.success('Eintrag erstellt')
+
       setFormData({
         title: '',
         description: '',
@@ -59,7 +69,6 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
         started_at: '',
         ended_at: ''
       })
-      onSuccess?.()
     } catch (err) {
       toast.error('Fehler beim Erstellen')
       console.error(err)

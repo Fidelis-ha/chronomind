@@ -5,7 +5,6 @@ import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 function formatTotalDuration(entries: TimeEntry[]): string {
   const totalSeconds = entries.reduce((sum, e) => sum + (e.duration_seconds || 0), 0)
@@ -15,38 +14,45 @@ function formatTotalDuration(entries: TimeEntry[]): string {
   return `${minutes}m`
 }
 
+const STORAGE_KEY = 'chronomind_entries'
+
+function loadEntries(): TimeEntry[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveEntries(entries: TimeEntry[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+}
+
 export default function EntriesPageClient() {
-  const [entries, setEntries] = useState<TimeEntry[]>([])
-  const [loading, setLoading] = useState(true)
+  const [allEntries] = useState<TimeEntry[]>(loadEntries)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [showForm, setShowForm] = useState(false)
 
-  useEffect(() => {
-    loadEntries()
-  }, [date])
+  const filteredEntries = allEntries.filter(entry => {
+    const entryDate = new Date(entry.started_at).toISOString().split('T')[0]
+    return entryDate === date
+  })
 
-  const loadEntries = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/entries?date=${date}`)
-      const data = await res.json()
-      if (res.ok) setEntries(data.entries || [])
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
-    const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
-    if (res.ok) setEntries(prev => prev.filter(e => e.id !== id))
+    const updated = allEntries.filter(e => e.id !== id)
+    saveEntries(updated)
+    window.location.reload()
   }
 
-  const handleSuccess = () => {
+  const handleCreate = (entry: TimeEntry) => {
+    const updated = [entry, ...loadEntries()]
+    saveEntries(updated)
     setShowForm(false)
-    loadEntries()
+    window.location.reload()
   }
 
   return (
@@ -59,29 +65,27 @@ export default function EntriesPageClient() {
       </div>
       {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
-          <EntryForm userId="demo" onSuccess={handleSuccess} />
+          <EntryForm onCreate={handleCreate} />
         </div>
       )}
       <div className="flex items-center gap-4 mb-6">
-        <Input
+        <input
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className="w-auto"
+          className="border rounded px-3 py-1"
         />
         <span className="text-muted-foreground">
-          Gesamt: {formatTotalDuration(entries)}
+          Gesamt: {formatTotalDuration(filteredEntries)}
         </span>
       </div>
-      {loading ? (
-        <div className="text-center py-8 text-muted-foreground">Wird geladen...</div>
-      ) : entries.length === 0 ? (
+      {filteredEntries.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           Keine Einträge für dieses Datum
         </div>
       ) : (
         <div className="space-y-3">
-          {entries.map(entry => (
+          {filteredEntries.map(entry => (
             <TimeEntryCard key={entry.id} entry={entry} onDelete={handleDelete} />
           ))}
         </div>
