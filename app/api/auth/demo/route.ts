@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       )
       response.cookies.set(COOKIE_NAME, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Allow over HTTP for testing
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30,
         path: '/'
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Allow over HTTP for testing
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
       path: '/'

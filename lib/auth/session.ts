@@ -141,12 +141,12 @@ export async function deleteSession(): Promise<void> {
 export async function setSessionCookie(token: string) {
   const cookieStore = cookies()
   await cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: SESSION_DURATION,
-    path: '/'
-  })
+      httpOnly: true,
+      secure: false, // Allow over HTTP for testing
+      sameSite: 'lax',
+      maxAge: SESSION_DURATION,
+      path: '/'
+    })
 }
 
 export async function debugSession(): Promise<any> {
