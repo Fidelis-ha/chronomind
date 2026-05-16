@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build && npm run fix-build",
     "start": "next start",
-    "fix-build": "node -e \"const fs=require('fs');const src='.next/server/app/page_client-reference-manifest.js';const dst='.next/server/app/(app)/page_client-reference-manifest.js';if(fs.existsSync(src)&&!fs.existsSync(dst)){fs.copyFileSync(src,dst);console.log('Fixed: copied manifest to (app) folder');}\"",
+    "fix-build": "node -e \"const fs=require('fs');const dir='.next/server/app';if(!fs.existsSync(dir)){console.log('No app dir');process.exit(0)};const src=dir+'/page_client-reference-manifest.js';const dst=dir+'/(app)/page_client-reference-manifest.js';if(fs.existsSync(src)){if(!fs.existsSync(dir+'/('+'app)')){fs.mkdirSync(dir+'/('+'app)',{recursive:true})}if(!fs.existsSync(dst)){fs.copyFileSync(src,dst);console.log('Fixed: copied manifest')}else{console.log('No fix needed')}}else{console.log('Source manifest not found')}\"",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "npm run build && npm run start",
