@@ -38,13 +38,6 @@ npm run dev
 
 App läuft auf [http://localhost:3000](http://localhost:3000)
 
-### 3. Demo-Login
-
-```
-E-Mail:    demo@chronomind.app
-Passwort:  demo123
-```
-
 ## Entwicklung
 
 ### Verfügbare Seiten
