@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const token = await createSession(user.id)
+    const token = await createSession(user.id, user.email)
 
     const response = NextResponse.json({
       success: true,

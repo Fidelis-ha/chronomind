@@ -16,19 +16,16 @@ export default function SignInPage() {
   const handleDemoLogin = async () => {
     setIsDemoLoading(true)
     try {
-      const res = await fetch('/api/auth/demo', { method: 'POST' })
-      const data = await res.json()
-      
-      if (!res.ok) {
-        toast.error(data.error || 'Demo-Login fehlgeschlagen')
-        return
-      }
-      
-      toast.success('Demo-Login erfolgreich!')
-      router.push('/app_main')
+      // Use a form POST to /api/auth/demo so browser gets the cookie
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/auth/demo'
+      // Set SameSite=None for cross-origin cookie on Vercel subdomains
+      document.body.appendChild(form)
+      form.submit()
+      // This will trigger a redirect, so the button click ends here
     } catch {
       toast.error('Demo-Login fehlgeschlagen')
-    } finally {
       setIsDemoLoading(false)
     }
   }
