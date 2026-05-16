@@ -14,6 +14,18 @@ export function Header() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/app_main/entries">Einträge</Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/app_main/chat">Chat</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/app_main/analytics">Auswertung</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/app_main/calendar">Kalender</Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/app_main/settings">Einstellungen</Link>
+          </Button>
         </nav>
       </div>
     </header>
