@@ -11,14 +11,22 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-const inputStyle: React.CSSProperties = {
+const fieldStyle = {
   width: '100%',
   padding: '0.5rem 0.75rem',
-  border: '1px solid hsl(var(--input))',
+  border: '1px solid hsl(215.4 16.3% 46.9%)',
   borderRadius: '0.375rem',
-  background: 'transparent',
+  background: 'hsl(0 0% 100%)',
+  color: 'hsl(215.4 16.3% 17.1%)',
   fontSize: '0.875rem',
-  outline: 'none'
+  boxSizing: 'border-box' as const
+}
+
+const labelStyle = {
+  fontSize: '0.875rem',
+  fontWeight: 500,
+  marginBottom: '0.25rem',
+  display: 'block' as const
 }
 
 export function EntryForm({ onCreate }: EntryFormProps) {
@@ -89,111 +97,114 @@ export function EntryForm({ onCreate }: EntryFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-        <label htmlFor="title" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Titel *</label>
-        <input
-          id="title"
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder="z.B. Projektarbeit"
-          required
-          style={inputStyle}
-        />
-      </div>
+    <div style={{ padding: '1rem', border: '1px solid hsl(214.3 31.8% 91.4%)', borderRadius: '0.5rem', background: 'hsl(0 0% 100%)' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        
+        <div>
+          <label htmlFor="ef-title" style={labelStyle}>Titel *</label>
+          <input
+            id="ef-title"
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="z.B. Projektarbeit"
+            required
+            style={fieldStyle}
+          />
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-        <label htmlFor="category" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Kategorie</label>
-        <select
-          id="category"
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          style={{ ...inputStyle, cursor: 'pointer' }}
+        <div>
+          <label htmlFor="ef-category" style={labelStyle}>Kategorie</label>
+          <select
+            id="ef-category"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            style={{ ...fieldStyle, cursor: 'pointer' }}
+          >
+            <option value="">Kategorie wählen</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div>
+            <label htmlFor="ef-sdate" style={labelStyle}>Startdatum *</label>
+            <input
+              id="ef-sdate"
+              type="date"
+              value={startedDate}
+              onChange={e => setStartedDate(e.target.value)}
+              required
+              style={fieldStyle}
+            />
+          </div>
+          <div>
+            <label htmlFor="ef-stime" style={labelStyle}>Startzeit *</label>
+            <input
+              id="ef-stime"
+              type="time"
+              value={startedTime}
+              onChange={e => setStartedTime(e.target.value)}
+              required
+              style={fieldStyle}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div>
+            <label htmlFor="ef-edate" style={labelStyle}>Enddatum</label>
+            <input
+              id="ef-edate"
+              type="date"
+              value={endedDate}
+              onChange={e => setEndedDate(e.target.value)}
+              style={fieldStyle}
+            />
+          </div>
+          <div>
+            <label htmlFor="ef-etime" style={labelStyle}>Endzeit</label>
+            <input
+              id="ef-etime"
+              type="time"
+              value={endedTime}
+              onChange={e => setEndedTime(e.target.value)}
+              style={fieldStyle}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="ef-desc" style={labelStyle}>Beschreibung</label>
+          <textarea
+            id="ef-desc"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Optionale Notizen..."
+            rows={3}
+            style={{ ...fieldStyle, resize: 'vertical', minHeight: '80px' }}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: loading ? 'hsl(214.3 31.8% 91.4%)' : 'hsl(221.2 83.2% 53.3%)',
+            color: 'hsl(0 0% 100%)',
+            border: 'none',
+            borderRadius: '0.375rem',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }}
         >
-          <option value="">Kategorie wählen</option>
-          {CATEGORIES.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label htmlFor="startedDate" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Startdatum *</label>
-          <input
-            id="startedDate"
-            type="date"
-            value={startedDate}
-            onChange={e => setStartedDate(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label htmlFor="startedTime" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Startzeit *</label>
-          <input
-            id="startedTime"
-            type="time"
-            value={startedTime}
-            onChange={e => setStartedTime(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label htmlFor="endedDate" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Enddatum</label>
-          <input
-            id="endedDate"
-            type="date"
-            value={endedDate}
-            onChange={e => setEndedDate(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label htmlFor="endedTime" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Endzeit</label>
-          <input
-            id="endedTime"
-            type="time"
-            value={endedTime}
-            onChange={e => setEndedTime(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-        <label htmlFor="description" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Beschreibung</label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder="Optionale Notizen..."
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }}
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        style={{
-          padding: '0.5rem 1rem',
-          backgroundColor: loading ? 'hsl(var(--muted))' : 'hsl(var(--primary))',
-          color: loading ? 'hsl(var(--muted-foreground))' : 'hsl(var(--primary-foreground))',
-          border: 'none',
-          borderRadius: '0.375rem',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          fontSize: '0.875rem',
-          fontWeight: 500
-        }}
-      >
-        {loading ? 'Wird erstellt...' : 'Eintrag erstellen'}
-      </button>
-    </form>
+          {loading ? 'Wird erstellt...' : 'Eintrag erstellen'}
+        </button>
+      </form>
+    </div>
   )
 }
