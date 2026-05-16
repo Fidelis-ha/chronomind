@@ -12,60 +12,69 @@
 
 ## Features
 
-- Natürlichsprachige Zeiterfassung per Chat (KI-gestützt)
-- Sprachinput per Web Speech API
-- WebCal-Kalender-Import
-- Auswertung mit Charts
-- Export: iCal, CSV, JSON
-- Multi-Provider-KI (Mistral, routerlab.ch)
+- **Zeiterfassung**: Manuelle Einträge mit Titel, Kategorie, Datum/Zeit, Beschreibung
+- **Natürlichsprachige Zeiterfassung per Chat** (KI-gestützt mit Mistral/RouterLab)
+- **Sprachinput** per Web Speech API
+- **Kalender-Verwaltung**: WebCal-URLs hinzufügen und synchronisieren
+- **Auswertung**: Stundenauswertung (BarChart) und Kategorie-Verteilung (PieChart) mit Periodenfilter
+- **Export**: iCal (.ics), CSV, JSON – alles direkt im Browser generiert
+- **Import**: JSON-Backup wiederherstellen
+- **Cloud Backup**: S3 oder WebDAV konfigurierbar
+- **KI-Einstellungen**: Anbieter (Mistral/RouterLab) und API-Keys in Settings verwalten
 
 ## Setup
 
-### 1. Umgebungsvariablen
+### 1. Dependencies installieren
 
-In Vercel projekt settings eintragen:
+```bash
+npm install
+```
 
-- `JWT_SECRET` – ein starker Secret-String für JWT-Signierung
-- `MISTRAL_API_KEY` – von [console.mistral.ai](https://console.mistral.ai)
-- `NEXT_PUBLIC_MISTRAL_API_KEY` – (optional, wird in User Settings gespeichert)
+### 2. Entwicklung starten
 
-### 2. Demo-Login
+```bash
+npm run dev
+```
+
+App läuft auf [http://localhost:3000](http://localhost:3000)
+
+### 3. Demo-Login
 
 ```
 E-Mail:    demo@chronomind.app
 Passwort:  demo123
 ```
 
-Eigene Nutzer können sich über /sign-up registrieren (Daten werden In-Memory gespeichert — für Demo-Zwecke).
-Optional: GitHub OAuth aktivieren unter **Auth > Providers > GitHub**
-
-### 4. Dependencies installieren
-
-```bash
-pnpm install
-```
-
-### 5. Entwicklung starten
-
-```bash
-pnpm dev
-```
-
-App läuft auf [http://localhost:3000](http://localhost:3000)
-
 ## Entwicklung
+
+### Verfügbare Seiten
+
+| Route | Beschreibung |
+|-------|--------------|
+| `/app_main` | Dashboard – Heutige Übersicht und Einträge |
+| `/app_main/entries` | Alle Zeiteinträge mit Datumsfilter |
+| `/app_main/chat` | KI-Chat für natürliche Zeiterfassung |
+| `/app_main/analytics` | Auswertung mit Charts |
+| `/app_main/calendar` | Kalender-Verwaltung (WebCal) |
+| `/app_main/settings` | Einstellungen (KI, Zeit, Backup, Export) |
 
 ### Architektur
 
-**Auth**: JWT-basierte Sessions (jose) — Cookie: `chronomind-session`
-**Storage**: In-Memory Store (Demo) — für Production bitte durch echte DB ersetzen
-**Zeiterfassung**: `/api/entries` API-Routen
+| Bereich | Technologie |
+|---------|-------------|
+| Framework | Next.js 14 (App Router) |
+| Sprache | TypeScript |
+| UI | shadcn/ui + Tailwind CSS |
+| Storage | localStorage (client-seitig) |
+| Auth | JWT (jose) – lokale Sessions |
+| KI | Mistral AI / RouterLab (fetch-basiert, kein SDK) |
+| Charts | recharts |
+| Kalender | ical.js |
 
 ### Branch-Strategie
 
 ```
 main          → stabil, production-ready
-develop       → Integrations-Branch
 feature/<name> → ein Branch pro Feature
 ```
 
@@ -84,9 +93,9 @@ git commit -m "docs: dokumentation aktualisiert"
 | Framework | Next.js 14 (App Router) |
 | Sprache | TypeScript |
 | UI | shadcn/ui + Tailwind CSS |
-| DB | In-Memory (Demo) |
+| Storage | localStorage |
 | Auth | JWT (jose) |
-| KI | Vercel AI SDK + Mistral |
+| KI | Mistral AI / RouterLab |
 | Charts | recharts |
 
 ## Lizenz
