@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,11 +15,6 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-function combineDateTime(dateStr: string, timeStr: string): string {
-  if (!dateStr || !timeStr) return ''
-  return new Date(`${dateStr}T${timeStr}`).toISOString()
-}
-
 export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -28,10 +22,14 @@ export function EntryForm({ onCreate }: EntryFormProps) {
     description: '',
     category: '',
     started_date: '',
-    started_time: '',
+    started_time: '09:00',
     ended_date: '',
     ended_time: ''
   })
+
+  const set = (key: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,6 +45,12 @@ export function EntryForm({ onCreate }: EntryFormProps) {
       const endedAt = (formData.ended_date && formData.ended_time)
         ? new Date(`${formData.ended_date}T${formData.ended_time}`)
         : null
+
+      if (endedAt && endedAt <= startedAt) {
+        toast.error('Endzeit muss nach Startzeit liegen')
+        setLoading(false)
+        return
+      }
 
       const duration_seconds = endedAt
         ? Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
@@ -76,7 +80,7 @@ export function EntryForm({ onCreate }: EntryFormProps) {
         description: '',
         category: '',
         started_date: '',
-        started_time: '',
+        started_time: '09:00',
         ended_date: '',
         ended_time: ''
       })
@@ -92,21 +96,20 @@ export function EntryForm({ onCreate }: EntryFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="title">Titel *</Label>
-        <Input
+        <input
           id="title"
+          type="text"
           value={formData.title}
-          onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          onChange={e => set('title', e.target.value)}
           placeholder="z.B. Projektarbeit"
           required
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="category">Kategorie</Label>
-        <Select
-          value={formData.category}
-          onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
-        >
+        <Select value={formData.category} onValueChange={v => set('category', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Kategorie wählen" />
           </SelectTrigger>
@@ -121,22 +124,24 @@ export function EntryForm({ onCreate }: EntryFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="started_date">Startdatum *</Label>
-          <Input
+          <input
             id="started_date"
             type="date"
             value={formData.started_date}
-            onChange={e => setFormData(prev => ({ ...prev, started_date: e.target.value }))}
+            onChange={e => set('started_date', e.target.value)}
             required
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="started_time">Startzeit *</Label>
-          <Input
+          <input
             id="started_time"
             type="time"
             value={formData.started_time}
-            onChange={e => setFormData(prev => ({ ...prev, started_time: e.target.value }))}
+            onChange={e => set('started_time', e.target.value)}
             required
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
       </div>
@@ -144,20 +149,22 @@ export function EntryForm({ onCreate }: EntryFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="ended_date">Enddatum</Label>
-          <Input
+          <input
             id="ended_date"
             type="date"
             value={formData.ended_date}
-            onChange={e => setFormData(prev => ({ ...prev, ended_date: e.target.value }))}
+            onChange={e => set('ended_date', e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="ended_time">Endzeit</Label>
-          <Input
+          <input
             id="ended_time"
             type="time"
             value={formData.ended_time}
-            onChange={e => setFormData(prev => ({ ...prev, ended_time: e.target.value }))}
+            onChange={e => set('ended_time', e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
       </div>
@@ -167,7 +174,7 @@ export function EntryForm({ onCreate }: EntryFormProps) {
         <Textarea
           id="description"
           value={formData.description}
-          onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={e => set('description', e.target.value)}
           placeholder="Optionale Notizen..."
         />
       </div>
