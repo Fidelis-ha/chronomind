@@ -16,19 +16,26 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
+function combineDateTime(dateStr: string, timeStr: string): string {
+  if (!dateStr || !timeStr) return ''
+  return new Date(`${dateStr}T${timeStr}`).toISOString()
+}
+
 export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
-    started_at: '',
-    ended_at: ''
+    started_date: '',
+    started_time: '',
+    ended_date: '',
+    ended_time: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title || !formData.started_at) {
+    if (!formData.title || !formData.started_date || !formData.started_time) {
       toast.error('Titel und Startzeit sind erforderlich')
       return
     }
@@ -36,8 +43,10 @@ export function EntryForm({ onCreate }: EntryFormProps) {
     setLoading(true)
     try {
       const now = new Date()
-      const startedAt = new Date(formData.started_at)
-      const endedAt = formData.ended_at ? new Date(formData.ended_at) : null
+      const startedAt = new Date(`${formData.started_date}T${formData.started_time}`)
+      const endedAt = (formData.ended_date && formData.ended_time)
+        ? new Date(`${formData.ended_date}T${formData.ended_time}`)
+        : null
 
       const duration_seconds = endedAt
         ? Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
@@ -66,8 +75,10 @@ export function EntryForm({ onCreate }: EntryFormProps) {
         title: '',
         description: '',
         category: '',
-        started_at: '',
-        ended_at: ''
+        started_date: '',
+        started_time: '',
+        ended_date: '',
+        ended_time: ''
       })
     } catch (err) {
       toast.error('Fehler beim Erstellen')
@@ -109,22 +120,44 @@ export function EntryForm({ onCreate }: EntryFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="started_at">Startzeit *</Label>
+          <Label htmlFor="started_date">Startdatum *</Label>
           <Input
-            id="started_at"
-            type="datetime-local"
-            value={formData.started_at}
-            onChange={e => setFormData(prev => ({ ...prev, started_at: e.target.value }))}
+            id="started_date"
+            type="date"
+            value={formData.started_date}
+            onChange={e => setFormData(prev => ({ ...prev, started_date: e.target.value }))}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ended_at">Endzeit</Label>
+          <Label htmlFor="started_time">Startzeit *</Label>
           <Input
-            id="ended_at"
-            type="datetime-local"
-            value={formData.ended_at}
-            onChange={e => setFormData(prev => ({ ...prev, ended_at: e.target.value }))}
+            id="started_time"
+            type="time"
+            value={formData.started_time}
+            onChange={e => setFormData(prev => ({ ...prev, started_time: e.target.value }))}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="ended_date">Enddatum</Label>
+          <Input
+            id="ended_date"
+            type="date"
+            value={formData.ended_date}
+            onChange={e => setFormData(prev => ({ ...prev, ended_date: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ended_time">Endzeit</Label>
+          <Input
+            id="ended_time"
+            type="time"
+            value={formData.ended_time}
+            onChange={e => setFormData(prev => ({ ...prev, ended_time: e.target.value }))}
           />
         </div>
       </div>
