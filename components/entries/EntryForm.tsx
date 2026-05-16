@@ -1,10 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { nanoid } from '@/lib/utils'
@@ -15,25 +11,29 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '0.5rem 0.75rem',
+  border: '1px solid hsl(var(--input))',
+  borderRadius: '0.375rem',
+  background: 'transparent',
+  fontSize: '0.875rem',
+  outline: 'none'
+}
+
 export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    started_date: '',
-    started_time: '09:00',
-    ended_date: '',
-    ended_time: ''
-  })
-
-  const set = (key: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }))
-  }
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('')
+  const [startedDate, setStartedDate] = useState('')
+  const [startedTime, setStartedTime] = useState('09:00')
+  const [endedDate, setEndedDate] = useState('')
+  const [endedTime, setEndedTime] = useState('')
+  const [description, setDescription] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title || !formData.started_date || !formData.started_time) {
+    if (!title.trim() || !startedDate || !startedTime) {
       toast.error('Titel und Startzeit sind erforderlich')
       return
     }
@@ -41,30 +41,28 @@ export function EntryForm({ onCreate }: EntryFormProps) {
     setLoading(true)
     try {
       const now = new Date()
-      const startedAt = new Date(`${formData.started_date}T${formData.started_time}`)
-      const endedAt = (formData.ended_date && formData.ended_time)
-        ? new Date(`${formData.ended_date}T${formData.ended_time}`)
-        : null
+      const start = new Date(`${startedDate}T${startedTime}`)
+      const end = (endedDate && endedTime) ? new Date(`${endedDate}T${endedTime}`) : null
 
-      if (endedAt && endedAt <= startedAt) {
+      if (end && end <= start) {
         toast.error('Endzeit muss nach Startzeit liegen')
         setLoading(false)
         return
       }
 
-      const duration_seconds = endedAt
-        ? Math.round((endedAt.getTime() - startedAt.getTime()) / 1000)
+      const duration_seconds = end
+        ? Math.round((end.getTime() - start.getTime()) / 1000)
         : null
 
       const entry: TimeEntry = {
         id: nanoid(),
         user_id: 'local-user',
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category || null,
+        title: title.trim(),
+        description: description.trim() || null,
+        category: category || null,
         tags: null,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt ? endedAt.toISOString() : null,
+        started_at: start.toISOString(),
+        ended_at: end ? end.toISOString() : null,
         duration_seconds,
         source: 'manual',
         calendar_event_id: null,
@@ -75,15 +73,13 @@ export function EntryForm({ onCreate }: EntryFormProps) {
       onCreate(entry)
       toast.success('Eintrag erstellt')
 
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-        started_date: '',
-        started_time: '09:00',
-        ended_date: '',
-        ended_time: ''
-      })
+      setTitle('')
+      setCategory('')
+      setStartedDate('')
+      setStartedTime('09:00')
+      setEndedDate('')
+      setEndedTime('')
+      setDescription('')
     } catch (err) {
       toast.error('Fehler beim Erstellen')
       console.error(err)
@@ -93,95 +89,111 @@ export function EntryForm({ onCreate }: EntryFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="title">Titel *</Label>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <label htmlFor="title" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Titel *</label>
         <input
           id="title"
           type="text"
-          value={formData.title}
-          onChange={e => set('title', e.target.value)}
+          value={title}
+          onChange={e => setTitle(e.target.value)}
           placeholder="z.B. Projektarbeit"
           required
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          style={inputStyle}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="category">Kategorie</Label>
-        <Select value={formData.category} onValueChange={v => set('category', v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Kategorie wählen" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map(cat => (
-              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <label htmlFor="category" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Kategorie</label>
+        <select
+          id="category"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          style={{ ...inputStyle, cursor: 'pointer' }}
+        >
+          <option value="">Kategorie wählen</option>
+          {CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="started_date">Startdatum *</Label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label htmlFor="startedDate" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Startdatum *</label>
           <input
-            id="started_date"
+            id="startedDate"
             type="date"
-            value={formData.started_date}
-            onChange={e => set('started_date', e.target.value)}
+            value={startedDate}
+            onChange={e => setStartedDate(e.target.value)}
             required
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            style={inputStyle}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="started_time">Startzeit *</Label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label htmlFor="startedTime" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Startzeit *</label>
           <input
-            id="started_time"
+            id="startedTime"
             type="time"
-            value={formData.started_time}
-            onChange={e => set('started_time', e.target.value)}
+            value={startedTime}
+            onChange={e => setStartedTime(e.target.value)}
             required
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            style={inputStyle}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="ended_date">Enddatum</Label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label htmlFor="endedDate" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Enddatum</label>
           <input
-            id="ended_date"
+            id="endedDate"
             type="date"
-            value={formData.ended_date}
-            onChange={e => set('ended_date', e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={endedDate}
+            onChange={e => setEndedDate(e.target.value)}
+            style={inputStyle}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="ended_time">Endzeit</Label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label htmlFor="endedTime" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Endzeit</label>
           <input
-            id="ended_time"
+            id="endedTime"
             type="time"
-            value={formData.ended_time}
-            onChange={e => set('ended_time', e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={endedTime}
+            onChange={e => setEndedTime(e.target.value)}
+            style={inputStyle}
           />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Beschreibung</Label>
-        <Textarea
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <label htmlFor="description" style={{ fontSize: '0.875rem', fontWeight: 500 }}>Beschreibung</label>
+        <textarea
           id="description"
-          value={formData.description}
-          onChange={e => set('description', e.target.value)}
+          value={description}
+          onChange={e => setDescription(e.target.value)}
           placeholder="Optionale Notizen..."
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }}
         />
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <button
+        type="submit"
+        disabled={loading}
+        style={{
+          padding: '0.5rem 1rem',
+          backgroundColor: loading ? 'hsl(var(--muted))' : 'hsl(var(--primary))',
+          color: loading ? 'hsl(var(--muted-foreground))' : 'hsl(var(--primary-foreground))',
+          border: 'none',
+          borderRadius: '0.375rem',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          fontSize: '0.875rem',
+          fontWeight: 500
+        }}
+      >
         {loading ? 'Wird erstellt...' : 'Eintrag erstellen'}
-      </Button>
+      </button>
     </form>
   )
 }
