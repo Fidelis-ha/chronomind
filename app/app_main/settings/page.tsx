@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
+import { type TimeEntry } from '@/lib/types'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -25,7 +26,24 @@ const AI_PROVIDERS = [
 
 const STORAGE_KEY = 'chronomind_settings'
 
-function loadSettings() {
+interface AppSettings {
+  timezone: string
+  work_day_start: string
+  work_day_end: string
+  backup_provider: string
+  backup_s3_bucket: string
+  backup_s3_region: string
+  backup_webdav_url: string
+  aws_access_key_id: string
+  aws_secret_access_key: string
+  ai_provider: string
+  ai_model: string
+  ai_api_key_mistral: string
+  ai_api_key_routerlab: string
+  routerlab_base_url: string
+}
+
+function loadSettings(): AppSettings | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -35,12 +53,12 @@ function loadSettings() {
   }
 }
 
-function saveSettings(settings: any) {
+function saveSettings(settings: AppSettings) {
   if (typeof window === 'undefined') return
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 }
 
-const DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS: AppSettings = {
   timezone: 'Europe/Berlin',
   work_day_start: '08:00',
   work_day_end: '18:00',
@@ -59,7 +77,7 @@ const DEFAULT_SETTINGS = {
 
 export default function SettingsPage() {
   const saved = loadSettings()
-  const [settings, setSettings] = useState<any>({
+  const [settings, setSettings] = useState<AppSettings>({
     ...DEFAULT_SETTINGS,
     ...(saved || {})
   })
@@ -95,7 +113,7 @@ export default function SettingsPage() {
     const entries = JSON.parse(entriesRaw)
 
     const headers = ['id', 'title', 'category', 'started_at', 'ended_at', 'duration_seconds', 'description']
-    const rows = entries.map((e: any) => [
+    const rows = entries.map((e: TimeEntry) => [
       e.id,
       `"${(e.title || '').replace(/"/g, '""')}"`,
       e.category || '',
@@ -127,7 +145,7 @@ export default function SettingsPage() {
       'CALSCALE:GREGORIAN'
     ]
 
-    entries.forEach((e: any) => {
+    entries.forEach((e: TimeEntry) => {
       const start = new Date(e.started_at)
       const end = e.ended_at ? new Date(e.ended_at) : new Date(start.getTime() + (e.duration_seconds || 0) * 1000)
       const uid = `${e.id}@chronomind`
@@ -202,7 +220,7 @@ export default function SettingsPage() {
               <Label htmlFor="ai_provider">KI Anbieter</Label>
               <Select
                 value={settings.ai_provider}
-                onValueChange={value => setSettings((prev: any) => ({ ...prev, ai_provider: value }))}
+                onValueChange={value => setSettings(prev => ({ ...prev, ai_provider: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -222,7 +240,7 @@ export default function SettingsPage() {
                   id="mistral_key"
                   type="password"
                   value={settings.ai_api_key_mistral}
-                  onChange={e => setSettings((prev: any) => ({ ...prev, ai_api_key_mistral: e.target.value }))}
+                  onChange={e => setSettings(prev => ({ ...prev, ai_api_key_mistral: e.target.value }))}
                   placeholder="sk-..."
                 />
               </div>
@@ -235,7 +253,7 @@ export default function SettingsPage() {
                   <Input
                     id="routerlab_url"
                     value={settings.routerlab_base_url}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, routerlab_base_url: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, routerlab_base_url: e.target.value }))}
                     placeholder="https://routerlab.ch/v1"
                   />
                 </div>
@@ -245,7 +263,7 @@ export default function SettingsPage() {
                     id="routerlab_key"
                     type="password"
                     value={settings.ai_api_key_routerlab}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, ai_api_key_routerlab: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, ai_api_key_routerlab: e.target.value }))}
                     placeholder="sk-..."
                   />
                 </div>
@@ -263,7 +281,7 @@ export default function SettingsPage() {
               <Label htmlFor="timezone">Zeitzone</Label>
               <Select
                 value={settings.timezone}
-                onValueChange={value => setSettings((prev: any) => ({ ...prev, timezone: value }))}
+                onValueChange={value => setSettings(prev => ({ ...prev, timezone: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -283,7 +301,7 @@ export default function SettingsPage() {
                   id="work_start"
                   type="time"
                   value={settings.work_day_start}
-                  onChange={e => setSettings((prev: any) => ({ ...prev, work_day_start: e.target.value }))}
+                  onChange={e => setSettings(prev => ({ ...prev, work_day_start: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -292,7 +310,7 @@ export default function SettingsPage() {
                   id="work_end"
                   type="time"
                   value={settings.work_day_end}
-                  onChange={e => setSettings((prev: any) => ({ ...prev, work_day_end: e.target.value }))}
+                  onChange={e => setSettings(prev => ({ ...prev, work_day_end: e.target.value }))}
                 />
               </div>
             </div>
@@ -308,7 +326,7 @@ export default function SettingsPage() {
               <Label htmlFor="backup_provider">Backup Anbieter</Label>
               <Select
                 value={settings.backup_provider}
-                onValueChange={value => setSettings((prev: any) => ({ ...prev, backup_provider: value }))}
+                onValueChange={value => setSettings(prev => ({ ...prev, backup_provider: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Backup auswählen..." />
@@ -328,7 +346,7 @@ export default function SettingsPage() {
                   <Input
                     id="s3_bucket"
                     value={settings.backup_s3_bucket}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, backup_s3_bucket: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, backup_s3_bucket: e.target.value }))}
                     placeholder="mein-backup-bucket"
                   />
                 </div>
@@ -337,7 +355,7 @@ export default function SettingsPage() {
                   <Input
                     id="s3_region"
                     value={settings.backup_s3_region}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, backup_s3_region: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, backup_s3_region: e.target.value }))}
                     placeholder="eu-central-1"
                   />
                 </div>
@@ -347,7 +365,7 @@ export default function SettingsPage() {
                     id="aws_access_key"
                     type="password"
                     value={settings.aws_access_key_id}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, aws_access_key_id: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, aws_access_key_id: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -356,7 +374,7 @@ export default function SettingsPage() {
                     id="aws_secret_key"
                     type="password"
                     value={settings.aws_secret_access_key}
-                    onChange={e => setSettings((prev: any) => ({ ...prev, aws_secret_access_key: e.target.value }))}
+                    onChange={e => setSettings(prev => ({ ...prev, aws_secret_access_key: e.target.value }))}
                   />
                 </div>
               </>
@@ -368,7 +386,7 @@ export default function SettingsPage() {
                 <Input
                   id="webdav_url"
                   value={settings.backup_webdav_url}
-                  onChange={e => setSettings((prev: any) => ({ ...prev, backup_webdav_url: e.target.value }))}
+                  onChange={e => setSettings(prev => ({ ...prev, backup_webdav_url: e.target.value }))}
                   placeholder="https://dav.example.com/backup/"
                 />
               </div>

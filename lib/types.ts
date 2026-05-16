@@ -1,7 +1,6 @@
 import { type UIMessage } from 'ai'
 
-// TODO refactor and remove unneccessary duplicate data.
-export interface Chat extends Record<string, any> {
+export interface Chat extends Record<string, unknown> {
   id: string
   title: string
   createdAt: Date
