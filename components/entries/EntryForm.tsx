@@ -33,7 +33,7 @@ export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
-  const [startedDate, setStartedDate] = useState('')
+  const [startedDate, setStartedDate] = useState(new Date().toISOString().split('T')[0])
   const [startedTime, setStartedTime] = useState('09:00')
   const [endedDate, setEndedDate] = useState('')
   const [endedTime, setEndedTime] = useState('')

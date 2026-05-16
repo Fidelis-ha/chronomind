@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
-import { cn } from '@/lib/utils'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
