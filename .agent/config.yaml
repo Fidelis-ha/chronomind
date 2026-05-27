@@ -1,7 +1,7 @@
 # ChronoMind — Autonomous Programming Config
 project_name: chronomind
 project_dir: /opt/data/chronomind
-vercel_token_file: /opt/data/.env.vercel
+vercel_token_file: /opt/data/.vercel_token
 branch_prefix: fidelis
 base_branch: main
 telegram_chat_id: "58614728"
