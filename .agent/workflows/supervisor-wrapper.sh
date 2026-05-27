@@ -1,0 +1,1 @@
+/opt/data/skills/software-development/autonomous-programming-supervisor/scripts/supervisor-wrapper.sh
