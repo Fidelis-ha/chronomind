@@ -1,0 +1,11 @@
+node_modules
+.expo
+.expo-shared
+dist
+.vercel_data
+.npm
+*.log
+.git
+.env.local
+.env.*.local
+core.*

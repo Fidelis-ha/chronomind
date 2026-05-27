@@ -1,6 +1,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Header() {
   return (
@@ -27,6 +28,9 @@ export function Header() {
             <Link href="/app_main/settings">Einstellungen</Link>
           </Button>
         </nav>
+      </div>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
       </div>
     </header>
   )
