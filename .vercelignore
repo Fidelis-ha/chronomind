@@ -1,0 +1,10 @@
+.next
+node_modules
+expo
+core.*
+*.log
+.vercel_data
+.agent/state/feature*.log
+.agent/state/implement*.log
+.agent/state/hermes*.log
+.vercelignore
