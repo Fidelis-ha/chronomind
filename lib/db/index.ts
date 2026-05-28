@@ -87,7 +87,11 @@ function getDb() {
         source TEXT DEFAULT 'manual',
         calendar_event_id TEXT,
         metadata TEXT,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        is_recurring INTEGER,
+        recurrence_rule TEXT,
+        recurrence_parent_id TEXT,
+        recurrence_index INTEGER
       );
       CREATE TABLE IF NOT EXISTS calendars (
         id TEXT PRIMARY KEY,

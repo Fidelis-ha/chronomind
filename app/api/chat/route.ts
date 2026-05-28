@@ -41,13 +41,33 @@ function getAIErrorMessage(userSettings: UserSettings | null): string | null {
   return null
 }
 
+type TimeEntryRow = {
+  id: string
+  userId: string
+  title: string
+  description: string | null
+  category: string | null
+  tags: unknown
+  startedAt: string
+  endedAt: string | null
+  durationSeconds: number | null
+  source: string | null
+  calendarEventId: string | null
+  metadata: unknown
+  createdAt: number
+  isRecurring?: boolean | null
+  recurrenceRule?: unknown | null
+  recurrenceParentId?: string | null
+  recurrenceIndex?: number | null
+}
+
 async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const entries = await localDb.timeEntries.findByUserAndDate(userId, today)
 
-  return entries.map(e => ({
+  return entries.map((e: TimeEntryRow) => ({
     id: e.id,
     user_id: e.userId,
     title: e.title,
@@ -60,7 +80,11 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
     source: e.source as TimeEntry['source'],
     calendar_event_id: e.calendarEventId,
     metadata: (e.metadata || null) as Record<string, unknown> | null,
-    created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString()
+    created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString(),
+    is_recurring: e.isRecurring ?? null,
+    recurrence_rule: (e.recurrenceRule as TimeEntry['recurrence_rule']) ?? null,
+    recurrence_parent_id: e.recurrenceParentId ?? null,
+    recurrence_index: e.recurrenceIndex ?? null
   }))
 }
 
