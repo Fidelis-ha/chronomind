@@ -40,3 +40,6 @@ chronomind.db
 chronomind.db-shm
 chronomind.db-wal
 .agent/state/*.log
+
+# Build artifacts
+tsconfig.tsbuildinfo
