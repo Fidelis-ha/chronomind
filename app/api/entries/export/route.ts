@@ -2,22 +2,6 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth/session'
 import { localDb } from '@/lib/db/local'
 
-interface TimeEntryRow {
-  id: string
-  userId: string
-  title: string
-  description: string | null
-  category: string | null
-  tags: string[] | null
-  startedAt: string
-  endedAt: string | null
-  durationSeconds: number | null
-  source: string | null
-  calendarEventId: string | null
-  metadata: Record<string, unknown> | null
-  createdAt: number | null
-}
-
 function formatDuration(seconds: number | null): string {
   if (seconds === null || seconds === undefined) return ''
   const h = Math.floor(seconds / 3600)
@@ -35,9 +19,9 @@ function escapeCSV(value: string | null | undefined): string {
   return str
 }
 
-function formatTags(tags: string[] | null): string {
+function formatTags(tags: unknown): string {
   if (!tags || !Array.isArray(tags)) return ''
-  return tags.join('; ')
+  return (tags as string[]).join('; ')
 }
 
 export async function GET(req: Request) {
@@ -54,7 +38,23 @@ export async function GET(req: Request) {
 
     const entries = await localDb.timeEntries.findAllByUser(session.id)
 
-    const mapped = entries.map(e => ({
+    interface EntryForExport {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  category: string | null
+  tags: unknown
+  started_at: string
+  ended_at: string | null
+  duration_seconds: number | null
+  source: string | null
+  calendar_event_id: string | null
+  metadata: unknown
+  created_at: string | null
+}
+
+    const mapped: EntryForExport[] = entries.map(e => ({
       id: e.id,
       user_id: e.userId,
       title: e.title,
