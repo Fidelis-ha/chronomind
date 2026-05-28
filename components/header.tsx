@@ -14,6 +14,9 @@ export function Header() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/app_main/entries">Einträge</Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/app_main/analytics">Auswertung</Link>
+          </Button>
         </nav>
       </div>
     </header>
