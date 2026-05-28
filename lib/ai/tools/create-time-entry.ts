@@ -8,7 +8,14 @@ const createTimeEntryParamsSchema = z.object({
   category: z.string().optional().describe('Kategorie z.B. Arbeit, Meeting, Pause, Privat'),
   description: z.string().optional().describe('Optionale Beschreibung'),
   started_at: z.string().describe('Startzeit als ISO 8601 String'),
-  ended_at: z.string().optional().describe('Endzeit als ISO 8601 String, optional wenn noch aktiv')
+  ended_at: z.string().optional().describe('Endzeit als ISO 8601 String, optional wenn noch aktiv'),
+  is_recurring: z.boolean().optional().describe('Ob der Eintrag wiederkehrend ist'),
+  recurrence_rule: z.object({
+    frequency: z.enum(['daily', 'weekly']),
+    interval: z.number().default(1),
+    endDate: z.string().nullable().optional(),
+    count: z.number().nullable().optional()
+  }).optional().describe('Wiederholungsregel wenn is_recurring true ist')
 })
 
 export type CreateTimeEntryParams = z.infer<typeof createTimeEntryParamsSchema>
@@ -40,7 +47,11 @@ export async function createTimeEntry(params: CreateTimeEntryParams): Promise<{ 
       startedAt: params.started_at,
       endedAt: params.ended_at || null,
       source: 'ai_chat',
-      createdAt: Math.floor(Date.now() / 1000)
+      createdAt: Math.floor(Date.now() / 1000),
+      isRecurring: params.is_recurring ? 1 : null,
+      recurrenceRule: params.recurrence_rule ? JSON.stringify(params.recurrence_rule) : null,
+      recurrenceParentId: null,
+      recurrenceIndex: 0
     }
 
     await localDb.timeEntries.create(entryData)

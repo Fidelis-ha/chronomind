@@ -38,7 +38,21 @@ export const localDb = {
       db
         .select()
         .from(timeEntries)
-        .where(eq(timeEntries.userId, userId))
+        .where(eq(timeEntries.userId, userId)),
+
+    findByParentId: (parentId: string) =>
+      db
+        .select()
+        .from(timeEntries)
+        .where(eq(timeEntries.recurrenceParentId, parentId)),
+
+    updateRecurrenceFields: (id: string, isRecurring: number | null, recurrenceRule: string | null, recurrenceParentId: string | null, recurrenceIndex: number | null) =>
+      db.update(timeEntries).set({
+        isRecurring,
+        recurrenceRule,
+        recurrenceParentId,
+        recurrenceIndex
+      }).where(eq(timeEntries.id, id))
   },
 
   chats: {

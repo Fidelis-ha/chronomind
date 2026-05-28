@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry, type RecurrenceRule, type RecurrenceFrequency } from '@/lib/types'
 import { nanoid } from '@/lib/utils'
@@ -51,6 +51,16 @@ export function EntryForm({ onCreate, initialData, onEdit, editMode }: EntryForm
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>(initialData?.recurrence_rule?.frequency || 'daily')
   const [recurrenceInterval, setRecurrenceInterval] = useState(initialData?.recurrence_rule?.interval || 1)
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(initialData?.recurrence_rule?.endDate || '')
+
+  // Reset recurrence fields when switching to edit mode with no recurring data
+  useEffect(() => {
+    if (editMode && initialData && !initialData.is_recurring) {
+      setIsRecurring(false)
+      setRecurrenceFrequency('daily')
+      setRecurrenceInterval(1)
+      setRecurrenceEndDate('')
+    }
+  }, [editMode, initialData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

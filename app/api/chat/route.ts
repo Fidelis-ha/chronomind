@@ -55,7 +55,7 @@ type TimeEntryRow = {
   calendarEventId: string | null
   metadata: unknown
   createdAt: number
-  isRecurring?: boolean | null
+  isRecurring: number | null
   recurrenceRule?: unknown | null
   recurrenceParentId?: string | null
   recurrenceIndex?: number | null
@@ -81,7 +81,7 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
     calendar_event_id: e.calendarEventId,
     metadata: (e.metadata || null) as Record<string, unknown> | null,
     created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString(),
-    is_recurring: e.isRecurring ?? null,
+    is_recurring: e.isRecurring ? true : null,
     recurrence_rule: (e.recurrenceRule as TimeEntry['recurrence_rule']) ?? null,
     recurrence_parent_id: e.recurrenceParentId ?? null,
     recurrence_index: e.recurrenceIndex ?? null

@@ -39,3 +39,8 @@ yarn-error.log*
 chronomind.db
 chronomind.db-shm
 chronomind.db-wal
+
+# Agent state (logs, tokens, etc)
+.agent/state/*.log
+.agent/state/*.env
+.agent/state/current_preview.env

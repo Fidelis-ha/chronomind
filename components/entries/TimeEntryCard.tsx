@@ -31,6 +31,18 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
 }
 
+function getRecurrenceLabel(entry: TimeEntry): string | null {
+  if (!entry.is_recurring || !entry.recurrence_rule) return null
+  const rule = entry.recurrence_rule
+  if (rule.frequency === 'daily') {
+    return rule.interval === 1 ? 'Täglich' : `Alle ${rule.interval} Tage`
+  }
+  if (rule.frequency === 'weekly') {
+    return rule.interval === 1 ? 'Wöchentlich' : `Alle ${rule.interval} Wochen`
+  }
+  return null
+}
+
 export function TimeEntryCard({ entry, onEdit, onDelete }: TimeEntryCardProps) {
   const isRunning = !entry.ended_at
 
@@ -46,6 +58,11 @@ export function TimeEntryCard({ entry, onEdit, onDelete }: TimeEntryCardProps) {
             {entry.category && (
               <Badge variant="secondary" className="text-xs">
                 {entry.category}
+              </Badge>
+            )}
+            {entry.is_recurring && (
+              <Badge variant="outline" className="text-xs">
+                {getRecurrenceLabel(entry)}
               </Badge>
             )}
           </div>
