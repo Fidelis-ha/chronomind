@@ -51,6 +51,7 @@ const DEFAULT_SETTINGS = {
 }
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme()
   const saved = loadSettings()
   const [settings, setSettings] = useState<any>({
     ...DEFAULT_SETTINGS,
@@ -138,9 +139,7 @@ export default function SettingsPage() {
             value={settings.theme || 'system'}
             onValueChange={value => {
               setSettings((prev: any) => ({ ...prev, theme: value }))
-              if (typeof window !== 'undefined') {
-                window.__setThemePreference?.(value)
-              }
+              setTheme(value)
             }}
           >
             <SelectTrigger>

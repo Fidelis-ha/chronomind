@@ -54,10 +54,3 @@ Telegram error sent to Marc (58614728)
 ---
 === SUPERVISOR Fri May  8 17:30:51 UTC 2026 ===
 ---
-
-=== SUPERVISOR Thu May 28 10:05:28 UTC 2026 ===
-Project: chronomind
-Status: dark-mode-toggle actively implementing (PID 39389)
-Review queue: dark-mode-toggle-2026-05-28 → https://chronomind-gk8eywh9x-marcs-projects-347e7b9d.vercel.app
-Stale entry removed from review_queue: recurring-entries (was since 2026-05-08, no feedback)
-Todo: 4 remaining (export-csv, dashboard-charts, improved-chat-ui, voice-input)

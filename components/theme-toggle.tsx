@@ -10,15 +10,18 @@ export function ThemeToggle() {
   const { setTheme, theme } = useTheme()
   const [_, startTransition] = React.useTransition()
 
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light'
+    startTransition(() => {
+      setTheme(nextTheme)
+    })
+  }
+
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => {
-        startTransition(() => {
-          setTheme(theme === 'light' ? 'dark' : 'light')
-        })
-      }}
+      onClick={toggleTheme}
     >
       {!theme ? null : theme === 'dark' ? (
         <IconMoon className="transition-all" />
