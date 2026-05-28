@@ -5,6 +5,7 @@ import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
+import { Download } from 'lucide-react'
 import { nanoid } from '@/lib/utils'
 
 function formatTotalDuration(entries: TimeEntry[]): string {
@@ -36,6 +37,7 @@ export function EntriesClient() {
   const [allEntries] = useState<TimeEntry[]>(loadEntries)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [showForm, setShowForm] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const filteredEntries = allEntries.filter(entry => {
     const entryDate = new Date(entry.started_at).toISOString().split('T')[0]
@@ -56,13 +58,41 @@ export function EntriesClient() {
     window.location.reload()
   }
 
+  const handleExportCSV = async () => {
+    setIsExporting(true)
+    try {
+      const response = await fetch('/api/entries/export?format=csv')
+      if (!response.ok) throw new Error('Export failed')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `chronomind-export-${date}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Export error:', err)
+      alert('Export fehlgeschlagen')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Zeiteinträge</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Abbrechen' : '+ Neuer Eintrag'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCSV} disabled={isExporting}>
+            <Download className="w-4 h-4 mr-2" />
+            {isExporting ? 'Exportiere...' : 'CSV Export'}
+          </Button>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Abbrechen' : '+ Neuer Eintrag'}
+          </Button>
+        </div>
       </div>
       {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">

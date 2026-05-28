@@ -38,7 +38,14 @@ export const localDb = {
       db
         .select()
         .from(timeEntries)
+        .where(eq(timeEntries.userId, userId)),
+
+    findAllByUser: (userId: string) =>
+      db
+        .select()
+        .from(timeEntries)
         .where(eq(timeEntries.userId, userId))
+        .orderBy(timeEntries.startedAt)
   },
 
   chats: {
