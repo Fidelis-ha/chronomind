@@ -1,0 +1,16 @@
+# Autonomous Programming Agent Config
+project_slug: chronomind
+project_dir: /opt/data/chronomind
+base_branch: main
+vercel_token_file: /opt/data/.vercel_token
+lint_command: npm run lint
+typecheck_command: npx tsc --noEmit
+build_command: npm run build
+allowed_toolsets:
+  - terminal
+  - file
+  - browser
+smoke_test_urls:
+  - "/sign-in:200"
+  - "/:200"
+  - "/entries:200"
