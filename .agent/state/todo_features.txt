@@ -1,4 +1,3 @@
-dark-mode-toggle: Dark Mode Toggle (Persistenz via localStorage + CSS Variables)
 export-csv: CSV Export für Zeiteinträge
 dashboard-charts: Charts auf Dashboard (recharts已经在analytics里了)
 improved-chat-ui: Chat UI Verbesserungen (mehr Kontext, bessere Messages)
