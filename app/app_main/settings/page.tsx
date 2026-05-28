@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +39,7 @@ function saveSettings(settings: any) {
 
 const DEFAULT_SETTINGS = {
   timezone: 'Europe/Berlin',
+  theme: 'system',
   work_day_start: '08:00',
   work_day_end: '18:00',
   backup_provider: '',
@@ -126,6 +128,28 @@ export default function SettingsPage() {
               {TIMEZONES.map(tz => (
                 <SelectItem key={tz} value={tz}>{tz}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="theme">Design</Label>
+          <Select
+            value={settings.theme || 'system'}
+            onValueChange={value => {
+              setSettings((prev: any) => ({ ...prev, theme: value }))
+              if (typeof window !== 'undefined') {
+                window.__setThemePreference?.(value)
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">Hell</SelectItem>
+              <SelectItem value="dark">Dunkel</SelectItem>
+              <SelectItem value="system">System</SelectItem>
             </SelectContent>
           </Select>
         </div>
