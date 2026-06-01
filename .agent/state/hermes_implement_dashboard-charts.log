@@ -1,0 +1,24 @@
+Query: /tmp/tmp.17Pye6aI2D.prompt
+Initializing agent...
+────────────────────────────────────────
+
+  ┊ 📖 preparing read_file…
+  ┊ 📖 read      /tmp/tmp.17Pye6aI2D.prompt  0.1s
+
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+    Das ist ein Prompt-Template für den autonomen Programmier-Subagent. Die Variablen wie ${PROJECT_DIR}, ${BRANCH}, ${FEATURE_DESC} etc. sind Platzhalter die beim Aufruf substituiert werden.
+    
+    Was soll ich damit machen? Soll ich:
+    1. Den Prompt ausführen — dafür fehlen mir die konkreten Werte (PROJECT_DIR, BRANCH, FEATURE_DESC, etc.)
+    2. Die Struktur analysieren — prüfen ob der Prompt korrekt aufgebaut ist
+    3. Etwas anderes
+    
+    Gib mir mehr Kontext.
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Resume this session with:
+  hermes --resume 20260528_154832_234721
+
+Session:        20260528_154832_234721
+Duration:       11s
+Messages:       4 (1 user, 2 tool calls)

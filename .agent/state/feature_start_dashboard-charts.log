@@ -1,0 +1,55 @@
+[2026-05-28 15:47:00] === FEATURE START ===
+[2026-05-28 15:47:00] Project: chronomind
+[2026-05-28 15:47:00] Feature: dashboard-charts
+[2026-05-28 15:47:00] Branch: fidelis/feature/dashboard-charts-2026-05-28
+[2026-05-28 15:47:00] Branch existiert — checkout + pull
+[2026-05-28 15:47:01] Deploye zu Vercel Preview...
+[2026-05-28 15:48:29] Retrieving project…
+Deploying marcs-projects-347e7b9d/chronomind
+Uploading [--------------------] (0.0B/218.1KB)
+Uploading [======--------------] (69.2KB/218.1KB)
+Uploading [==========----------] (117.2KB/218.1KB)
+Uploading [===============-----] (165.2KB/218.1KB)
+Uploading [====================] (218.1KB/218.1KB)
+  Inspect     https://vercel.com/marcs-projects-347e7b9d/chronomind/69mhjUcCqjGfMPRnpcjdQ1FbhKXV
+▲ Production  https://chronomind-9lrcq1lui-marcs-projects-347e7b9d.vercel.app
+https://chronomind-9lrcq1lui-marcs-projects-347e7b9d.vercel.appBuilding…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Downloading 1632 deployment files...
+Restored build cache from previous deployment (54ZJGiRKkzk2oEXntkCE8U7Rjmro)
+Running "vercel build"
+Vercel CLI 54.4.1
+Running "install" command: `npm install`...
+added 37 packages, and audited 764 packages in 9s
+256 packages are looking for funding
+run `npm fund` for details
+13 vulnerabilities (11 moderate, 1 high, 1 critical)
+To address issues that do not require attention, run:
+npm audit fix
+To address all issues (including breaking changes), run:
+npm audit fix --force
+Run `npm audit` for details.
+Detected Next.js version: 13.4.10
+Running "npm run build"
+> @supabase-community/vercel-ai-chatbot@0.0.2 build
+> next build && npm run fix-build
+- info Loaded env from /vercel/path0/.env.production
+- warn You have enabled experimental features (serverActions, serverComponentsExternalPackages) in next.config.js.
+- warn Experimental features are not covered by semver, and may cause unexpected or broken application behavior. Use at your own risk.
+- info Creating an optimized production build...
+- info Compiled successfully
+- info Linting and checking validity of types...
+Failed to compile.
+./components/analytics/ChartComponents.tsx
+56:11  Error: Definition for rule '@typescript-eslint/no-explicit-any' was not found.  @typescript-eslint/no-explicit-any
+119:11  Error: Definition for rule '@typescript-eslint/no-explicit-any' was not found.  @typescript-eslint/no-explicit-any
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+Error: Command "npm run build" exited with 1
+Error: Command "npm run build" exited with 1
+[2026-05-28 15:48:29] Preview URL: https://chronomind-9lrcq1lui-marcs-projects-347e7b9d.vercel.app
+[2026-05-28 15:48:29] Starte implement-feature.sh als Background-Job (SKIP_PHASE1)...
+[2026-05-28 15:48:29] implement-feature.sh gestartet (PID 1567)
+[2026-05-28 15:48:29] === FEATURE START ENDE ===

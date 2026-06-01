@@ -1,0 +1,59 @@
+[2026-05-28 15:48:29] SKIP_PHASE1=1 — jumping to Phase 2
+[2026-05-28 15:48:29] === PHASE 2: LLM-IMPLEMENTIERUNG ===
+[2026-05-28 15:48:29] Feature: dashboard-charts
+Du bist ein autonomer Programmier-Agent. Arbeite vollstaendig selbststaendig.
+
+**DEINE AUFGABE:**
+Implementiere das folgende Feature:
+
+PROJEKT: ${PROJECT_DIR}
+BRANCH: ${BRANCH}
+FEATURE-BESCHREIBUNG: ${FEATURE_DESC}
+
+Quality Gate配置:
+- lint: ${LINT_CMD:-npm run lint}
+- typecheck: ${TS_CMD:-npx tsc --noEmit}
+- build: ${BUILD_CMD:-npm run build}
+- smoke_urls: ${SMOKE_URLS}
+
+**ARBEITSSCHRITTE:**
+0. Lese Deine Tokens:
+   TELEGRAM_TOKEN=$(cat /tmp/.hermes_telegram_token)
+   VERCEL_TOKEN=$(cat /tmp/.hermes_vercel_token)
+
+1. cd ${PROJECT_DIR} && git checkout ${BRANCH}
+2. Lese CLAUDE.md und README.md wenn vorhanden
+3. Implementiere das Feature ${FEATURE_DESC} vollstaendig. Keine TODOs, keine Placeholder.
+4. git add . && git commit -m "feat(\${FEATURE_SLUG}): <was implementiert wurde>" && git push origin HEAD
+   (nach jedem bedeutsamen Teilcommit wiederholen)
+5. Nach Fertigstellung: Quality Gate:
+   a) ${LINT_CMD:-npm run lint}  → exit 0 = PASS, sonst FAIL
+   b) ${TS_CMD:-npx tsc --noEmit} → exit 0 = PASS, sonst FAIL
+   c) ${BUILD_CMD:-npm run build} → exit 0 = PASS, sonst FAIL
+
+   **BEI FAIL:**
+   - curl -s "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+       -d "chat_id=58614728" \
+       -d "text=⚠️ Quality Gate fehlgeschlagen — ${PROJECT_SLUG}%0A%0AStufe: <lint|typecheck|build>%0ALetzter Commit: $(git log -1 --format='%h %s' HEAD)%0A%0A→ Manual Review nötig"
+   - Exit 1
+
+   **BEI PASS:**
+   - curl -s "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+       -d "chat_id=58614728" \
+       -d "text=✅ ${PROJECT_SLUG}: Feature fertig%0A%0A🔗 ${PREVIEW_URL}%0A%0A/approve ${BRANCH}"
+   - Review-Queue updaten: echo "fidelis/feature/${FEATURE_SLUG}:${PREVIEW_URL}" >> ${STATE_DIR}/review_queue.txt
+   - active_features.txt leeren: > ${STATE_DIR}/active_features.txt
+   - Completed loggen: echo "$(date): ${BRANCH} — passed" >> ${STATE_DIR}/completed_features.txt
+   - Vercel Preview deployen:
+     mkdir -p /tmp/vercel-final && HOME=/tmp/vercel-final npx --yes vercel@latest --token "${VERCEL_TOKEN}" --yes --prod=false
+
+**WICHTIG:**
+- Arbeite vollstaendig autonom. Keine Rueckfragen.
+- Commit-Nachrichten: conventional commits (feat:, fix:, chore:)
+- Der Branch ${BRANCH} existiert bereits. Du implementierst nur den Code.
+- Wenn ein Quality-Gate-Schritt fehlschlägt: versuche ihn zu beheben (max 2 Iterationen) bevor du aufgibst.
+- Bei hartnäckigen Fehlern: Telegram-Eskalation und exit 1.
+[2026-05-28 15:48:45] Hermes exit code: 0
+[2026-05-28 15:48:45] === IMPLEMENTIERUNG ABGESCHLOSSEN ===
+[2026-05-28 15:48:45] Feature: dashboard-charts
+[2026-05-28 15:48:45] Preview: https://chronomind-9lrcq1lui-marcs-projects-347e7b9d.vercel.app
