@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -31,6 +31,66 @@ function saveEntries(entries: TimeEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
 }
 
+function entriesToCSV(entries: TimeEntry[]): string {
+  const headers = [
+    'id',
+    'title',
+    'description',
+    'category',
+    'tags',
+    'started_at',
+    'ended_at',
+    'duration_seconds',
+    'source',
+    'created_at'
+  ]
+
+  const rows = entries.map(entry => [
+    entry.id,
+    `"${(entry.title || '').replace(/"/g, '""')}"`,
+    `"${(entry.description || '').replace(/"/g, '""')}"`,
+    `"${(entry.category || '').replace(/"/g, '""')}"`,
+    `"${(entry.tags || []).join(', ')}"`,
+    entry.started_at,
+    entry.ended_at || '',
+    entry.duration_seconds?.toString() || '',
+    entry.source,
+    entry.created_at
+  ])
+
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+}
+
+function downloadCSV(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', filename)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function entriesToJSON(entries: TimeEntry[]): string {
+  return JSON.stringify(entries, null, 2)
+}
+
+function downloadJSON(json: string, filename: string) {
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', filename)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 export default function EntriesPageClient() {
   const [allEntries] = useState<TimeEntry[]>(loadEntries)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -42,7 +102,7 @@ export default function EntriesPageClient() {
   })
 
   const handleDelete = (id: string) => {
-    if (!confirm('Eintrag wirklich löschen?')) return
+    if (!confirm('Eintrag wirklich loeschen?')) return
     const updated = allEntries.filter(e => e.id !== id)
     saveEntries(updated)
     window.location.reload()
@@ -55,13 +115,49 @@ export default function EntriesPageClient() {
     window.location.reload()
   }
 
+  const handleExportCSV = useCallback(() => {
+    const csv = entriesToCSV(allEntries)
+    const dateStr = new Date().toISOString().split('T')[0]
+    downloadCSV(csv, `chronomind-entries-${dateStr}.csv`)
+  }, [allEntries])
+
+  const handleExportFilteredCSV = useCallback(() => {
+    const csv = entriesToCSV(filteredEntries)
+    downloadCSV(csv, `chronomind-entries-${date}.csv`)
+  }, [filteredEntries, date])
+
+  const handleExportJSON = useCallback(() => {
+    const json = entriesToJSON(allEntries)
+    const dateStr = new Date().toISOString().split('T')[0]
+    downloadJSON(json, `chronomind-entries-${dateStr}.json`)
+  }, [allEntries])
+
+  const handleExportFilteredJSON = useCallback(() => {
+    const json = entriesToJSON(filteredEntries)
+    downloadJSON(json, `chronomind-entries-${date}.json`)
+  }, [filteredEntries, date])
+
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Zeiteinträge</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Abbrechen' : '+ Neuer Eintrag'}
-        </Button>
+        <h1 className="text-2xl font-bold">Zeiteintraege</h1>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={handleExportCSV} title="Alle Eintraege exportieren">
+            CSV (Alle)
+          </Button>
+          <Button variant="outline" onClick={handleExportFilteredCSV} title="Gefilterte Eintraege exportieren">
+            CSV (Gefiltert)
+          </Button>
+          <Button variant="outline" onClick={handleExportJSON} title="Alle Eintraege als JSON exportieren">
+            JSON (Alle)
+          </Button>
+          <Button variant="outline" onClick={handleExportFilteredJSON} title="Gefilterte Eintraege als JSON exportieren">
+            JSON (Gefiltert)
+          </Button>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Abbrechen' : '+ Neuer Eintrag'}
+          </Button>
+        </div>
       </div>
       {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
@@ -81,7 +177,7 @@ export default function EntriesPageClient() {
       </div>
       {filteredEntries.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          Keine Einträge für dieses Datum
+          Keine Eintraege fuer dieses Datum
         </div>
       ) : (
         <div className="space-y-3">
