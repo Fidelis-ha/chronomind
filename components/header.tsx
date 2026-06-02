@@ -1,6 +1,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Header() {
   return (
@@ -12,10 +13,11 @@ export function Header() {
             <Link href="/app_main">Heute</Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/app_main/entries">Einträge</Link>
+            <Link href="/app_main/entries">EintrÃ¤ge</Link>
           </Button>
         </nav>
       </div>
+      <ThemeToggle />
     </header>
   )
 }
