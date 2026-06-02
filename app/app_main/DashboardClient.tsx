@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
+import DashboardCharts from '@/components/dashboard/DashboardCharts'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -81,6 +82,8 @@ export default function DashboardClient() {
           <EntryForm onCreate={handleCreate} />
         </div>
       )}
+
+      <DashboardCharts entries={entries} />
 
       <div className="flex items-center justify-between mb-4">
         <span className="text-muted-foreground">
