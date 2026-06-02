@@ -30,7 +30,11 @@ export async function GET(req: Request) {
       source: e.source,
       calendar_event_id: e.calendarEventId,
       metadata: e.metadata,
-      created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : null
+      created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : null,
+      is_recurring: (e.isRecurring ?? null),
+      recurrence_rule: (e.recurrenceRule ? JSON.parse(e.recurrenceRule) : null),
+      recurrence_parent_id: (e.recurrenceParentId ?? null),
+      recurrence_index: (e.recurrenceIndex ?? null)
     }))
 
     return NextResponse.json({ entries: mapped })
@@ -80,7 +84,11 @@ export async function POST(req: Request) {
       source: created.source,
       calendar_event_id: created.calendarEventId,
       metadata: created.metadata,
-      created_at: created.createdAt ? new Date(created.createdAt * 1000).toISOString() : null
+      created_at: created.createdAt ? new Date(created.createdAt * 1000).toISOString() : null,
+      is_recurring: (created.isRecurring ?? null),
+      recurrence_rule: (created.recurrenceRule ? JSON.parse(created.recurrenceRule) : null),
+      recurrence_parent_id: (created.recurrenceParentId ?? null),
+      recurrence_index: (created.recurrenceIndex ?? null)
     }
 
     return NextResponse.json({ entry: mapped })

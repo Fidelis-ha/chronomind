@@ -44,7 +44,11 @@ export function createTimeEntry(
     duration_seconds: data.ended_at
       ? Math.round((new Date(data.ended_at).getTime() - new Date(data.started_at).getTime()) / 1000)
       : null,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    is_recurring: data.is_recurring ?? null,
+    recurrence_rule: data.recurrence_rule ?? null,
+    recurrence_parent_id: data.recurrence_parent_id ?? null,
+    recurrence_index: data.recurrence_index ?? null
   }
   store.timeEntries.push(entry)
   return entry

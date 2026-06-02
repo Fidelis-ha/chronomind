@@ -1,0 +1,2 @@
+fidelis/feature/recurring-entries-2026-05-28:https://chronomind-hosdx4xex-marcs-projects-347e7b9d.vercel.app
+fidelis/feature/export-csv-2026-05-28:https://chronomind-456uee49y-marcs-projects-347e7b9d.vercel.app
