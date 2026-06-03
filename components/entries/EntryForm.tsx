@@ -75,7 +75,11 @@ export function EntryForm({ onCreate }: EntryFormProps) {
         source: 'manual',
         calendar_event_id: null,
         metadata: null,
-        created_at: now.toISOString()
+        created_at: now.toISOString(),
+        is_recurring: null,
+        recurrence_rule: null,
+        recurrence_parent_id: null,
+        recurrence_index: null
       }
 
       onCreate(entry)

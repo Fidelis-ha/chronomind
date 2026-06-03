@@ -60,7 +60,11 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
     source: e.source as TimeEntry['source'],
     calendar_event_id: e.calendarEventId,
     metadata: (e.metadata || null) as Record<string, unknown> | null,
-    created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString()
+    created_at: e.createdAt ? new Date(e.createdAt * 1000).toISOString() : new Date().toISOString(),
+    is_recurring: (e.isRecurring ?? null) as boolean | null,
+    recurrence_rule: (e.recurrenceRule ?? null) as TimeEntry['recurrence_rule'],
+    recurrence_parent_id: (e.recurrenceParentId ?? null) as string | null,
+    recurrence_index: (e.recurrenceIndex ?? null) as number | null
   }))
 }
 
