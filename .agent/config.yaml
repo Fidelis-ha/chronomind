@@ -13,10 +13,6 @@ allowed_toolsets:
 smoke_test_urls:
   - "/sign-in:200"
   - "/:200"
-<<<<<<< Updated upstream
   - "/entries:200"
 branch_prefix: fidelis
 telegram_chat_id: "58614728"
-=======
-  - "/entries:200"
->>>>>>> Stashed changes
