@@ -43,10 +43,6 @@ export interface TimeEntry {
   calendar_event_id: string | null
   metadata: Record<string, unknown> | null
   created_at: string
-  is_recurring: boolean | null
-  recurrence_rule: RecurrenceRule | null
-  recurrence_parent_id: string | null
-  recurrence_index: number | null
 }
 
 export interface Calendar {

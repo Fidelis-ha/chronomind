@@ -1,0 +1,2 @@
+fidelis/feature/dark-mode-toggle-2026-06-03:https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.app
+fidelis/feature/recurring-entries-2026-06-03:https://chronomind-9z74ogvid-marcs-projects-347e7b9d.vercel.app

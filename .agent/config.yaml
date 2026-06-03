@@ -1,0 +1,24 @@
+# Autonomous Programming Agent Config
+# Für ChronoMind Projekt
+
+project_slug: chronomind
+project_dir: /opt/data/chronomind
+base_branch: main
+branch_prefix: fidelis
+
+# Vercel
+vercel_token_file: /opt/data/.vercel_token
+
+# Quality Gate Commands
+lint_command: npm run lint
+typecheck_command: npx tsc --noEmit
+build_command: npm run build
+telegram_chat_id: "58614728"
+
+# Allowed Toolsets für LLM-Subagenten
+allowed_toolsets:
+  - terminal
+  - file
+  - browser
+
+git_push_target: origin

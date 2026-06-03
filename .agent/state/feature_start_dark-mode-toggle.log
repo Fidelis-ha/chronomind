@@ -1,0 +1,105 @@
+[2026-06-03 08:45:39] Deploye zu Vercel Preview...
+[2026-06-03 08:47:08] Vercel CLI 54.7.1 (Node.js 20.19.2)
+Retrieving project…
+Deploying marcs-projects-347e7b9d/chronomind
+Uploading [--------------------] (0.0B/51B)
+Uploading [====================] (51.0B/51B)
+  Inspect     https://vercel.com/marcs-projects-347e7b9d/chronomind/TUGF57WbjAwD5xKMAVKxjeQdq9k8
+▲ Production  https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.app
+https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.appBuilding…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Downloading 1623 deployment files...
+Restored build cache from previous deployment (9qbQceZa6upui3nrsf7SUJ8WUccQ)
+Running "vercel build"
+Vercel CLI 54.7.1
+Running "install" command: `npm install`...
+up to date, audited 727 packages in 5s
+254 packages are looking for funding
+run `npm fund` for details
+13 vulnerabilities (11 moderate, 1 high, 1 critical)
+To address issues that do not require attention, run:
+npm audit fix
+To address all issues (including breaking changes), run:
+npm audit fix --force
+Run `npm audit` for details.
+Detected Next.js version: 13.4.10
+Running "npm run build"
+> @supabase-community/vercel-ai-chatbot@0.0.2 build
+> next build && npm run fix-build
+- info Loaded env from /vercel/path0/.env.production
+- warn You have enabled experimental features (serverActions, serverComponentsExternalPackages) in next.config.js.
+- warn Experimental features are not covered by semver, and may cause unexpected or broken application behavior. Use at your own risk.
+- info Creating an optimized production build...
+- info Compiled successfully
+- info Linting and checking validity of types...
+- info Collecting page data...
+- info Generating static pages (0/22)
+- info Generating static pages (5/22)
+Creating database file at: /tmp/chronomind.db
+- info Generating static pages (10/22)
+- warn
+metadata.metadataBase is not set for resolving social open graph or twitter images, using "https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.app". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+- info Generating static pages (16/22)
+- info Generating static pages (22/22)
+- info Finalizing page optimization...
+Route (app)                                Size     First Load JS
+┌ ○ /                                      425 B            81 kB
+├ λ /api/auth/demo                         0 B                0 B
+├ ○ /api/auth/session                      0 B                0 B
+├ λ /api/auth/sign-in                      0 B                0 B
+├ λ /api/auth/sign-out                     0 B                0 B
+├ λ /api/auth/sign-up                      0 B                0 B
+├ λ /api/backup                            0 B                0 B
+├ λ /api/chat                              0 B                0 B
+├ ○ /api/dbtest                            0 B                0 B
+├ λ /api/entries                           0 B                0 B
+├ λ /api/entries/[id]                      0 B                0 B
+├ λ /api/settings                          0 B                0 B
+├ ○ /api/test                              0 B                0 B
+├ ○ /app_main                              1.06 kB         108 kB
+├ ○ /app_main/entries                      1.06 kB         108 kB
+├ ○ /app_main/settings                     20.2 kB         124 kB
+├ λ /chat/[id]                             361 kB          479 kB
+├ ○ /entries                               425 B            81 kB
+├ ○ /opengraph-image.png                   0 B                0 B
+├ λ /share/[id]                            425 B            81 kB
+├ ○ /sign-in                               425 B            81 kB
+├ ○ /sign-up                               425 B            81 kB
+└ ○ /twitter-image.png                     0 B                0 B
++ First Load JS shared by all              80.6 kB
+├ chunks/381-9bc129daa4c85cce.js         25.9 kB
+├ chunks/87bc1fd9-c3677ddac48a0aaa.js    52.7 kB
+├ chunks/main-app-e156d452cf2200ea.js    222 B
+└ chunks/webpack-446f33dad0dc26c0.js     1.75 kB
+Route (pages)                              Size     First Load JS
+─ ○ /404                                   181 B          75.9 kB
++ First Load JS shared by all              75.7 kB
+├ chunks/framework-0d01cdd3f4d700bf.js   45 kB
+├ chunks/main-4b0bf96948d03d9e.js        28.7 kB
+├ chunks/pages/_app-6b79a29ad0d63b21.js  197 B
+└ chunks/webpack-446f33dad0dc26c0.js     1.75 kB
+ƒ Middleware                               18.8 kB
+λ  (Server)  server-side renders at runtime (uses getInitialProps or getServerSideProps)
+○  (Static)  automatically rendered as static HTML (uses no initial props)
+> @supabase-community/vercel-ai-chatbot@0.0.2 fix-build
+> node -e "const fs=require('fs');const dir='.next/server/app';if(!fs.existsSync(dir)){console.log('No app dir');process.exit(0)};const src=dir+'/page_client-reference-manifest.js';const dst=dir+'/(app)/page_client-reference-manifest.js';if(fs.existsSync(src)){if(!fs.existsSync(dir+'/('+'app)')){fs.mkdirSync(dir+'/('+'app)',{recursive:true})}if(!fs.existsSync(dst)){fs.copyFileSync(src,dst);console.log('Fixed: copied manifest')}else{console.log('No fix needed')}}else{console.log('Source manifest not found')}"
+Fixed: copied manifest
+Traced Next.js server files in: 680.619ms
+Created all serverless functions in: 499.43ms
+Collected static files (public/, static/, .next/static): 9.578ms
+Build Completed in /vercel/output [41s]
+Deploying outputs...
+Deployment completed
+Creating build cache...
+[2K[1A[2K[G▲ Production  https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.app
+Completing…
+▲ Aliased     https://chronomind-two.vercel.app
+
+✓ Ready in 1m
+[2026-06-03 08:47:08] Preview URL: https://chronomind-roi6rjjlu-marcs-projects-347e7b9d.vercel.app
+[2026-06-03 08:47:08] Starte implement-feature.sh als Background-Job (SKIP_PHASE1)...
+[2026-06-03 08:47:08] implement-feature.sh gestartet (PID 130778)
+[2026-06-03 08:47:08] === FEATURE START ENDE ===

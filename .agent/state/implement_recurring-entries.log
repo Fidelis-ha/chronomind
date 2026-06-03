@@ -1,0 +1,51 @@
+[2026-06-03 09:17:48] SKIP_PHASE1=1 — jumping to Phase 2
+[2026-06-03 09:17:48] === PHASE 2: LLM-IMPLEMENTIERUNG ===
+[2026-06-03 09:17:48] Feature: recurring-entries
+Du bist ein autonomer Programmier-Agent. Arbeite vollstaendig selbststaendig.
+
+**DEINE AUFGABE:**
+Implementiere das folgende Feature:
+
+PROJEKT: /opt/data/chronomind
+BRANCH: fidelis/feature/recurring-entries-2026-06-03
+FEATURE-BESCHREIBUNG: recurring-entries
+
+Quality Gate配置:
+- lint: npm run lint
+- typecheck: npx tsc --noEmit
+- build: npm run build
+- smoke_urls: / /sign-in
+
+**ARBEITSSCHRITTE:**
+1. cd /opt/data/chronomind && git checkout fidelis/feature/recurring-entries-2026-06-03
+2. Lese CLAUDE.md und README.md wenn vorhanden
+3. Implementiere das Feature recurring-entries vollstaendig. Keine TODOs, keine Placeholder.
+4. git add . && git commit -m "feat(recurring-entries): <was implementiert wurde>" && git push origin HEAD
+   (nach jedem bedeutsamen Teilcommit wiederholen)
+5. Nach Fertigstellung: Quality Gate:
+   a) npm run lint  → exit 0 = PASS, sonst FAIL
+   b) npx tsc --noEmit → exit 0 = PASS, sonst FAIL
+   c) npm run build → exit 0 = PASS, sonst FAIL
+
+   **BEI FAIL:**
+   - bash /opt/data/skills/software-development/autonomous-programming-supervisor/scripts/telegram-handler.sh "Quality Gate fehlgeschlagen — chronomind" "Stufe: <lint|typecheck|build>" "Letzter Commit: 71688f21 fix: use explicit IDs for form fields (ef-title, ef-sdate, etc.)"
+   - Exit 1
+
+   **BEI PASS:**
+   - bash /opt/data/skills/software-development/autonomous-programming-supervisor/scripts/telegram-handler.sh "chronomind: Feature fertig" "Preview: https://chronomind-9z74ogvid-marcs-projects-347e7b9d.vercel.app" "/approve fidelis/feature/recurring-entries-2026-06-03"
+   - echo "fidelis/feature/recurring-entries:https://chronomind-9z74ogvid-marcs-projects-347e7b9d.vercel.app" >> /opt/data/chronomind/.agent/state/review_queue.txt
+   - > /opt/data/chronomind/.agent/state/active_features.txt
+   - echo "Wed Jun  3 09:17:48 UTC 2026: fidelis/feature/recurring-entries-2026-06-03 — passed" >> /opt/data/chronomind/.agent/state/completed_features.txt
+   - Lese Vercel-Token aus /tmp/.hermes_vercel_token und deploye Vercel Preview
+
+**WICHTIG:**
+- Arbeite vollstaendig autonom. Keine Rueckfragen.
+- Commit-Nachrichten: conventional commits (feat:, fix:, chore:)
+- Der Branch fidelis/feature/recurring-entries-2026-06-03 existiert bereits. Du implementierst nur den Code.
+- Wenn ein Quality-Gate-Schritt fehlschlägt: versuche ihn zu beheben (max 2 Iterationen) bevor du aufgibst.
+- Bei hartnäckigen Fehlern: Telegram-Eskalation und exit 1.
+[2026-06-03 09:18:18] Hermes exit code: 0
+[2026-06-03 09:18:18] === POST-LLM VERIFICATION ===
+[2026-06-03 09:18:18] Hermes Duration: 26s, Messages: 4
+[2026-06-03 09:18:18] WARN: LLM stopped early (token-detection-halt or asked for guidance)
+[2026-06-03 09:18:18] Feature NOT implemented — clearing active, leaving in todo

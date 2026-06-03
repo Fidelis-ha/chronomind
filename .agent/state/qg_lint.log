@@ -1,0 +1,9 @@
+
+> @supabase-community/vercel-ai-chatbot@0.0.2 lint
+> next lint
+
+- info Loaded env from /opt/data/chronomind/.env.production
+- warn You have enabled experimental features (serverActions, serverComponentsExternalPackages) in next.config.js.
+- warn Experimental features are not covered by semver, and may cause unexpected or broken application behavior. Use at your own risk.
+
+✔ No ESLint warnings or errors

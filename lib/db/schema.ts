@@ -32,7 +32,11 @@ export const timeEntries = sqliteTable('time_entries', {
   source: text('source').default('manual'),
   calendarEventId: text('calendar_event_id'),
   metadata: text('metadata', { mode: 'json' }),
-  createdAt: integer('created_at').notNull().$type<number>()
+  createdAt: integer('created_at').notNull().$type<number>(),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }),
+  recurrenceRule: text('recurrence_rule', { mode: 'json' }),
+  recurrenceParentId: text('recurrence_parent_id'),
+  recurrenceIndex: integer('recurrence_index')
 })
 
 export const calendars = sqliteTable('calendars', {
