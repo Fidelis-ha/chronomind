@@ -19,6 +19,16 @@ export type ServerActionResult<Result> = Promise<
 >
 
 // Time Tracking Types
+// Recurrence Types
+export type RecurrenceFrequency = 'daily' | 'weekly'
+
+export interface RecurrenceRule {
+  frequency: RecurrenceFrequency
+  interval: number
+  endDate: string | null
+  count: number | null
+}
+
 export interface TimeEntry {
   id: string
   user_id: string
@@ -33,6 +43,10 @@ export interface TimeEntry {
   calendar_event_id: string | null
   metadata: Record<string, unknown> | null
   created_at: string
+  is_recurring: boolean | null
+  recurrence_rule: RecurrenceRule | null
+  recurrence_parent_id: string | null
+  recurrence_index: number | null
 }
 
 export interface Calendar {
