@@ -1,1 +1,3 @@
-fidelis/feature/recurring-entries-2026-06-03:https://chronomind-9z74ogvid-marcs-projects-347e7b9d.vercel.app
+fidelis/feature/improved-chat-ui-2026-06-03:https://chronomind-3tbnlq952-marcs-projects-347e7b9d.vercel.app
+fidelis/feature/recurring-entries-2026-06-03:https://chronomind-m3rx7ozps-marcs-projects-347e7b9d.vercel.app
+fidelis/feature/export-csv-2026-06-03:https://chronomind-pa6766gyj-marcs-projects-347e7b9d.vercel.app
