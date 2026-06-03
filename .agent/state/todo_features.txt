@@ -1,2 +1,3 @@
-improved-chat-ui: Chat UI Verbesserungen (mehr Kontext, bessere Messages)
+dark-mode-toggle: Dark Mode Toggle (Persistenz via localStorage + CSS Variables)
+dashboard-charts: Charts auf Dashboard (recharts已经在analytics里了)
 voice-input: Voice Input via Web Speech API
