@@ -1,18 +1,20 @@
 {
   "$schema": "https://json.schemastore.org/eslintrc",
   "root": true,
+  "parser": "@typescript-eslint/parser",
   "extends": [
     "next/core-web-vitals",
     "prettier",
     "plugin:tailwindcss/recommended"
   ],
-  "plugins": ["tailwindcss"],
+  "plugins": ["tailwindcss", "@typescript-eslint"],
   "rules": {
     "tailwindcss/no-custom-classname": "off",
     "tailwindcss/enforces-negative-arbitrary-values": "off",
     "tailwindcss/enforces-shorthand": "off",
     "tailwindcss/no-unnecessary-arbitrary-value": "off",
-    "tailwindcss/classnames-order": "off"
+    "tailwindcss/classnames-order": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   },
   "settings": {
     "tailwindcss": {
