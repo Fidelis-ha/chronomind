@@ -3,14 +3,12 @@ IDLE - No busy subagent
 Config: /opt/data/chronomind/.agent/config.yaml
 Feedback: none
 Active: empty
-Review Queue (3 features):
-  - fidelis/feature/improved-chat-ui-2026-06-03: https://chronomind-3tbnlq952-marcs-projects-347e7b9d.vercel.app
-  - fidelis/feature/recurring-entries-2026-06-03: https://chronomind-ibaz85a1c-marcs-projects-347e7b9d.vercel.app (QG PASS, Phase 2 deployed)
-  - fidelis/feature/export-csv-2026-06-03: https://chronomind-1koi7sgj7-marcs-projects-347e7b9d.vercel.app (QG PASS, Phase 2 deployed)
-Todo (3 features):
-  - dark-mode-toggle: Dark Mode Toggle (Persistenz via localStorage + CSS Variables)
-  - dashboard-charts: Charts auf Dashboard (recharts已经在analytics里了)
-  - voice-input: Voice Input via Web Speech API
-State recovery completed: recurring-entries (5 commits), export-csv (1 commit) recovered from feature branches
-Features moved to review_queue with Phase 2 URLs after manual QG + Vercel deploy
+Review Queue (4 features):
+  - fidelis/feature/recurring-entries-2026-06-03: https://chronomind-bs0wpl3ov-marcs-projects-347e7b9d.vercel.app
+  - fidelis/feature/export-csv-2026-06-03: https://chronomind-n10q6dwdt-marcs-projects-347e7b9d.vercel.app
+  - fidelis/feature/dark-mode-toggle-2026-06-03: https://chronomind-9einef9o8-marcs-projects-347e7b9d.vercel.app
+  - fidelis/feature/dashboard-charts-2026-06-03: https://chronomind-ppisaewkw-marcs-projects-347e7b9d.vercel.app
+Todo: empty
+State cleanup: removed stale log files, fixed review_queue.txt corruption, recovered from stash conflict
+Telegram sent with all 4 preview URLs
 === SUPERVISOR END ===
