@@ -36,3 +36,17 @@ Review Queue (4 features awaiting Marc review):
 State cleanup: working tree clean, no stale feature_desc files
 SILENT - nothing to do
 === SUPERVISOR END ===
+
+=== SUPERVISOR $(date -u '+%a %b %e %H:%M:%S UTC %Y') ===
+IDLE - No busy subagent
+Feedback: none (no new feedback files)
+Active: empty
+Todo: empty
+Review Queue (4 features awaiting Marc review):
+  - recurring-entries-2026-06-03: https://chronomind-bs0wpl3ov-marcs-projects-347e7b9d.vercel.app
+  - export-csv-2026-06-03: https://chronomind-n10q6dwdt-marcs-projects-347e7b9d.vercel.app
+  - dark-mode-toggle-2026-06-03: https://chronomind-9einef9o8-marcs-projects-347e7b9d.vercel.app
+  - dashboard-charts-2026-06-03: https://chronomind-ppisaewkw-marcs-projects-347e7b9d.vercel.app
+Idle-state inspection: no stale .feature_desc files, no stuck active_features
+SILENT - nothing to do
+=== SUPERVISOR END ===
