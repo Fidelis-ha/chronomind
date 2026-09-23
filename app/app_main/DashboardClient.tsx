@@ -22,32 +22,26 @@ function formatTotalDuration(entries: TimeEntry[]): string {
   return `${minutes}m`
 }
 
-const STORAGE_KEY = 'chronomind_entries'
-
-function loadEntries(): TimeEntry[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveEntries(entries: TimeEntry[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-}
+import { loadEntries, saveEntries } from '@/lib/entries-store'
+import { useCloudSync } from '@/lib/hooks/useCloudSync'
+import { CloudQuestionBanner } from '@/components/entries/CloudQuestionBanner'
 
 export default function DashboardClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showDetails, setShowDetails] = useState(false)
+  const cloud = useCloudSync()
 
   useEffect(() => {
     setEntries(loadEntries())
     setLoading(false)
   }, [])
+
+  // Auto-Push nach lokalen Änderungen
+  useEffect(() => {
+    if (entries.length > 0) cloud.scheduleAutoPush?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries.length])
 
   const handleDelete = (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
@@ -69,9 +63,29 @@ export default function DashboardClient() {
 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
+      {cloud.cloudQuestion && (
+        <CloudQuestionBanner
+          cloudTs={cloud.cloudQuestion.cloudTs}
+          onKeepLocal={cloud.cloudQuestion.onKeepLocal}
+          onUseCloud={cloud.cloudQuestion.onUseCloud}
+          onDismiss={cloud.dismissCloudQuestion}
+        />
+      )}
+      {cloud.lastResult === 'error' && cloud.lastError && (
+        <div className="mb-6 p-3 rounded-lg border border-destructive/40 bg-destructive/10 text-sm">
+          ⚠️ Cloud-Sync-Fehler: {cloud.lastError}
+          <button onClick={() => cloud.pushNow()} className="ml-2 underline underline-offset-2">
+            Erneut versuchen
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Heute</h1>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {cloud.syncing && <span className="text-xs text-muted-foreground animate-pulse">☁️ synchronisiere…</span>}
+          {cloud.config && !cloud.syncing && cloud.lastResult === 'ok' && (
+            <span className="text-xs text-muted-foreground" title="Cloud-Sync aktiv">☁️ synchron</span>
+          )}
           <Button variant="outline" asChild>
             <Link href="/app_main/entries">Alle Einträge</Link>
           </Button>

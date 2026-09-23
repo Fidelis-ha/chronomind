@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
+import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -327,81 +328,13 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Backup Settings */}
+        {/* Cloud Sync */}
         <div className="border-t pt-6">
-          <h2 className="text-lg font-semibold mb-4">Cloud Backup</h2>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="backup_provider">Backup Anbieter</Label>
-              <Select
-                value={settings.backup_provider}
-                onValueChange={value => setSettings(prev => ({ ...prev, backup_provider: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Backup auswählen..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {BACKUP_PROVIDERS.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {settings.backup_provider === 's3' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="s3_bucket">S3 Bucket Name</Label>
-                  <Input
-                    id="s3_bucket"
-                    value={settings.backup_s3_bucket}
-                    onChange={e => setSettings(prev => ({ ...prev, backup_s3_bucket: e.target.value }))}
-                    placeholder="mein-backup-bucket"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="s3_region">AWS Region</Label>
-                  <Input
-                    id="s3_region"
-                    value={settings.backup_s3_region}
-                    onChange={e => setSettings(prev => ({ ...prev, backup_s3_region: e.target.value }))}
-                    placeholder="eu-central-1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="aws_access_key">AWS Access Key ID</Label>
-                  <Input
-                    id="aws_access_key"
-                    type="password"
-                    value={settings.aws_access_key_id}
-                    onChange={e => setSettings(prev => ({ ...prev, aws_access_key_id: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="aws_secret_key">AWS Secret Access Key</Label>
-                  <Input
-                    id="aws_secret_key"
-                    type="password"
-                    value={settings.aws_secret_access_key}
-                    onChange={e => setSettings(prev => ({ ...prev, aws_secret_access_key: e.target.value }))}
-                  />
-                </div>
-              </>
-            )}
-
-            {settings.backup_provider === 'webdav' && (
-              <div className="space-y-2">
-                <Label htmlFor="webdav_url">WebDAV URL</Label>
-                <Input
-                  id="webdav_url"
-                  value={settings.backup_webdav_url}
-                  onChange={e => setSettings(prev => ({ ...prev, backup_webdav_url: e.target.value }))}
-                  placeholder="https://dav.example.com/backup/"
-                />
-              </div>
-            )}
-          </div>
+          <h2 className="text-lg font-semibold mb-1">Cloud-Speicher</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Aktivitäten werden dann automatisch synchronisiert.
+          </p>
+          <CloudSyncSettings />
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
