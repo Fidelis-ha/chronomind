@@ -23,18 +23,30 @@ function formatTotalDuration(entries: TimeEntry[]): string {
 }
 
 import { loadEntries, saveEntries } from '@/lib/entries-store'
+import { isDirty, DIRTY_CHANGED_EVENT } from '@/lib/dirty-state'
 import { useCloudSync } from '@/lib/hooks/useCloudSync'
+import { isTimerRunning } from '@/lib/cloud-sync-payload'
 import { CloudQuestionBanner } from '@/components/entries/CloudQuestionBanner'
 
 export default function DashboardClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showDetails, setShowDetails] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const [timerRunning, setTimerRunning] = useState(false)
   const cloud = useCloudSync()
 
   useEffect(() => {
     setEntries(loadEntries())
+    setDirty(isDirty())
+    setTimerRunning(isTimerRunning())
     setLoading(false)
+    const onDirtyChanged = () => {
+      setDirty(isDirty())
+      setTimerRunning(isTimerRunning())
+    }
+    window.addEventListener(DIRTY_CHANGED_EVENT, onDirtyChanged)
+    return () => window.removeEventListener(DIRTY_CHANGED_EVENT, onDirtyChanged)
   }, [])
 
   const handleDelete = (id: string) => {
@@ -75,10 +87,30 @@ export default function DashboardClient() {
       )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Heute</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {cloud.syncing && <span className="text-xs text-muted-foreground animate-pulse">☁️ synchronisiere…</span>}
           {cloud.config && !cloud.syncing && cloud.lastResult === 'ok' && (
             <span className="text-xs text-muted-foreground" title="Cloud-Sync aktiv">☁️ synchron</span>
+          )}
+          {dirty && timerRunning && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="text-xs text-muted-foreground"
+              title="Der laufende Timer wird beim Beenden als Eintrag gesichert und in die Cloud hochgeladen."
+            >
+              ⏱️ Timer läuft – wird beim Beenden gesichert
+            </span>
+          )}
+          {dirty && !timerRunning && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="text-xs text-amber-600 dark:text-amber-400"
+              title="Änderungen sind lokal gespeichert, aber noch nicht in die Cloud hochgeladen."
+            >
+              ⚠️ Noch nicht in der Cloud gesichert
+            </span>
           )}
           <Button variant="outline" asChild>
             <Link href="/app_main/entries">Alle Einträge</Link>

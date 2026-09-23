@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
+import { InstallHint } from '@/components/settings/InstallHint'
 import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
 
 const TIMEZONES = [
@@ -339,6 +340,15 @@ export default function SettingsPage() {
             Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Aktivitäten werden dann automatisch synchronisiert.
           </p>
           <CloudSyncSettings />
+        </div>
+
+        {/* Install Hint */}
+        <div className="border-t pt-6">
+          <h2 className="text-lg font-semibold mb-1">App installieren</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            ChronoMind als eigenständige App auf Desktop oder Android installieren – mit automatischen Updates.
+          </p>
+          <InstallHint />
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full">

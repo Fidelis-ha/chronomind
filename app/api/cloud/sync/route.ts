@@ -11,6 +11,32 @@ interface SyncRequest {
 
 const enc = new TextEncoder()
 
+// SSRF-Basis-Schutz: nur öffentliche https-Server erlauben
+function assertPublicHttpsUrl(raw: string): URL {
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw new Error('Ungültige Server-URL')
+  }
+  if (url.protocol !== 'https:') {
+    throw new Error('Nur https-Server erlaubt')
+  }
+  const host = url.hostname.toLowerCase()
+  const blocked =
+    host === 'localhost' ||
+    host.startsWith('127.') ||
+    host.startsWith('10.') ||
+    host.startsWith('192.168.') ||
+    host.startsWith('169.254.') ||
+    host.endsWith('.local') ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  if (blocked) {
+    throw new Error('Nur öffentliche Server erlaubt')
+  }
+  return url
+}
+
 async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(input))
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
@@ -69,6 +95,7 @@ async function s3Request(method: 'PUT' | 'GET', cfg: Record<string, string>, bod
 function webdavTarget(cfg: Record<string, string>, provider: string): { url: string; dirUrl: string; auth: string } {
   const auth = Buffer.from(`${cfg.username}:${cfg.password}`).toString('base64')
   if (provider === 'nextcloud') {
+    assertPublicHttpsUrl(cfg.nc_server || '')
     const base = (cfg.nc_server || '').replace(/\/+$/, '')
     const path = (cfg.nc_path || 'chronomind/chronomind-data.json').replace(/^\/+/, '')
     const dir = path.split('/').slice(0, -1).join('/')
@@ -79,6 +106,7 @@ function webdavTarget(cfg: Record<string, string>, provider: string): { url: str
     }
   }
   // generisches WebDAV: URL zeigt auf Verzeichnis
+  assertPublicHttpsUrl(cfg.webdav_url || '')
   const base = (cfg.webdav_url || '').replace(/\/+$/, '')
   const filename = cfg.webdav_filename || 'chronomind-data.json'
   return { url: `${base}/${filename}`, dirUrl: base, auth }
@@ -110,6 +138,18 @@ async function webdavPutWithDir(target: { url: string; dirUrl: string; auth: str
 }
 
 export async function POST(req: Request) {
+  // Origin-Check (CSRF-Basis-Schutz)
+  const origin = req.headers.get('origin')
+  if (origin) {
+    try {
+      if (new URL(origin).host !== req.headers.get('host')) {
+        return NextResponse.json({ ok: false, error: 'Verboten' }, { status: 403 })
+      }
+    } catch {
+      return NextResponse.json({ ok: false, error: 'Verboten' }, { status: 403 })
+    }
+  }
+
   let body: SyncRequest
   try {
     body = await req.json()

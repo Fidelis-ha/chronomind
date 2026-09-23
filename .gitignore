@@ -39,3 +39,5 @@ yarn-error.log*
 chronomind.db
 chronomind.db-shm
 chronomind.db-wal
+.review-diff.diff
+tsconfig.tsbuildinfo

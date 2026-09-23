@@ -11,6 +11,7 @@ import {
   ACTIVITIES_CHANGED_EVENT
 } from '@/lib/activities'
 import { markDirty } from '@/lib/dirty-state'
+import { RUNNING_ENTRY_KEY as STORAGE_KEY } from '@/lib/cloud-sync-payload'
 import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 
 interface QuickTapProps {
@@ -23,8 +24,6 @@ interface RunningEntry {
   category: string | null
   started_at: string
 }
-
-const STORAGE_KEY = 'chronomind-running-entry'
 
 function fmtElapsed(startIso: string, now: number): string {
   const sec = Math.max(0, Math.floor((now - new Date(startIso).getTime()) / 1000))

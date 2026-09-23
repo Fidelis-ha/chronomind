@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { initCloudSyncWatcher } from '@/lib/cloud-sync-watcher'
 
 /**
  * Registriert den Service Worker (PWA) und übernimmt Updates automatisch:
@@ -11,6 +12,10 @@ import toast from 'react-hot-toast'
 export function PwaRegister() {
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // Dirty-State/Auto-Push global aktivieren (auf jeder Seite)
+    initCloudSyncWatcher()
+
     if (!('serviceWorker' in navigator)) return
 
     let refreshing = false

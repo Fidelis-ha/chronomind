@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
-import { loadEntries, saveEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
-import { loadActivities, saveActivities, type Activity, ACTIVITIES_CHANGED_EVENT } from '@/lib/activities'
-import { isDirty, markDirty, clearDirty, SETTINGS_CHANGED_EVENT } from '@/lib/dirty-state'
+import { loadEntries, saveEntries } from '@/lib/entries-store'
+import { loadActivities, saveActivities, type Activity } from '@/lib/activities'
+import { clearDirty } from '@/lib/dirty-state'
+import { buildPayload, getChangeCounter, isTimerRunning } from '@/lib/cloud-sync-payload'
 import {
   loadCloudConfig,
   pushToCloud,
@@ -24,7 +25,6 @@ export interface CloudSyncState {
 
 export function useCloudSync(): CloudSyncState & {
   pushNow: () => Promise<void>
-  scheduleAutoPush: () => void
   checkCloudOnLoad: () => Promise<void>
   applyCloudData: (payload: CloudPayload) => void
   cloudQuestion: { cloudTs: string; onKeepLocal: () => void; onUseCloud: () => void } | null
@@ -41,7 +41,6 @@ export function useCloudSync(): CloudSyncState & {
     onUseCloud: () => void
   } | null>(null)
   const checkRan = useRef(false)
-  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const configVersion = useRef(0)
 
   const refreshConfig = useCallback(() => {
@@ -60,23 +59,19 @@ export function useCloudSync(): CloudSyncState & {
     }
   }, [refreshConfig])
 
-  const buildPayload = (): Omit<import('@/lib/cloud-sync').CloudPayload, 'timestamp' | 'device'> => {
-    const entries = loadEntries()
-    let settings: unknown = {}
-    try { settings = JSON.parse(localStorage.getItem('chronomind_settings') || '{}') } catch { /* ignore */ }
-    return { version: 1, entries, settings, activities: loadActivities() }
-  }
-
   const pushNow = useCallback(async (): Promise<void> => {
     const cfg = loadCloudConfig()
     if (!cfg) return
     setSyncing(true)
     try {
+      const capturedCounter = getChangeCounter()
       const result = await pushToCloud(cfg, buildPayload())
       if (result.ok) {
         setLastResult('ok')
         setLastError(null)
-        clearDirty() // Speicherung = Cloud-Upload erfolgt
+        // Nur clearDirty, wenn sich seit Push-Start nichts geändert hat
+        // und kein laufender Timer existiert
+        if (getChangeCounter() === capturedCounter && !isTimerRunning()) clearDirty()
       } else {
         setLastResult('error')
         setLastError(result.error || 'Unbekannter Fehler')
@@ -88,16 +83,6 @@ export function useCloudSync(): CloudSyncState & {
       setSyncing(false)
     }
   }, [])
-
-  /** Auto-Push nach Änderungen (debounced 2s) */
-  const scheduleAutoPush = useCallback(() => {
-    const cfg = loadCloudConfig()
-    if (!cfg) return
-    if (pushTimer.current) clearTimeout(pushTimer.current)
-    pushTimer.current = setTimeout(() => {
-      pushNow()
-    }, 2000)
-  }, [pushNow])
 
   const lastErrorRef = useRef<string | null>(null)
   useEffect(() => { lastErrorRef.current = lastError }, [lastError])
@@ -175,36 +160,6 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
     checkCloudOnLoad()
   }, [checkCloudOnLoad])
 
-  // Globale Änderungen: Dirty markieren + Auto-Push (einmal pro Hook, wirkt app-weit über Events)
-  useEffect(() => {
-    const onChange = () => {
-      if (loadCloudConfig()) {
-        markDirty()
-        scheduleAutoPush()
-      }
-    }
-    window.addEventListener(ENTRIES_CHANGED_EVENT, onChange)
-    window.addEventListener(ACTIVITIES_CHANGED_EVENT, onChange)
-    window.addEventListener(SETTINGS_CHANGED_EVENT, onChange)
-    return () => {
-      window.removeEventListener(ENTRIES_CHANGED_EVENT, onChange)
-      window.removeEventListener(ACTIVITIES_CHANGED_EVENT, onChange)
-      window.removeEventListener(SETTINGS_CHANGED_EVENT, onChange)
-    }
-  }, [scheduleAutoPush])
-
-  // Warnung beim Schließen, wenn ungespeicherte Änderungen (kein Cloud-Upload seit letzter Änderung)
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty() && loadCloudConfig()) {
-        e.preventDefault()
-        e.returnValue = '' // Chrome/Edge verlangen returnValue
-      }
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [])
-
   const dismissCloudQuestion = useCallback(() => setCloudQuestion(null), [])
 
   return {
@@ -213,7 +168,6 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
     lastResult,
     lastError,
     pushNow,
-    scheduleAutoPush,
     checkCloudOnLoad,
     applyCloudData,
     cloudQuestion,
