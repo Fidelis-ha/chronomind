@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { QuickTap } from '@/components/entries/QuickTap'
 import { QuickEntry } from '@/components/entries/QuickEntry'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
@@ -145,6 +146,8 @@ export function EntriesClient() {
           </Button>
         </div>
       </div>
+
+      <QuickTap onCreate={handleCreate} recentTitles={recentTitles} />
 
       <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
 
