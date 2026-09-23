@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { nanoid } from '@/lib/utils'
+import {
+  type Activity,
+  loadActivities,
+  mergeWithRecent,
+  ACTIVITIES_CHANGED_EVENT
+} from '@/lib/activities'
+import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 
 interface QuickTapProps {
   onCreate: (entry: TimeEntry) => void
@@ -17,29 +24,6 @@ interface RunningEntry {
 }
 
 const STORAGE_KEY = 'chronomind-running-entry'
-
-const DEFAULT_ACTIVITIES: { title: string; icon: string }[] = [
-  { title: 'Arbeit', icon: '💼' },
-  { title: 'Meeting', icon: '👥' },
-  { title: 'Pause', icon: '☕' },
-  { title: 'Projekt', icon: '📋' },
-  { title: 'Sonstiges', icon: '📌' },
-  { title: 'Fahren', icon: '🚗' }
-]
-
-const ACTIVITY_ICONS: Record<string, string> = {
-  Arbeit: '💼', Meeting: '👥', Pause: '☕', Projekt: '📋',
-  Sonstiges: '📌', Fahren: '🚗', Büro: '🏢', Telefon: '📞',
-  Einkaufshilfe: '🛒', Freizeit: '🌳', Sport: '🏃', Hausarbeit: '🏠'
-}
-
-function iconFor(title: string): string {
-  const t = title.toLowerCase()
-  for (const [k, v] of Object.entries(ACTIVITY_ICONS)) {
-    if (t.includes(k.toLowerCase())) return v
-  }
-  return '⏱️'
-}
 
 function fmtElapsed(startIso: string, now: number): string {
   const sec = Math.max(0, Math.floor((now - new Date(startIso).getTime()) / 1000))
@@ -60,16 +44,32 @@ function fmtSaved(sec: number): string {
 export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
   const [running, setRunning] = useState<RunningEntry | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [editing, setEditing] = useState(false)
   const onCreateRef = useRef(onCreate)
   onCreateRef.current = onCreate
+  const recentKey = recentTitles.join('|')
 
-  // Laufenden Eintrag beim Start laden (überlebt Reload)
+  const refreshActivities = useCallback(() => {
+    setActivities(mergeWithRecent(loadActivities(), recentTitles))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recentKey])
+
+  // Aktivitäten + laufenden Eintrag beim Start laden
   useEffect(() => {
+    refreshActivities()
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) setRunning(JSON.parse(raw))
     } catch { /* ignorieren */ }
-  }, [])
+    const handler = () => refreshActivities()
+    window.addEventListener(ACTIVITIES_CHANGED_EVENT, handler)
+    window.addEventListener('storage', handler)
+    return () => {
+      window.removeEventListener(ACTIVITIES_CHANGED_EVENT, handler)
+      window.removeEventListener('storage', handler)
+    }
+  }, [refreshActivities])
 
   // Timer ticken
   useEffect(() => {
@@ -108,7 +108,8 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
     return running
   }
 
-  const handleTap = (title: string) => {
+  const handleTap = (activity: Activity) => {
+    const title = activity.title
     const nowIso = new Date().toISOString()
     const wasRunning = finishRunning(nowIso)
 
@@ -118,11 +119,10 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
       return
     }
 
-    // Neue Aktivität starten
-    const isDefault = DEFAULT_ACTIVITIES.some(a => a.title === title)
+    // Neue Aktivität starten (Kategorie = Titel, wenn Icon gepflegt)
     const next: RunningEntry = {
       title,
-      category: isDefault ? title : null,
+      category: activity.icon !== '⏱️' ? title : null,
       started_at: nowIso
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
@@ -135,13 +135,6 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
     finishRunning(new Date().toISOString())
     setRunning(null)
   }
-
-  // Kacheln: häufige Titel zuerst, dann Defaults (ohne Duplikate)
-  const activityTitles = [
-    ...recentTitles.slice(0, 4),
-    ...DEFAULT_ACTIVITIES.map(a => a.title)
-  ]
-  const tiles = Array.from(new Set(activityTitles)).slice(0, 10)
 
   return (
     <div className="mb-6">
@@ -168,31 +161,49 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
         </div>
       )}
 
-      {/* Aktivitäts-Kacheln */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {tiles.map(title => {
-          const active = running?.title === title
-          return (
-            <button
-              key={title}
-              onClick={() => handleTap(title)}
-              className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-4 transition-transform active:scale-95 ${
-                active
-                  ? 'border-primary bg-primary/10 shadow-sm'
-                  : 'border-border bg-card hover:bg-accent'
-              }`}
-            >
-              <span className="text-2xl leading-none">{iconFor(title)}</span>
-              <span className="text-sm font-medium text-center leading-tight">{title}</span>
-              {active && <span className="text-[10px] text-primary font-semibold">● läuft</span>}
-            </button>
-          )
-        })}
+      {/* Kopfzeile mit Bearbeiten-Link */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aktivitäten</span>
+        <button
+          onClick={() => setEditing(!editing)}
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+        >
+          {editing ? 'Fertig' : 'Anpassen'}
+        </button>
       </div>
 
-      <p className="mt-2 text-xs text-muted-foreground px-1">
-        Antippen = Start · Nochmal tippen = Ende & nächster Start · Fertig-Button = nur Ende
-      </p>
+      {/* Bearbeiten-Modus */}
+      {editing ? (
+        <ActivitiesEditor onChanged={() => refreshActivities()} />
+      ) : (
+        <>
+          {/* Aktivitäts-Kacheln */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {activities.slice(0, 12).map(a => {
+              const active = running?.title === a.title
+              return (
+                <button
+                  key={a.title}
+                  onClick={() => handleTap(a)}
+                  className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-4 transition-transform active:scale-95 ${
+                    active
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border bg-card hover:bg-accent'
+                  }`}
+                >
+                  <span className="text-2xl leading-none">{a.icon}</span>
+                  <span className="text-sm font-medium text-center leading-tight">{a.title}</span>
+                  {active && <span className="text-[10px] text-primary font-semibold">● läuft</span>}
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="mt-2 text-xs text-muted-foreground px-1">
+            Antippen = Start · Nochmal tippen = Ende &amp; nächster Start · Fertig-Button = nur Ende
+          </p>
+        </>
+      )}
     </div>
   )
 }

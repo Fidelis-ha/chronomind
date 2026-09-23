@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
+import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -270,6 +271,15 @@ export default function SettingsPage() {
               </>
             )}
           </div>
+        </div>
+
+        {/* Activities */}
+        <div className="border-t pt-6">
+          <h2 className="text-lg font-semibold mb-1">Aktivitäten</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Diese Kacheln erscheinen auf der Heute- und Einträge-Seite zum schnellen Start/Stop der Zeiterfassung.
+          </p>
+          <ActivitiesEditor />
         </div>
 
         {/* Time Settings */}
