@@ -191,7 +191,7 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground px-1">
-        Antippen = Start · Nochmal tippen = Ende & nächster Start · „Fertig" = nur Ende
+        Antippen = Start · Nochmal tippen = Ende & nächster Start · Fertig-Button = nur Ende
       </p>
     </div>
   )
