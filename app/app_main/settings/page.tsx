@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
+import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -89,6 +90,9 @@ export default function SettingsPage() {
     setSaving(true)
     try {
       saveSettings(settings)
+      localStorage.setItem('chronomind_settings', JSON.stringify(settings))
+      markDirty()
+      window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT))
       toast.success('Einstellungen gespeichert')
     } catch {
       toast.error('Fehler beim Speichern')

@@ -7,6 +7,7 @@ import { fontMono, fontSans } from '@/lib/fonts'
 import { cn } from '@/lib/utils'
 import { TailwindIndicator } from '@/components/tailwind-indicator'
 import { Providers } from '@/components/providers'
+import { PwaRegister } from '@/components/pwa-register'
 import { Header } from '@/components/header'
 
 export const metadata: Metadata = {
@@ -15,12 +16,18 @@ export const metadata: Metadata = {
     template: `%s - ChronoMind`
   },
   description: 'KI-gestützte Zeiterfassungs-App',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ChronoMind'
+  },
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' }
   ],
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icons/icon-192.png',
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png'
   }
@@ -42,6 +49,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         )}
       >
         <Toaster />
+        <PwaRegister />
         <Providers attribute="class" defaultTheme="system" enableSystem>
           <div className="flex min-h-screen flex-col">
             {/* @ts-ignore */}

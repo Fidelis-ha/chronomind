@@ -10,6 +10,7 @@ import {
   mergeWithRecent,
   ACTIVITIES_CHANGED_EVENT
 } from '@/lib/activities'
+import { markDirty } from '@/lib/dirty-state'
 import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
 
 interface QuickTapProps {
@@ -126,6 +127,7 @@ export function QuickTap({ onCreate, recentTitles = [] }: QuickTapProps) {
       started_at: nowIso
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    markDirty() // laufender Timer wäre beim Schließen verloren -> Warnung nötig
     setRunning(next)
     setNow(Date.now())
     if (wasRunning) toast(`Jetzt: ${title}`, { icon: '▶️' })

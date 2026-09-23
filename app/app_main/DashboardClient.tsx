@@ -37,12 +37,6 @@ export default function DashboardClient() {
     setLoading(false)
   }, [])
 
-  // Auto-Push nach lokalen Änderungen
-  useEffect(() => {
-    if (entries.length > 0) cloud.scheduleAutoPush?.()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries.length])
-
   const handleDelete = (id: string) => {
     if (!confirm('Eintrag wirklich löschen?')) return
     const updated = entries.filter(e => e.id !== id)

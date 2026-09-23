@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
-import { loadEntries, saveEntries } from '@/lib/entries-store'
-import { loadActivities, saveActivities, type Activity } from '@/lib/activities'
+import { loadEntries, saveEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
+import { loadActivities, saveActivities, type Activity, ACTIVITIES_CHANGED_EVENT } from '@/lib/activities'
+import { isDirty, markDirty, clearDirty, SETTINGS_CHANGED_EVENT } from '@/lib/dirty-state'
 import {
   loadCloudConfig,
   pushToCloud,
@@ -75,6 +76,7 @@ export function useCloudSync(): CloudSyncState & {
       if (result.ok) {
         setLastResult('ok')
         setLastError(null)
+        clearDirty() // Speicherung = Cloud-Upload erfolgt
       } else {
         setLastResult('error')
         setLastError(result.error || 'Unbekannter Fehler')
@@ -154,6 +156,9 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
             setTimeout(() => window.location.reload(), 800)
           }
         })
+      } else if (comparison === 'lokal-neuer') {
+        // Lokal neuer (z.B. Änderungen vor dem letzten Schließen) → still hochladen
+        pushNow()
       }
     } catch (err) {
       setLastResult('error')
@@ -169,6 +174,36 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
     checkRan.current = true
     checkCloudOnLoad()
   }, [checkCloudOnLoad])
+
+  // Globale Änderungen: Dirty markieren + Auto-Push (einmal pro Hook, wirkt app-weit über Events)
+  useEffect(() => {
+    const onChange = () => {
+      if (loadCloudConfig()) {
+        markDirty()
+        scheduleAutoPush()
+      }
+    }
+    window.addEventListener(ENTRIES_CHANGED_EVENT, onChange)
+    window.addEventListener(ACTIVITIES_CHANGED_EVENT, onChange)
+    window.addEventListener(SETTINGS_CHANGED_EVENT, onChange)
+    return () => {
+      window.removeEventListener(ENTRIES_CHANGED_EVENT, onChange)
+      window.removeEventListener(ACTIVITIES_CHANGED_EVENT, onChange)
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, onChange)
+    }
+  }, [scheduleAutoPush])
+
+  // Warnung beim Schließen, wenn ungespeicherte Änderungen (kein Cloud-Upload seit letzter Änderung)
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty() && loadCloudConfig()) {
+        e.preventDefault()
+        e.returnValue = '' // Chrome/Edge verlangen returnValue
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [])
 
   const dismissCloudQuestion = useCallback(() => setCloudQuestion(null), [])
 
