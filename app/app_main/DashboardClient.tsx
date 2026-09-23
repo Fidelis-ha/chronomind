@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { QuickEntry } from '@/components/entries/QuickEntry'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { nanoid } from '@/lib/utils'
 
 function formatTotalDuration(entries: TimeEntry[]): string {
   const totalSeconds = entries.reduce(
@@ -41,7 +41,7 @@ function saveEntries(entries: TimeEntry[]) {
 export default function DashboardClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     setEntries(loadEntries())
@@ -59,8 +59,12 @@ export default function DashboardClient() {
     const updated = [entry, ...entries]
     setEntries(updated)
     saveEntries(updated)
-    setShowForm(false)
+    setShowDetails(false)
   }
+
+  const recentTitles = Array.from(
+    new Set(entries.slice(0, 30).map(e => e.title))
+  ).filter(Boolean)
 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
@@ -70,13 +74,15 @@ export default function DashboardClient() {
           <Button variant="outline" asChild>
             <Link href="/app_main/entries">Alle Einträge</Link>
           </Button>
-          <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Abbrechen' : '+ Eintrag'}
+          <Button variant="outline" onClick={() => setShowDetails(!showDetails)}>
+            {showDetails ? 'Details ausblenden' : 'Detailliert…'}
           </Button>
         </div>
       </div>
 
-      {showForm && (
+      <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
+
+      {showDetails && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <EntryForm onCreate={handleCreate} />
         </div>

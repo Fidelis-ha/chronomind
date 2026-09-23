@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { QuickEntry } from '@/components/entries/QuickEntry'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
@@ -92,7 +93,7 @@ function downloadJSON(json: string, filename: string) {
 }
 
 export function EntriesClient() {
-  const [allEntries] = useState<TimeEntry[]>(loadEntries)
+  const [allEntries, setAllEntries] = useState<TimeEntry[]>(loadEntries)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [showForm, setShowForm] = useState(false)
 
@@ -104,61 +105,49 @@ export function EntriesClient() {
   const handleDelete = (id: string) => {
     if (!confirm('Eintrag wirklich loeschen?')) return
     const updated = allEntries.filter(e => e.id !== id)
+    setAllEntries(updated)
     saveEntries(updated)
-    window.location.reload()
   }
 
   const handleCreate = (entry: TimeEntry) => {
     const updated = [entry, ...loadEntries()]
     saveEntries(updated)
     setShowForm(false)
-    window.location.reload()
   }
-
-  const handleExportCSV = useCallback(() => {
-    const csv = entriesToCSV(allEntries)
-    const dateStr = new Date().toISOString().split('T')[0]
-    downloadCSV(csv, `chronomind-entries-${dateStr}.csv`)
-  }, [allEntries])
 
   const handleExportFilteredCSV = useCallback(() => {
     const csv = entriesToCSV(filteredEntries)
     downloadCSV(csv, `chronomind-entries-${date}.csv`)
   }, [filteredEntries, date])
 
-  const handleExportJSON = useCallback(() => {
-    const json = entriesToJSON(allEntries)
-    const dateStr = new Date().toISOString().split('T')[0]
-    downloadJSON(json, `chronomind-entries-${dateStr}.json`)
-  }, [allEntries])
-
   const handleExportFilteredJSON = useCallback(() => {
     const json = entriesToJSON(filteredEntries)
     downloadJSON(json, `chronomind-entries-${date}.json`)
   }, [filteredEntries, date])
 
+  const recentTitles = Array.from(
+    new Set(allEntries.slice(0, 30).map(e => e.title))
+  ).filter(Boolean)
+
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Zeiteintraege</h1>
+        <h1 className="text-2xl font-bold">Zeiteinträge</h1>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={handleExportCSV} title="Alle Eintraege exportieren">
-            CSV (Alle)
+          <Button variant="outline" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Details ausblenden' : 'Detailliert…'}
           </Button>
-          <Button variant="outline" onClick={handleExportFilteredCSV} title="Gefilterte Eintraege exportieren">
-            CSV (Gefiltert)
+          <Button variant="outline" onClick={handleExportFilteredCSV} title="Gefilterte Einträge als CSV exportieren">
+            CSV
           </Button>
-          <Button variant="outline" onClick={handleExportJSON} title="Alle Eintraege als JSON exportieren">
-            JSON (Alle)
-          </Button>
-          <Button variant="outline" onClick={handleExportFilteredJSON} title="Gefilterte Eintraege als JSON exportieren">
-            JSON (Gefiltert)
-          </Button>
-          <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Abbrechen' : '+ Neuer Eintrag'}
+          <Button variant="outline" onClick={handleExportFilteredJSON} title="Gefilterte Einträge als JSON exportieren">
+            JSON
           </Button>
         </div>
       </div>
+
+      <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
+
       {showForm && (
         <div className="mb-6 p-4 border rounded-lg bg-card">
           <EntryForm onCreate={handleCreate} />
