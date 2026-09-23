@@ -53,7 +53,6 @@ export function DurationChart({ data }: DurationChartProps) {
             const date = new Date(value)
             return date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })
           }}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={(value: unknown) => [`${Number(value).toFixed(1)} Stunden`, 'Dauer'] as any}
           contentStyle={{
             backgroundColor: 'hsl(var(--card))',
@@ -116,7 +115,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
           paddingAngle={2}
           dataKey="value"
           nameKey="name"
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Typ-Assertion nötig, da recharts-format value als unknown typisiert ist
           label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%` as any}
           labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
         >
