@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import type { Viewport } from 'next/dist/lib/metadata/types/extra-types'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'ChronoMind'
   },
+  viewport: {
+    viewportFit: 'cover'
+  } satisfies Viewport,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' }
@@ -54,7 +58,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <div className="flex min-h-screen flex-col">
             {/* @ts-ignore */}
             <Header />
-            <main className="flex flex-1 flex-col bg-muted/50">{children}</main>
+            <div className="flex flex-1 flex-col bg-muted/50">{children}</div>
           </div>
           <TailwindIndicator />
         </Providers>
