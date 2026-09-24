@@ -39,7 +39,7 @@ export const DEFAULT_MAIN_CATEGORIES: MainCategory[] = [
   // Grauschwarz statt reinem Schwarz: im Dark Mode via heller Kante sichtbar
   { id: 'cat-soziale', name: 'Soziale', color: '#374151', subs: [] },
   { id: 'cat-geistlich', name: 'Geistlich', color: '#22c55e', subs: [] },
-  { id: 'cat-vergnuegen', name: 'Vergnuegen', color: '#7dd3fc', subs: [] },
+  { id: 'cat-vergnuegen', name: 'Vergnügen', color: '#7dd3fc', subs: [] },
   { id: 'cat-eigene-versorgung', name: 'Eigene Versorgung', color: '#d1d5db', subs: [] }
 ]
 
