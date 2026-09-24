@@ -4,7 +4,7 @@
 // WICHTIG: Secret-Felder werden vor dem Upload aus den Settings entfernt.
 
 import { loadEntries } from '@/lib/entries-store'
-import { loadActivities } from '@/lib/activities'
+import { loadCategories } from '@/lib/categories'
 import { type CloudPayload } from '@/lib/cloud-sync'
 
 export const SETTINGS_STORAGE_KEY = 'chronomind_settings'
@@ -37,7 +37,8 @@ export function buildPayload(): Omit<CloudPayload, 'timestamp' | 'device'> {
   } else {
     settings = {}
   }
-  return { version: 1, entries: loadEntries(), settings, activities: loadActivities() }
+  // Version 2: 3-Ebenen-Kategorien unter 'categories' (v1 nutzte 'activities')
+  return { version: 2, entries: loadEntries(), settings, categories: loadCategories() }
 }
 
 let changeCounter = 0

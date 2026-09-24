@@ -17,7 +17,7 @@ import {
   pullFromCloud
 } from '@/lib/cloud-sync'
 import { loadEntries } from '@/lib/entries-store'
-import { loadActivities } from '@/lib/activities'
+import { loadCategories } from '@/lib/categories'
 
 const PROVIDERS = [
   { id: 'nextcloud', label: 'Nextcloud (empfohlen)' },
@@ -65,10 +65,10 @@ export function CloudSyncSettings() {
       let settings: unknown = {}
       try { settings = JSON.parse(localStorage.getItem('chronomind_settings') || '{}') } catch { /* ignore */ }
       const result = await pushToCloud(config, {
-        version: 1,
+        version: 2,
         entries: loadEntries(),
         settings,
-        activities: loadActivities()
+        categories: loadCategories()
       })
       if (result.ok) {
         saveCloudConfig(config)
@@ -99,7 +99,9 @@ export function CloudSyncSettings() {
       saveCloudConfig(config)
       if (Array.isArray(result.data.entries)) localStorage.setItem('chronomind_entries', JSON.stringify(result.data.entries))
       if (result.data.settings && typeof result.data.settings === 'object') localStorage.setItem('chronomind_settings', JSON.stringify(result.data.settings))
-      if (Array.isArray(result.data.activities)) localStorage.setItem('chronomind_activities', JSON.stringify(result.data.activities))
+      // v1-Cloud-Stände ohne categories: lokale Kategorien bleiben unangetastet,
+      // werden beim nächsten Push als v2 hochgeladen.
+      if (Array.isArray(result.data.categories)) localStorage.setItem('chronomind_categories', JSON.stringify(result.data.categories))
       toast.success('Cloud-Stand übernommen')
       setTimeout(() => window.location.reload(), 600)
     } finally {

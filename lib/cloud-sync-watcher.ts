@@ -7,7 +7,7 @@
 
 import { markDirty, clearDirty, isDirty, SETTINGS_CHANGED_EVENT } from '@/lib/dirty-state'
 import { ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
-import { ACTIVITIES_CHANGED_EVENT } from '@/lib/activities'
+import { CATEGORIES_CHANGED_EVENT } from '@/lib/categories'
 import { loadCloudConfig, pushToCloud } from '@/lib/cloud-sync'
 import { buildPayload, getChangeCounter, bumpChangeCounter, isTimerRunning } from '@/lib/cloud-sync-payload'
 
@@ -60,7 +60,7 @@ export function initCloudSyncWatcher(): void {
     scheduleAutoPush()
   }
   window.addEventListener(ENTRIES_CHANGED_EVENT, onChange)
-  window.addEventListener(ACTIVITIES_CHANGED_EVENT, onChange)
+  window.addEventListener(CATEGORIES_CHANGED_EVENT, onChange)
   window.addEventListener(SETTINGS_CHANGED_EVENT, onChange)
 
   // Warnung beim Schließen nur bei ungespeicherten Änderungen UND

@@ -1,7 +1,7 @@
 'use client'
 
 // Cloud-Sync für Chronomind: Ein-/Ausgangspunkt für alle Cloud-Operationen.
-// Datenformat: { version, timestamp, device, entries, settings, activities }
+// Datenformat: { version, timestamp, device, entries, settings, categories }
 
 export type CloudProvider = 'nextcloud' | 'webdav' | 's3'
 
@@ -28,7 +28,7 @@ export interface CloudPayload {
   device: string
   entries: unknown[]
   settings: unknown
-  activities: unknown[]
+  categories: unknown[]
 }
 
 const SYNC_CONFIG_KEY = 'chronomind_cloud_config'

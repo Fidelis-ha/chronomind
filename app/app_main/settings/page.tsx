@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
-import { ActivitiesEditor } from '@/components/entries/ActivitiesEditor'
+import { CategorySettings } from '@/components/settings/CategorySettings'
 import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
 import { InstallHint } from '@/components/settings/InstallHint'
 import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
@@ -279,13 +279,13 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Activities */}
+        {/* Kategorien */}
         <div className="border-t pt-6">
-          <h2 className="text-lg font-semibold mb-1">Aktivitäten</h2>
+          <h2 className="text-lg font-semibold mb-1">Kategorien</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Diese Kacheln erscheinen auf der Heute- und Einträge-Seite zum schnellen Start/Stop der Zeiterfassung.
+            Verwalte Haupt- und Unterkategorien (bis zu 3 Ebenen). Diese erscheinen als Kacheln und Chips zum schnellen Start der Zeiterfassung.
           </p>
-          <ActivitiesEditor />
+          <CategorySettings />
         </div>
 
         {/* Time Settings */}
@@ -337,7 +337,7 @@ export default function SettingsPage() {
         <div className="border-t pt-6">
           <h2 className="text-lg font-semibold mb-1">Cloud-Speicher</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Aktivitäten werden dann automatisch synchronisiert.
+            Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Kategorien werden dann automatisch synchronisiert.
           </p>
           <CloudSyncSettings />
         </div>

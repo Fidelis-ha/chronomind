@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { loadEntries, saveEntries } from '@/lib/entries-store'
-import { loadActivities, saveActivities, type Activity } from '@/lib/activities'
+import { saveCategories, type MainCategory } from '@/lib/categories'
 import { clearDirty } from '@/lib/dirty-state'
 import { buildPayload, getChangeCounter, isTimerRunning } from '@/lib/cloud-sync-payload'
 import {
@@ -95,8 +95,11 @@ export function useCloudSync(): CloudSyncState & {
     if (payload.settings && typeof payload.settings === 'object') {
       localStorage.setItem('chronomind_settings', JSON.stringify(payload.settings))
     }
-    if (Array.isArray(payload.activities)) {
-      saveActivities(payload.activities as Activity[])
+    // v1-Cloud-Stände ohne categories: lokale Kategorien bleiben unangetastet,
+    // werden beim nächsten Push als v2 hochgeladen.
+    if (Array.isArray(payload.categories)) {
+      // saveCategories schreibt 'chronomind_categories' und dispatcht CATEGORIES_CHANGED_EVENT
+      saveCategories(payload.categories as MainCategory[])
     }
   }, [])
 
