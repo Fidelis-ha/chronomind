@@ -393,6 +393,20 @@ export function QuickTap({ onCreate }: QuickTapProps) {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Ebene 2: direkter Start der Unterkategorie ohne Kind – primäre Aktion */}
+          {dialogSub && (
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                if (!dialogMain) return
+                selectPath([dialogMain.name, dialogSub.name], dialogSub.name)
+              }}
+            >
+              Mit {dialogSub.name} direkt starten
+            </Button>
+          )}
+
           <div className="max-h-72 overflow-y-auto -mx-1 px-1">
             {currentSubs.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
@@ -401,7 +415,6 @@ export function QuickTap({ onCreate }: QuickTapProps) {
             ) : (
               <div className="divide-y divide-border rounded-lg border border-border">
                 {currentSubs.map((sub, idx) => {
-                  const hasChildren = sub.children.length > 0
                   const isActive = running?.category === categoryPathToString(
                     dialogSub
                       ? [dialogMain?.name || '', dialogSub.name, sub.name]
@@ -411,13 +424,14 @@ export function QuickTap({ onCreate }: QuickTapProps) {
                     <button
                       key={`${idx}-${sub.name}`}
                       onClick={() => {
-                        if (hasChildren) {
+                        if (!dialogSub) {
+                          // Ebene 1: immer hinein navigieren (auch ohne Kinder),
+                          // damit Ebene 3 erreichbar bleibt / angelegt werden kann
                           setDialogSub(sub)
                           setNewSubName('')
-                        } else if (dialogSub) {
-                          selectPath([dialogMain?.name || '', dialogSub.name, sub.name], sub.name)
                         } else {
-                          selectPath([dialogMain?.name || '', sub.name], sub.name)
+                          // Ebene 2 → Kind (Ebene 3) startet direkt
+                          selectPath([dialogMain?.name || '', dialogSub.name, sub.name], sub.name)
                         }
                       }}
                       className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-left transition-colors ${
@@ -425,17 +439,17 @@ export function QuickTap({ onCreate }: QuickTapProps) {
                       }`}
                     >
                       <span className="truncate">{sub.name}</span>
-                      {hasChildren ? (
-                        // Branch: es gibt Kinder → hinein navigieren
-                        <span className="flex items-center gap-1 text-muted-foreground text-xs shrink-0">
-                          {sub.children.length}
-                          <ChevronRightIcon />
-                        </span>
-                      ) : (
-                        // Leaf: klar als Start-Aktion gekennzeichnet
+                      {dialogSub ? (
+                        // Ebene 3 = letzte Ebene: klar als Start-Aktion gekennzeichnet
                         <span className="flex items-center gap-1 text-primary text-xs font-medium shrink-0">
                           <PlayIcon />
                           starten
+                        </span>
+                      ) : (
+                        // Ebene 1: immer drill-down (Kinderzahl, auch 0)
+                        <span className="flex items-center gap-1 text-muted-foreground text-xs shrink-0">
+                          {sub.children.length}
+                          <ChevronRightIcon />
                         </span>
                       )}
                     </button>
@@ -474,21 +488,19 @@ export function QuickTap({ onCreate }: QuickTapProps) {
                 Anlegen
               </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                if (!dialogMain) return
-                if (dialogSub) {
-                  selectPath([dialogMain.name, dialogSub.name], dialogSub.name)
-                } else {
+            {!dialogSub && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  if (!dialogMain) return
                   selectPath([dialogMain.name], dialogMain.name)
-                }
-              }}
-            >
-              {dialogSub ? `Mit ${dialogSub.name} starten` : 'Ohne Unterkategorie starten'}
-            </Button>
+                }}
+              >
+                Ohne Unterkategorie starten
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
