@@ -226,8 +226,7 @@ export function CategorySettings() {
                         }}
                         ariaLabel={`Name von ${c.name} / ${s.name}`}
                       />
-                      {s.children.length > 0 && (
-                        <Button
+                      <Button
                           variant="ghost"
                           size="sm"
                           className="min-h-9 px-2"
@@ -236,7 +235,6 @@ export function CategorySettings() {
                         >
                           {expandedSubs.has(subKey) ? '▾' : '▸'} {s.children.length}
                         </Button>
-                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -251,6 +249,9 @@ export function CategorySettings() {
 
                     {expandedSubs.has(subKey) && (
                       <div className="ml-3 border-l border-border pl-3 space-y-1.5">
+                        {s.children.length === 0 && (
+                          <p className="text-xs text-muted-foreground">Noch keine Unterunterkategorien.</p>
+                        )}
                         {s.children.map((ch, childIdx) => (
                           <div key={childIdx} className="flex items-center gap-2">
                             <InlineName
