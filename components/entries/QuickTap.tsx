@@ -246,14 +246,18 @@ export function QuickTap({ onCreate }: QuickTapProps) {
       }
       // childIdx undefined = ans Ende der Kinder anhängen
       addSub({ mainId: main.id, subIdx }, name)
+      // Ebene 3 = letzte Ebene: direkt starten (entspricht dem Chip-Verhalten)
       selectPath([main.name, dialogSub.name, name], name)
+      setNewSubName('')
     } else {
       const main = categories.find(c => c.id === dialogMain.id) || dialogMain
       // subIdx undefined = neue Ebene-1-Unterkategorie ans Ende anhängen
       addSub({ mainId: main.id }, name)
-      selectPath([main.name, name], name)
+      // Im Dialog bleiben und in die neue Unterkategorie navigieren,
+      // damit optional eine Ebene-3-Sub angelegt/gewählt werden kann
+      setDialogSub({ name: sanitizeName(name), children: [] })
+      setNewSubName('')
     }
-    setNewSubName('')
   }
 
   const currentSubs = useMemo<SubCategory[]>(() => {
