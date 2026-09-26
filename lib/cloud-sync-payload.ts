@@ -4,6 +4,7 @@
 // WICHTIG: Secret-Felder werden vor dem Upload aus den Settings entfernt.
 
 import { loadEntries } from '@/lib/entries-store'
+import { loadPlans } from '@/lib/plans'
 import { loadCategories } from '@/lib/categories'
 import { type CloudPayload } from '@/lib/cloud-sync'
 
@@ -37,8 +38,8 @@ export function buildPayload(): Omit<CloudPayload, 'timestamp' | 'device'> {
   } else {
     settings = {}
   }
-  // Version 2: 3-Ebenen-Kategorien unter 'categories' (v1 nutzte 'activities')
-  return { version: 2, entries: loadEntries(), settings, categories: loadCategories() }
+  // Version 3: Pläne unter 'plans' (v2: Kategorien, v1: activities).
+  return { version: 3, entries: loadEntries(), plans: loadPlans(), settings, categories: loadCategories() }
 }
 
 let changeCounter = 0

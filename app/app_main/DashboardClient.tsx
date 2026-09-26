@@ -5,6 +5,7 @@ import { QuickTap } from '@/components/entries/QuickTap'
 import { QuickEntry } from '@/components/entries/QuickEntry'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
+import { Timeline } from '@/components/timeline/Timeline'
 import { type TimeEntry } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -22,7 +23,7 @@ function formatTotalDuration(entries: TimeEntry[]): string {
   return `${minutes}m`
 }
 
-import { loadEntries, saveEntries } from '@/lib/entries-store'
+import { loadEntries, saveEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
 import { isDirty, DIRTY_CHANGED_EVENT } from '@/lib/dirty-state'
 import { useCloudSync } from '@/lib/hooks/useCloudSync'
 import { isTimerRunning } from '@/lib/cloud-sync-payload'
@@ -45,8 +46,14 @@ export default function DashboardClient() {
       setDirty(isDirty())
       setTimerRunning(isTimerRunning())
     }
+    // Listen-Refresh, wenn der Zeitstrahl o.ä. Einträge direkt im Store ändert
+    const onEntriesChanged = () => setEntries(loadEntries())
     window.addEventListener(DIRTY_CHANGED_EVENT, onDirtyChanged)
-    return () => window.removeEventListener(DIRTY_CHANGED_EVENT, onDirtyChanged)
+    window.addEventListener(ENTRIES_CHANGED_EVENT, onEntriesChanged)
+    return () => {
+      window.removeEventListener(DIRTY_CHANGED_EVENT, onDirtyChanged)
+      window.removeEventListener(ENTRIES_CHANGED_EVENT, onEntriesChanged)
+    }
   }, [])
 
   const handleDelete = (id: string) => {
@@ -121,6 +128,9 @@ export default function DashboardClient() {
         </div>
       </div>
 
+      {/* Zeitstrahl als Haupt-Element */}
+      <Timeline />
+
       <QuickTap onCreate={handleCreate} recentTitles={recentTitles} />
 
       <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
@@ -131,31 +141,47 @@ export default function DashboardClient() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-muted-foreground">
-          {entries.length} Einträge · {formatTotalDuration(entries)}
-        </span>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-8 text-muted-foreground">
-          Wird geladen...
+      {/* Einträge-Liste: standardmäßig eingeklappt */}
+      <details className="group mb-6 rounded-lg border bg-card">
+        <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-4 py-3 text-sm font-semibold list-none [&::-webkit-details-marker]:hidden">
+          <span>
+            Einträge ({entries.length}) · {formatTotalDuration(entries)}
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-open:rotate-90"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </summary>
+        <div className="px-4 pb-4 border-t border-border pt-3">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Wird geladen...
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Noch keine Einträge heute
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {entries.map(entry => (
+                <TimeEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : entries.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          Noch keine Einträge heute
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {entries.map(entry => (
-            <TimeEntryCard
-              key={entry.id}
-              entry={entry}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      </details>
     </div>
   )
 }

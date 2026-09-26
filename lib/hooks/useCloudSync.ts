@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { loadEntries, saveEntries } from '@/lib/entries-store'
 import { saveCategories, type MainCategory } from '@/lib/categories'
+import { loadPlans, savePlans, type TimePlan } from '@/lib/plans'
 import { clearDirty } from '@/lib/dirty-state'
 import { buildPayload, getChangeCounter, isTimerRunning } from '@/lib/cloud-sync-payload'
 import {
@@ -101,6 +102,8 @@ export function useCloudSync(): CloudSyncState & {
       // saveCategories schreibt 'chronomind_categories' und dispatcht CATEGORIES_CHANGED_EVENT
       saveCategories(payload.categories as MainCategory[])
     }
+    // v2-Cloud-Stände ohne plans: als leere Pläne-Liste übernehmen
+    savePlans(Array.isArray(payload.plans) ? (payload.plans as TimePlan[]) : [])
   }, [])
 
 function newestEntryIso(entries: TimeEntry[]): string | null {
@@ -110,6 +113,23 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
     if (e.created_at && (!newest || e.created_at > newest)) newest = e.created_at
   }
   return newest
+}
+
+function newestPlanIso(plans: TimePlan[]): string | null {
+  let newest: string | null = null
+  for (const p of plans) {
+    if (p.created_at && (!newest || p.created_at > newest)) newest = p.created_at
+  }
+  return newest
+}
+
+/** Neuester lokaler Änderungszeitpunkt über Entries UND Pläne (max) */
+function newestLocalIso(entries: TimeEntry[], plans: TimePlan[]): string | null {
+  const e = newestEntryIso(entries)
+  const p = newestPlanIso(plans)
+  if (!e) return p
+  if (!p) return e
+  return e > p ? e : p
 }
 
 /** Beim Laden der Seite: Cloud-Stand prüfen */
@@ -126,7 +146,7 @@ function newestEntryIso(entries: TimeEntry[]): string | null {
       }
       setLastResult('ok')
       const cloudTs = result.data?.timestamp || null
-      const localNewest = newestEntryIso(loadEntries())
+      const localNewest = newestLocalIso(loadEntries(), loadPlans())
       const comparison = compareWithCloud(localNewest, cloudTs)
       if (comparison === 'cloud-neuer' && result.data) {
         // Cloud ist neuer → Nutzer fragen

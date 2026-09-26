@@ -16,8 +16,7 @@ import {
   pushToCloud,
   pullFromCloud
 } from '@/lib/cloud-sync'
-import { loadEntries } from '@/lib/entries-store'
-import { loadCategories } from '@/lib/categories'
+import { buildPayload } from '@/lib/cloud-sync-payload'
 
 const PROVIDERS = [
   { id: 'nextcloud', label: 'Nextcloud (empfohlen)' },
@@ -62,14 +61,8 @@ export function CloudSyncSettings() {
   const handlePush = async () => {
     setPushing(true)
     try {
-      let settings: unknown = {}
-      try { settings = JSON.parse(localStorage.getItem('chronomind_settings') || '{}') } catch { /* ignore */ }
-      const result = await pushToCloud(config, {
-        version: 2,
-        entries: loadEntries(),
-        settings,
-        categories: loadCategories()
-      })
+      // buildPayload() statt Handbau: enthält auch Pläne (v3) und stript Settings-Secrets
+      const result = await pushToCloud(config, buildPayload())
       if (result.ok) {
         saveCloudConfig(config)
         window.dispatchEvent(new CustomEvent('chronomind:cloud-config-changed'))
@@ -102,6 +95,8 @@ export function CloudSyncSettings() {
       // v1-Cloud-Stände ohne categories: lokale Kategorien bleiben unangetastet,
       // werden beim nächsten Push als v2 hochgeladen.
       if (Array.isArray(result.data.categories)) localStorage.setItem('chronomind_categories', JSON.stringify(result.data.categories))
+      // v2-Cloud-Stände ohne plans: als leere Pläne-Liste übernehmen
+      localStorage.setItem('chronomind_plans', JSON.stringify(Array.isArray(result.data.plans) ? result.data.plans : []))
       toast.success('Cloud-Stand übernommen')
       setTimeout(() => window.location.reload(), 600)
     } finally {

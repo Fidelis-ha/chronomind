@@ -27,6 +27,8 @@ export interface CloudPayload {
   timestamp: string
   device: string
   entries: unknown[]
+  /** Seit v3; fehlt in älteren Backups -> als leere Liste behandeln */
+  plans?: unknown[]
   settings: unknown
   categories: unknown[]
 }
