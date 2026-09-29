@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
+import { Plus, X } from 'lucide-react'
 import { type TimeEntry } from '@/lib/types'
 import { nanoid } from '@/lib/utils'
 import {
@@ -118,6 +119,9 @@ export function Timeline() {
   const [deleteArmId, setDeleteArmId] = useState<string | null>(null)
   const [showTapHint, setShowTapHint] = useState(false)
   const [showCreateHint, setShowCreateHint] = useState(false)
+  const [commitFab, setCommitFab] = useState<{ x: number; y: number; kind: 'entry' | 'plan' } | null>(null)
+  const [fabExiting, setFabExiting] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const rafRef = useRef(0)
   const extendRef = useRef<{ past?: number; future?: number } | null>(null)
@@ -128,6 +132,8 @@ export function Timeline() {
   const dragUntil = useRef(0)
   const deleteArmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const popoverRef = useRef<HTMLDivElement | null>(null)
+  const fabWrapRef = useRef<HTMLDivElement | null>(null)
+  const fabExitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const pxPerMin = PX_PER_MIN[cellMin]
   const dayHeight = 24 * 60 * pxPerMin
@@ -189,6 +195,9 @@ export function Timeline() {
   }, [popover?.item.id, popover?.hover])
   useEffect(() => () => {
     if (deleteArmTimer.current) clearTimeout(deleteArmTimer.current)
+  }, [])
+  useEffect(() => () => {
+    if (fabExitTimer.current) clearTimeout(fabExitTimer.current)
   }, [])
 
   /* ---------- Farben ---------- */
@@ -265,6 +274,50 @@ export function Timeline() {
     (ms: number) => Math.floor((dayStartMs(ms) - today0) / DAY_MS) + pastDays,
     [today0, pastDays]
   )
+
+  /* ---------- Bestätigungs-FAB (nach Tap 2) ---------- */
+
+  /** FAB-Position im Content-Koordinatensystem: horizontal über der Markierung zentriert,
+   *  vertikal knapp oberhalb der Markierungsoberkante (mind. 8px oberer Rand). */
+  const fabPosFor = useCallback(
+    (p: PendingParts): { x: number; y: number } => {
+      const ranges = [p.past, p.future].filter((r): r is Range => r !== null)
+      if (!ranges.length) return { x: 0, y: 0 }
+      const startMs = Math.min(...ranges.map(r => r.start))
+      const endMs = Math.max(...ranges.map(r => r.end))
+      const xStart = dayIdxOfMs(startMs) * DAY_WIDTH
+      const xEnd = (dayIdxOfMs(endMs - 1) + 1) * DAY_WIDTH
+      const markingTop = HEADER_H + ((startMs - dayStartMs(startMs)) / MIN_MS) * pxPerMin
+      return { x: (xStart + xEnd) / 2, y: Math.max(HEADER_H + 8, markingTop - 56) }
+    },
+    [dayIdxOfMs, pxPerMin]
+  )
+
+  // Position/Label des FAB mit der Markierung synchron halten
+  // (Zoom, unendliche Vergangenheit, Adopt-„Nur Plan“)
+  useLayoutEffect(() => {
+    setCommitFab(f => {
+      if (!f || !pending) return f
+      const pos = fabPosFor(pending)
+      const kind: 'entry' | 'plan' = pending.past ? 'entry' : 'plan'
+      if (f.x === pos.x && f.y === pos.y && f.kind === kind) return f
+      return { ...f, ...pos, kind }
+    })
+  }, [pending, fabPosFor])
+
+  // FAB horizontal in den sichtbaren Bereich clampen (mind. 8px Rand)
+  useLayoutEffect(() => {
+    const wrap = fabWrapRef.current
+    const sc = scrollerRef.current
+    if (!wrap || !sc || !commitFab) return
+    const w = wrap.offsetWidth
+    if (!w) return
+    const sl = sc.scrollLeft
+    const vw = sc.clientWidth
+    const minLeft = Math.max(8, sl + 8)
+    const maxLeft = Math.max(minLeft, sl + vw - w - 8)
+    wrap.style.left = `${Math.min(Math.max(commitFab.x - w / 2, minLeft), maxLeft)}px`
+  }, [commitFab])
 
   const firstVisible = Math.max(0, Math.floor(scrollLeft / DAY_WIDTH) - 1)
   const visibleCount = Math.ceil(Math.max(1, viewportW) / DAY_WIDTH) + 3
@@ -441,6 +494,17 @@ export function Timeline() {
     setPopover(null)
     setSelected(null)
     if (!selStart) {
+      // Neue Markierung starten: alte, unbestätigte Markierung + FAB still verwerfen
+      if (commitFab || pending) {
+        if (fabExitTimer.current) {
+          clearTimeout(fabExitTimer.current)
+          fabExitTimer.current = null
+        }
+        setFabExiting(false)
+        setCommitFab(null)
+        setPending(null)
+        setCreateDialogOpen(false)
+      }
       setSelStart({ dayIdx, minute })
       return
     }
@@ -466,13 +530,30 @@ export function Timeline() {
       }
     }
     const nowFloor = Math.floor(nowMs / (5 * MIN_MS)) * (5 * MIN_MS)
+    let past: Range | null = null
+    let future: Range | null = null
     if (startMs >= nowFloor) {
-      prepareCommit({ past: null, future: { start: startMs, end: endMs } })
+      future = { start: startMs, end: endMs }
     } else if (endMs <= nowFloor) {
-      prepareCommit({ past: { start: startMs, end: endMs }, future: null })
+      past = { start: startMs, end: endMs }
     } else {
-      setAdoptState({ past: { start: startMs, end: nowFloor }, future: { start: nowFloor, end: endMs } })
+      past = { start: startMs, end: nowFloor }
+      future = { start: nowFloor, end: endMs }
     }
+    // Nach Tap 2: KEIN Dialog mehr – Markierung bleibt + Bestätigungs-FAB erscheint
+    const parts: PendingParts = { past, future, colls: [] }
+    setPending(parts)
+    setCommitFab({ ...fabPosFor(parts), kind: past ? 'entry' : 'plan' })
+  }
+
+  /** FAB-Klick: bestehenden Dialog-Flow starten (Adopt → Kollision → Kategorie) */
+  const beginCreateFlow = () => {
+    if (!pending) return
+    if (pending.past && pending.future) {
+      setAdoptState({ past: pending.past, future: pending.future })
+      return
+    }
+    prepareCommit({ past: pending.past, future: pending.future })
   }
 
   const prepareCommit = (parts: { past: Range | null; future: Range | null }) => {
@@ -485,7 +566,35 @@ export function Timeline() {
       setCollisionState(full)
     } else {
       setPending(full)
+      setCreateDialogOpen(true)
     }
+  }
+
+  /** FAB mit M3-Exit-Animation ausblenden (nach Verwerfen oder abgeschlossener Auswahl) */
+  // Exit-Dauer synchron mit --m3-dur-exit (200ms) in globals.css halten
+  const M3_EXIT_MS = 200
+  const hideFab = () => {
+    if (!commitFab || fabExiting) return
+    if (fabExitTimer.current) clearTimeout(fabExitTimer.current)
+    setFabExiting(true)
+    fabExitTimer.current = setTimeout(() => {
+      fabExitTimer.current = null
+      setFabExiting(false)
+      setCommitFab(null)
+      setPending(null)
+    }, M3_EXIT_MS)
+  }
+
+  /** ×-Klick: Markierung + FAB verwerfen (Exit-Animation), Zustand sauber zurücksetzen */
+  const discardMarking = () => {
+    setAdoptState(null)
+    setCollisionState(null)
+    setCreateDialogOpen(false)
+    setPickerOpen(false)
+    setPickerSource(null)
+    setRetitleTarget(null)
+    setDeleteArmId(null)
+    hideFab()
   }
 
   /* ---------- Anlegen / Kollisionen anwenden ---------- */
@@ -598,6 +707,8 @@ export function Timeline() {
     if ((pending.past && (Number.isNaN(pending.past.start) || Number.isNaN(pending.past.end))) ||
       (pending.future && (Number.isNaN(pending.future.start) || Number.isNaN(pending.future.end)))) {
       setPending(null)
+      setCreateDialogOpen(false)
+      hideFab()
       return
     }
     // Erste erfolgreiche Eintrag-Anlage: Header-Hinweis dauerhaft ausblenden
@@ -613,6 +724,8 @@ export function Timeline() {
     if (pending.past) createEntry(pending.past, path, title)
     if (pending.future) createPlan(pending.future, path, title)
     setPending(null)
+    setCreateDialogOpen(false)
+    hideFab()
   }
 
   /* ---------- Bearbeiten ---------- */
@@ -623,6 +736,17 @@ export function Timeline() {
     const rect = e.currentTarget.getBoundingClientRect()
     setSelected(item.kind === 'timer' ? null : { kind: item.kind, id: item.id })
     setSelStart(null)
+    // Offene Markierung + FAB still verwerfen (Auswahl wechselt zum Item)
+    if (commitFab || pending) {
+      if (fabExitTimer.current) {
+        clearTimeout(fabExitTimer.current)
+        fabExitTimer.current = null
+      }
+      setFabExiting(false)
+      setCommitFab(null)
+      setPending(null)
+      setCreateDialogOpen(false)
+    }
     setPopover({ item, hover: false, x: rect.left, y: rect.bottom })
   }
 
@@ -1001,7 +1125,7 @@ export function Timeline() {
           Heute
         </Button>
         {showCreateHint && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground rounded-full bg-secondary/60 px-3 py-1">
             Zum Markieren zweimal antippen (Start + Ende)
           </span>
         )}
@@ -1044,6 +1168,37 @@ export function Timeline() {
 
           {/* Tag-Spalten (nur sichtbarer Bereich) */}
           {visibleIdx.map(idx => renderDay(idx))}
+
+          {/* Bestätigungs-FAB für die offene Markierung (im Content-Koordinatensystem,
+              scrollt mit der Markierung mit) */}
+          {commitFab && (pending || fabExiting) && (
+            <div
+              ref={fabWrapRef}
+              className={`absolute z-40 flex items-center gap-2 ${
+                fabExiting ? 'm3-fab-exit pointer-events-none' : 'm3-fab-enter'
+              }`}
+              style={{ left: commitFab.x, top: commitFab.y }}
+            >
+              <button
+                type="button"
+                onClick={beginCreateFlow}
+                className="flex h-12 items-center gap-2 rounded-full bg-primary pl-4 pr-5 text-primary-foreground shadow-md transition-transform hover:bg-primary/90 active:scale-[0.98]"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="text-sm font-medium">
+                  {commitFab.kind === 'plan' ? 'Plan erstellen' : 'Zeiteintrag erstellen'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={discardMarking}
+                aria-label="Markierung verwerfen"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1133,9 +1288,9 @@ export function Timeline() {
 
       {/* Dialog: Markierung reicht über „jetzt" hinaus */}
       <Dialog open={!!adoptState} onOpenChange={o => !o && setAdoptState(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
-            <DialogTitle>Als Eintrag übernehmen?</DialogTitle>
+            <DialogTitle className="text-lg font-medium">Als Eintrag übernehmen?</DialogTitle>
             <DialogDescription>
               Die Markierung reicht über jetzt hinaus.{' '}
               {adoptState && (
@@ -1150,7 +1305,7 @@ export function Timeline() {
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
-              size="sm"
+              className="h-10 rounded-full px-5"
               onClick={() => {
                 const a = adoptState
                 setAdoptState(null)
@@ -1160,7 +1315,7 @@ export function Timeline() {
               Nur Plan
             </Button>
             <Button
-              size="sm"
+              className="h-10 rounded-full px-5"
               onClick={() => {
                 const a = adoptState
                 setAdoptState(null)
@@ -1175,9 +1330,9 @@ export function Timeline() {
 
       {/* Dialog: Kollisionen */}
       <Dialog open={!!collisionState} onOpenChange={o => !o && setCollisionState(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
-            <DialogTitle>Überschreiben?</DialogTitle>
+            <DialogTitle className="text-lg font-medium">Überschreiben?</DialogTitle>
             <DialogDescription>Die Markierung überschneidet sich mit Bestehendem:</DialogDescription>
           </DialogHeader>
           <ul className="text-sm space-y-1 list-disc pl-5">
@@ -1186,15 +1341,18 @@ export function Timeline() {
             ))}
           </ul>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setCollisionState(null)}>
+            <Button variant="ghost" className="h-10 rounded-full px-5" onClick={() => setCollisionState(null)}>
               Abbrechen
             </Button>
             <Button
-              size="sm"
+              className="h-10 rounded-full px-5"
               onClick={() => {
                 const c = collisionState
                 setCollisionState(null)
-                if (c) setPending(c)
+                if (c) {
+                  setPending(c)
+                  setCreateDialogOpen(true)
+                }
               }}
             >
               Überschreiben
@@ -1205,14 +1363,15 @@ export function Timeline() {
 
       {/* Dialog: Kategorieauswahl für die Markierung (häufige Chips + Kategorien-Dialog) */}
       <Dialog
-        open={!!pending && !pickerOpen}
+        open={createDialogOpen && !!pending && !pickerOpen}
         onOpenChange={o => {
-          if (!o) setPending(null)
+          // Abbruch: zurück zur Markierung + FAB (pending bleibt bestehen)
+          if (!o) setCreateDialogOpen(false)
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
-            <DialogTitle>Eintrag anlegen</DialogTitle>
+            <DialogTitle className="text-lg font-medium">Eintrag anlegen</DialogTitle>
             <DialogDescription>{pendingLabel} – Kategorie wählen</DialogDescription>
           </DialogHeader>
           {chips.length > 0 ? (
@@ -1242,10 +1401,10 @@ export function Timeline() {
             <p className="text-sm text-muted-foreground">Keine häufigen Kategorien in den letzten 7 Tagen.</p>
           )}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setPending(null)}>
+            <Button variant="ghost" className="h-10 rounded-full px-5" onClick={() => setCreateDialogOpen(false)}>
               Abbrechen
             </Button>
-            <Button variant="outline" size="sm" onClick={() => {
+            <Button variant="outline" className="h-10 rounded-full px-5" onClick={() => {
               setPickerSource('create')
               setPickerOpen(true)
             }}>
@@ -1262,7 +1421,9 @@ export function Timeline() {
           setPickerOpen(open)
           if (!open) {
             // Aus dem Anlege-Dialog geöffnet: pending aufbewahren (Abbruch ohne Auswahl)
+            // und zurück zur Markierung + FAB kehren statt den Dialog wieder zu öffnen
             if (pickerSource !== 'create') setPending(null)
+            else setCreateDialogOpen(false)
             // Retitle-Auftrag verwerfen, sonst würde der nächste onPick fälschlich umtiteln
             setRetitleTarget(null)
             setPickerSource(null)

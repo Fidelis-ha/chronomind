@@ -88,3 +88,50 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ---------- Material Design 3 Motion Tokens (Zeitstrahl-FAB) ---------- */
+
+:root {
+  --m3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --m3-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --m3-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --m3-dur-enter: 400ms;
+  --m3-dur-exit: 200ms;
+}
+
+@keyframes m3-fab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m3-fab-exit {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+}
+
+.m3-fab-enter {
+  animation: m3-fab-enter var(--m3-dur-enter) var(--m3-easing-emphasized-decelerate) both;
+}
+
+.m3-fab-exit {
+  animation: m3-fab-exit var(--m3-dur-exit) var(--m3-easing-emphasized-accelerate) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3-fab-enter,
+  .m3-fab-exit {
+    animation: none;
+  }
+}
