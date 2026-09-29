@@ -136,13 +136,13 @@ export default function DashboardClient() {
       <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
 
       {showDetails && (
-        <div className="mb-6 p-4 border rounded-lg bg-card">
+        <div className="mb-6 p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
           <EntryForm onCreate={handleCreate} />
         </div>
       )}
 
       {/* Einträge-Liste: standardmäßig eingeklappt */}
-      <details className="group mb-6 rounded-lg border bg-card">
+      <details className="group mb-6 rounded-2xl border border-outline-variant bg-surface-container-low">
         <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-4 py-3 text-sm font-semibold list-none [&::-webkit-details-marker]:hidden">
           <span>
             Einträge ({entries.length}) · {formatTotalDuration(entries)}
@@ -160,7 +160,7 @@ export default function DashboardClient() {
             <path d="m9 18 6-6-6-6" />
           </svg>
         </summary>
-        <div className="px-4 pb-4 border-t border-border pt-3">
+        <div className="px-4 pb-4 border-t border-outline-variant pt-3">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
               Wird geladen...

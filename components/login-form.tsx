@@ -3,8 +3,7 @@
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { IconSpinner } from '@/components/ui/icons'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { MdTextField } from '@/components/m3/md-text-field'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -67,56 +66,72 @@ export function LoginForm({
   }
 
   return (
-    <div {...props}>
+    <div
+      className="mx-auto w-full max-w-sm rounded-[28px] border border-outline-variant bg-surface-container-low p-8"
+      {...props}
+    >
+      <h1 className="mb-6 text-center text-2xl font-bold text-on-surface">
+        {action === 'sign-in' ? 'Anmelden' : 'Registrieren'}
+      </h1>
       <form onSubmit={handleSubmit}>
         <fieldset className="flex flex-col gap-y-4">
-          <div className="flex flex-col gap-y-1">
-            <Label>E-Mail</Label>
-            <Input
-              name="email"
-              type="email"
-              value={formState.email}
-              onChange={e =>
-                setFormState(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))
-              }
-            />
-          </div>
-          <div className="flex flex-col gap-y-1">
-            <Label>Passwort</Label>
-            <Input
-              name="password"
-              type="password"
-              value={formState.password}
-              onChange={e =>
-                setFormState(prev => ({
-                  ...prev,
-                  password: e.target.value
-                }))
-              }
-            />
-          </div>
+          <MdTextField
+            name="email"
+            type="email"
+            label="E-Mail"
+            value={formState.email}
+            onInput={value =>
+              setFormState(prev => ({
+                ...prev,
+                email: value
+              }))
+            }
+            required
+            autoComplete="email"
+          />
+          <MdTextField
+            name="password"
+            type="password"
+            label="Passwort"
+            value={formState.password}
+            onInput={value =>
+              setFormState(prev => ({
+                ...prev,
+                password: value
+              }))
+            }
+            required
+            autoComplete="current-password"
+          />
         </fieldset>
 
-        <div className="mt-4 flex items-center">
-          <Button disabled={isLoading}>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <md-filled-button
+            type="submit"
+            disabled={isLoading}
+            class="w-full"
+          >
             {isLoading && <IconSpinner className="mr-2 animate-spin" />}
             {action === 'sign-in' ? 'Anmelden' : 'Registrieren'}
-          </Button>
-          <p className="ml-4">
+          </md-filled-button>
+          <p className="text-sm text-on-surface-variant">
             {action === 'sign-in' ? (
               <>
                 Noch kein Konto?{' '}
-                <Link href="/sign-up" className="font-medium">
+                <Link
+                  href="/sign-up"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
                   Registrieren
                 </Link>
               </>
             ) : (
               <>
                 Bereits ein Konto?{' '}
-                <Link href="/sign-in" className="font-medium">
+                <Link
+                  href="/sign-in"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
                   Anmelden
                 </Link>
               </>

@@ -134,7 +134,7 @@ export default function CalendarPage() {
       </div>
 
       {showForm && (
-        <div className="mb-6 p-4 border rounded-lg bg-card">
+        <div className="mb-6 p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
           <div className="grid gap-4">
             <div>
               <Label htmlFor="cal-name">Name</Label>
@@ -168,7 +168,7 @@ export default function CalendarPage() {
       ) : (
         <div className="space-y-4">
           {calendars.map(cal => (
-            <div key={cal.id} className="p-4 border rounded-lg">
+            <div key={cal.id} className="p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: cal.color || '#3b82f6' }} />
@@ -200,7 +200,7 @@ export default function CalendarPage() {
           <h2 className="text-lg font-semibold mb-4">Anstehende Ereignisse</h2>
           <div className="space-y-2">
             {getUpcomingEvents().map(event => (
-              <div key={event.id} className="flex items-center justify-between p-3 border rounded">
+              <div key={event.id} className="flex items-center justify-between p-3 rounded-xl border border-outline-variant bg-surface-container-low">
                 <div>
                   <div className="font-medium">{event.title}</div>
                   {event.description && (

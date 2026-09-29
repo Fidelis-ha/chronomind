@@ -38,7 +38,14 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       >
         {message.role === 'user' ? <IconUser /> : <IconOpenAI />}
       </div>
-      <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
+      <div
+        className={cn(
+          'ml-4 flex-1 space-y-2 overflow-hidden rounded-2xl px-4 py-3',
+          message.role === 'user'
+            ? 'bg-primary-container text-on-primary-container'
+            : 'bg-surface-container-low text-on-surface'
+        )}
+      >
         <MemoizedReactMarkdown
           className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
           remarkPlugins={[remarkGfm, remarkMath]}

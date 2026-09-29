@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { type TimeEntry } from '@/lib/types'
 import { nanoid } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 interface EntryFormProps {
   onCreate: (entry: TimeEntry) => void
@@ -11,23 +12,11 @@ interface EntryFormProps {
 
 const CATEGORIES = ['Arbeit', 'Meeting', 'Pause', 'Projekt', 'Sonstiges']
 
-const fieldStyle = {
-  width: '100%',
-  padding: '0.5rem 0.75rem',
-  border: '1px solid hsl(215.4 16.3% 46.9%)',
-  borderRadius: '0.375rem',
-  background: 'hsl(0 0% 100%)',
-  color: 'hsl(215.4 16.3% 17.1%)',
-  fontSize: '0.875rem',
-  boxSizing: 'border-box' as const
-}
+const fieldClass =
+  'w-full rounded-xl border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors duration-200'
 
-const labelStyle = {
-  fontSize: '0.875rem',
-  fontWeight: 500,
-  marginBottom: '0.25rem',
-  display: 'block' as const
-}
+const labelClass =
+  'mb-1 block text-sm font-medium text-on-surface'
 
 export function EntryForm({ onCreate }: EntryFormProps) {
   const [loading, setLoading] = useState(false)
@@ -101,114 +90,98 @@ export function EntryForm({ onCreate }: EntryFormProps) {
   }
 
   return (
-    <div style={{ padding: '1rem', border: '1px solid hsl(214.3 31.8% 91.4%)', borderRadius: '0.5rem', background: 'hsl(0 0% 100%)' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        
-        <div>
-          <label htmlFor="ef-title" style={labelStyle}>Titel *</label>
-          <input
-            id="ef-title"
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="z.B. Projektarbeit"
-            required
-            style={fieldStyle}
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div>
+        <label htmlFor="ef-title" className={labelClass}>Titel *</label>
+        <input
+          id="ef-title"
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="z.B. Projektarbeit"
+          required
+          className={fieldClass}
+        />
+      </div>
 
-        <div>
-          <label htmlFor="ef-category" style={labelStyle}>Kategorie</label>
-          <select
-            id="ef-category"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            style={{ ...fieldStyle, cursor: 'pointer' }}
-          >
-            <option value="">Kategorie wählen</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div>
-            <label htmlFor="ef-sdate" style={labelStyle}>Startdatum *</label>
-            <input
-              id="ef-sdate"
-              type="date"
-              value={startedDate}
-              onChange={e => setStartedDate(e.target.value)}
-              required
-              style={fieldStyle}
-            />
-          </div>
-          <div>
-            <label htmlFor="ef-stime" style={labelStyle}>Startzeit *</label>
-            <input
-              id="ef-stime"
-              type="time"
-              value={startedTime}
-              onChange={e => setStartedTime(e.target.value)}
-              required
-              style={fieldStyle}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div>
-            <label htmlFor="ef-edate" style={labelStyle}>Enddatum</label>
-            <input
-              id="ef-edate"
-              type="date"
-              value={endedDate}
-              onChange={e => setEndedDate(e.target.value)}
-              style={fieldStyle}
-            />
-          </div>
-          <div>
-            <label htmlFor="ef-etime" style={labelStyle}>Endzeit</label>
-            <input
-              id="ef-etime"
-              type="time"
-              value={endedTime}
-              onChange={e => setEndedTime(e.target.value)}
-              style={fieldStyle}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="ef-desc" style={labelStyle}>Beschreibung</label>
-          <textarea
-            id="ef-desc"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Optionale Notizen..."
-            rows={3}
-            style={{ ...fieldStyle, resize: 'vertical', minHeight: '80px' }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: loading ? 'hsl(214.3 31.8% 91.4%)' : 'hsl(221.2 83.2% 53.3%)',
-            color: 'hsl(0 0% 100%)',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 500
-          }}
+      <div>
+        <label htmlFor="ef-category" className={labelClass}>Kategorie</label>
+        <select
+          id="ef-category"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className={`${fieldClass} cursor-pointer`}
         >
-          {loading ? 'Wird erstellt...' : 'Eintrag erstellen'}
-        </button>
-      </form>
-    </div>
+          <option value="">Kategorie wählen</option>
+          {CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="ef-sdate" className={labelClass}>Startdatum *</label>
+          <input
+            id="ef-sdate"
+            type="date"
+            value={startedDate}
+            onChange={e => setStartedDate(e.target.value)}
+            required
+            className={fieldClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="ef-stime" className={labelClass}>Startzeit *</label>
+          <input
+            id="ef-stime"
+            type="time"
+            value={startedTime}
+            onChange={e => setStartedTime(e.target.value)}
+            required
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="ef-edate" className={labelClass}>Enddatum</label>
+          <input
+            id="ef-edate"
+            type="date"
+            value={endedDate}
+            onChange={e => setEndedDate(e.target.value)}
+            className={fieldClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="ef-etime" className={labelClass}>Endzeit</label>
+          <input
+            id="ef-etime"
+            type="time"
+            value={endedTime}
+            onChange={e => setEndedTime(e.target.value)}
+            className={fieldClass}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="ef-desc" className={labelClass}>Beschreibung</label>
+        <textarea
+          id="ef-desc"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="Optionale Notizen..."
+          rows={3}
+          className={`${fieldClass} min-h-[80px] resize-y`}
+        />
+      </div>
+
+      <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+        {loading ? 'Wird erstellt...' : 'Eintrag erstellen'}
+      </Button>
+    </form>
   )
 }

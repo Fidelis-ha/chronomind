@@ -219,7 +219,7 @@ export default function SettingsPage() {
       <div className="space-y-8">
 
         {/* AI Settings */}
-        <div className="border-t pt-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
           <h2 className="text-lg font-semibold mb-4">KI Einstellungen</h2>
 
           <div className="space-y-4">
@@ -280,7 +280,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Kategorien */}
-        <div className="border-t pt-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
           <h2 className="text-lg font-semibold mb-1">Kategorien</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Verwalte Haupt- und Unterkategorien (bis zu 3 Ebenen). Diese erscheinen als Kacheln und Chips zum schnellen Start der Zeiterfassung.
@@ -289,7 +289,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Time Settings */}
-        <div className="border-t pt-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
           <h2 className="text-lg font-semibold mb-4">Zeit-Einstellungen</h2>
 
           <div className="space-y-4">
@@ -334,7 +334,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Cloud Sync */}
-        <div className="border-t pt-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
           <h2 className="text-lg font-semibold mb-1">Cloud-Speicher</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Kategorien werden dann automatisch synchronisiert.
@@ -343,7 +343,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Install Hint */}
-        <div className="border-t pt-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
           <h2 className="text-lg font-semibold mb-1">App installieren</h2>
           <p className="text-sm text-muted-foreground mb-4">
             ChronoMind als eigenständige App auf Desktop oder Android installieren – mit automatischen Updates.

@@ -30,7 +30,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      'fixed inset-0 z-50 transition-all duration-100 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in',
+      'fixed inset-0 z-50 bg-black/[0.32] data-[state=closed]:animate-m3-fade-out data-[state=open]:animate-m3-fade-in',
       className
     )}
     {...props}
@@ -47,13 +47,13 @@ const SheetContent = React.forwardRef<
     <SheetPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed z-50 h-full border-r bg-background p-6 opacity-100 shadow-lg data-[state=closed]:animate-slide-to-left data-[state=open]:animate-slide-from-left',
+        'fixed z-50 h-full rounded-r-[28px] border-r border-outline-variant bg-surface-container-low p-6 text-on-surface shadow-lg data-[state=closed]:animate-m3-sheet-out data-[state=open]:animate-m3-sheet-in',
         className
       )}
       {...props}
     >
       {children}
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+      <SheetPrimitive.Close className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-on-surface-variant transition-colors duration-200 hover:bg-on-surface/[0.08] hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <IconClose />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>

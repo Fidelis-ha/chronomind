@@ -152,7 +152,7 @@ export function EntriesClient() {
       <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
 
       {showForm && (
-        <div className="mb-6 p-4 border rounded-lg bg-card">
+        <div className="mb-6 p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
           <EntryForm onCreate={handleCreate} />
         </div>
       )}
@@ -161,7 +161,7 @@ export function EntriesClient() {
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className="border rounded px-3 py-1"
+          className="rounded-full border border-outline-variant bg-surface-container-low px-4 py-1.5 text-sm text-on-surface transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         <span className="text-muted-foreground">
           Gesamt: {formatTotalDuration(filteredEntries)}

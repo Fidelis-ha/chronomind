@@ -195,7 +195,7 @@ export function QuickTap({ onCreate }: QuickTapProps) {
     <div className="mb-6">
       {/* Laufender Timer */}
       {running && (
-        <div className="mb-4 p-4 rounded-xl border-2 border-primary bg-primary/5">
+        <div className="mb-4 p-4 rounded-2xl border-2 border-primary bg-primary/5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-xs text-muted-foreground mb-0.5">Läuft gerade</div>
@@ -233,7 +233,7 @@ export function QuickTap({ onCreate }: QuickTapProps) {
               key={c.id}
               onClick={() => openDialog(c)}
               style={{ borderLeftColor: c.color }}
-              className={`flex items-center gap-2 rounded-xl border-2 border-l-4 ring-1 ring-border px-3 py-4 transition-transform active:scale-95 ${
+              className={`flex items-center gap-2 rounded-2xl border-2 border-l-4 ring-1 ring-border px-3 py-4 transition-transform active:scale-95 ${
                 active
                   ? 'border-primary bg-primary/10 shadow-sm'
                   : 'border-border bg-card hover:bg-accent'

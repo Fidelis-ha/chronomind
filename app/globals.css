@@ -2,81 +2,253 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Material Design 3 – Token-Layer (Seed #4F46E5, hell + dunkel)
+   - shadcn-HSL-Variablen bleiben (Kompatibilität), Werte auf M3
+     umgebogen (HSL-Triplets, da Tailwind via hsl(var(--x)) konsumiert)
+   - --md-*: M3-Rollen als Hex (Referenz)
+   - --md-rgb-*: M3-Rollen als RGB-Triplets (Tailwind-Farben mit
+     Alpha-Modifiern, z.B. bg-on-surface/[0.08] State-Layer)
+   - --md-sys-color-*: Tokens für @material/web-Komponenten (MWC)
+   ============================================================ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* ---- shadcn-Mapping auf M3 (Light) ---- */
+    --background: 300 100% 99.2%; /* surface */
+    --foreground: 255 7% 11.4%; /* on-surface */
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 285 12% 93.7%; /* surface-container */
+    --muted-foreground: 247 6% 29.2%; /* on-surface-variant */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 288 12% 91.6%; /* surface-container-high */
+    --popover-foreground: 255 7% 11.4%; /* on-surface */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card: 288 24% 95.9%; /* surface-container-low */
+    --card-foreground: 255 7% 11.4%; /* on-surface */
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 256 10% 79.4%; /* outline-variant */
+    --input: 256 10% 79.4%; /* outline-variant */
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 243 74% 57.8%; /* md-primary */
+    --primary-foreground: 0 0% 100%; /* on-primary */
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 247 68% 92.7%; /* secondary-container */
+    --secondary-foreground: 240 26% 13.7%; /* on-secondary-container */
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: ;
+    --accent: 247 68% 92.7%; /* secondary-container */
+    --accent-foreground: 240 26% 13.7%; /* on-secondary-container */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 75% 41.6%; /* error */
+    --destructive-foreground: 0 0% 100%; /* on-error */
 
-    --ring: 240 5% 64.9%;
+    --ring: 243 74% 57.8%; /* primary */
 
-    --chart-1: 240 5.9% 10%;
-    --chart-2: 240 3.8% 46.1%;
-    --chart-3: 240 4.8% 95.9%;
-    --chart-4: 240 5.9% 30%;
-    --chart-5: 240 5.9% 70%;
+    --chart-1: 243 74% 57.8%; /* primary */
+    --chart-2: 328 19% 40.2%; /* tertiary */
+    --chart-3: 246 10% 40.2%; /* secondary */
+    --chart-4: 332 100% 92.4%; /* tertiary-container */
+    --chart-5: 246 100% 93.7%; /* primary-container */
 
-    --radius: 0.5rem;
+    --radius: 1rem; /* M3 large */
+
+    /* ---- M3-Rollen (Hex, Light) ---- */
+    --md-primary: #4d44e3;
+    --md-on-primary: #ffffff;
+    --md-primary-container: #e2dfff;
+    --md-on-primary-container: #0f0069;
+    --md-secondary: #5e5c71;
+    --md-secondary-container: #e3e0f9;
+    --md-on-secondary-container: #1a1a2c;
+    --md-tertiary: #7a5368;
+    --md-tertiary-container: #ffd8ea;
+    --md-on-tertiary-container: #2f1123;
+    --md-surface: #fffbff;
+    --md-on-surface: #1c1b1f;
+    --md-on-surface-variant: #47464f;
+    --md-surface-container-lowest: #ffffff;
+    --md-surface-container-low: #f6f2f7;
+    --md-surface-container: #f0edf1;
+    --md-surface-container-high: #ebe7ec;
+    --md-surface-container-highest: #e5e1e6;
+    --md-surface-dim: #dcd9dd;
+    --md-outline: #787680;
+    --md-outline-variant: #c8c5d0;
+    --md-inverse-surface: #313034;
+    --md-inverse-on-surface: #f3eff4;
+    --md-inverse-primary: #c3c0ff;
+    --md-error: #ba1a1a;
+    --md-on-error: #ffffff;
+    --md-error-container: #ffdad6;
+    --md-on-error-container: #410002;
+
+    /* ---- M3-Rollen (RGB-Triplets für Tailwind-Alpha) ---- */
+    --md-rgb-primary: 77 68 227;
+    --md-rgb-on-primary: 255 255 255;
+    --md-rgb-primary-container: 226 223 255;
+    --md-rgb-on-primary-container: 15 0 105;
+    --md-rgb-secondary: 94 92 113;
+    --md-rgb-secondary-container: 227 224 249;
+    --md-rgb-on-secondary-container: 26 26 44;
+    --md-rgb-tertiary: 122 83 104;
+    --md-rgb-tertiary-container: 255 216 234;
+    --md-rgb-on-tertiary-container: 47 17 35;
+    --md-rgb-surface: 255 251 255;
+    --md-rgb-on-surface: 28 27 31;
+    --md-rgb-on-surface-variant: 71 70 79;
+    --md-rgb-surface-container-lowest: 255 255 255;
+    --md-rgb-surface-container-low: 246 242 247;
+    --md-rgb-surface-container: 240 237 241;
+    --md-rgb-surface-container-high: 235 231 236;
+    --md-rgb-surface-container-highest: 229 225 230;
+    --md-rgb-surface-dim: 220 217 221;
+    --md-rgb-outline: 120 118 128;
+    --md-rgb-outline-variant: 200 197 208;
+    --md-rgb-inverse-surface: 49 48 52;
+    --md-rgb-inverse-on-surface: 243 239 244;
+    --md-rgb-inverse-primary: 195 192 255;
+    --md-rgb-error: 186 26 26;
+    --md-rgb-on-error: 255 255 255;
+    --md-rgb-error-container: 255 218 214;
+    --md-rgb-on-error-container: 65 0 2;
+
+    /* ---- MWC-System-Tokens (--md-sys-color-*) ---- */
+    --md-sys-color-primary: var(--md-primary);
+    --md-sys-color-on-primary: var(--md-on-primary);
+    --md-sys-color-primary-container: var(--md-primary-container);
+    --md-sys-color-on-primary-container: var(--md-on-primary-container);
+    --md-sys-color-secondary: var(--md-secondary);
+    --md-sys-color-on-secondary: var(--md-secondary);
+    --md-sys-color-secondary-container: var(--md-secondary-container);
+    --md-sys-color-on-secondary-container: var(--md-on-secondary-container);
+    --md-sys-color-tertiary: var(--md-tertiary);
+    --md-sys-color-on-tertiary: var(--md-on-tertiary);
+    --md-sys-color-tertiary-container: var(--md-tertiary-container);
+    --md-sys-color-on-tertiary-container: var(--md-on-tertiary-container);
+    --md-sys-color-error: var(--md-error);
+    --md-sys-color-on-error: var(--md-on-error);
+    --md-sys-color-error-container: var(--md-error-container);
+    --md-sys-color-on-error-container: var(--md-on-error-container);
+    --md-sys-color-surface: var(--md-surface);
+    --md-sys-color-on-surface: var(--md-on-surface);
+    --md-sys-color-on-surface-variant: var(--md-on-surface-variant);
+    --md-sys-color-surface-dim: var(--md-surface-dim);
+    --md-sys-color-surface-container-lowest: var(--md-surface-container-lowest);
+    --md-sys-color-surface-container-low: var(--md-surface-container-low);
+    --md-sys-color-surface-container: var(--md-surface-container);
+    --md-sys-color-surface-container-high: var(--md-surface-container-high);
+    --md-sys-color-surface-container-highest: var(--md-surface-container-highest);
+    --md-sys-color-outline: var(--md-outline);
+    --md-sys-color-outline-variant: var(--md-outline-variant);
+    --md-sys-color-inverse-surface: var(--md-inverse-surface);
+    --md-sys-color-inverse-on-surface: var(--md-inverse-on-surface);
+    --md-sys-color-inverse-primary: var(--md-inverse-primary);
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+
+    /* Scrollbar-Theming: Thumb outline-variant, Track transparent */
+    scrollbar-color: var(--md-outline-variant) transparent;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* ---- shadcn-Mapping auf M3 (Dark) ---- */
+    --background: 255 7% 11.4%; /* surface */
+    --foreground: 288 9% 89.2%; /* on-surface */
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 255 6% 12.9%; /* surface-container */
+    --muted-foreground: 256 10% 79.4%; /* on-surface-variant */
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 255 5% 16.9%; /* surface-container-high */
+    --popover-foreground: 288 9% 89.2%; /* on-surface */
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 255 7% 11.4%; /* surface-container-low */
+    --card-foreground: 288 9% 89.2%; /* on-surface */
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 247 6% 29.2%; /* outline-variant */
+    --input: 247 6% 29.2%; /* outline-variant */
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 243 100% 87.6%; /* md-primary */
+    --primary-foreground: 251 100% 32.4%; /* on-primary */
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 243 13% 31%; /* secondary-container */
+    --secondary-foreground: 247 68% 92.7%; /* on-secondary-container */
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: ;
+    --accent: 243 13% 31%; /* secondary-container */
+    --accent-foreground: 247 68% 92.7%; /* on-secondary-container */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --destructive: 6 100% 83.5%; /* error */
+    --destructive-foreground: 357 100% 20.6%; /* on-error */
 
-    --ring: 240 3.7% 15.9%;
+    --ring: 243 100% 87.6%; /* primary */
 
-    --chart-1: 0 0% 98%;
-    --chart-2: 240 5% 64.9%;
-    --chart-3: 240 3.7% 15.9%;
-    --chart-4: 0 0% 80%;
-    --chart-5: 0 0% 45%;
+    --chart-1: 243 100% 87.6%; /* primary */
+    --chart-2: 331 54% 82.2%; /* tertiary */
+    --chart-3: 247 27% 81.8%; /* secondary */
+    --chart-4: 327 23% 30.6%; /* tertiary-container */
+    --chart-5: 246 71% 46.9%; /* primary-container */
+
+    /* ---- M3-Rollen (Hex, Dark) ---- */
+    --md-primary: #c3c0ff;
+    --md-on-primary: #1d00a5;
+    --md-primary-container: #3323cc;
+    --md-on-primary-container: #e2dfff;
+    --md-secondary: #c7c4dd;
+    --md-secondary-container: #464559;
+    --md-on-secondary-container: #e3e0f9;
+    --md-tertiary: #eab9d1;
+    --md-tertiary-container: #603c50;
+    --md-on-tertiary-container: #ffd8ea;
+    --md-surface: #1c1b1f;
+    --md-on-surface: #e5e1e6;
+    --md-on-surface-variant: #c8c5d0;
+    --md-surface-container-lowest: #0e0e11;
+    --md-surface-container-low: #1c1b1f;
+    --md-surface-container: #201f23;
+    --md-surface-container-high: #2a292d;
+    --md-surface-container-highest: #353438;
+    --md-surface-dim: #131316;
+    --md-outline: #928f9a;
+    --md-outline-variant: #47464f;
+    --md-inverse-surface: #e5e1e6;
+    --md-inverse-on-surface: #313034;
+    --md-inverse-primary: #4d44e3;
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffb4ab;
+
+    /* ---- M3-Rollen (RGB-Triplets, Dark) ---- */
+    --md-rgb-primary: 195 192 255;
+    --md-rgb-on-primary: 29 0 165;
+    --md-rgb-primary-container: 51 35 204;
+    --md-rgb-on-primary-container: 226 223 255;
+    --md-rgb-secondary: 199 196 221;
+    --md-rgb-secondary-container: 70 69 89;
+    --md-rgb-on-secondary-container: 227 224 249;
+    --md-rgb-tertiary: 234 185 209;
+    --md-rgb-tertiary-container: 96 60 80;
+    --md-rgb-on-tertiary-container: 255 216 234;
+    --md-rgb-surface: 28 27 31;
+    --md-rgb-on-surface: 229 225 230;
+    --md-rgb-on-surface-variant: 200 197 208;
+    --md-rgb-surface-container-lowest: 14 14 17;
+    --md-rgb-surface-container-low: 28 27 31;
+    --md-rgb-surface-container: 32 31 35;
+    --md-rgb-surface-container-high: 42 41 45;
+    --md-rgb-surface-container-highest: 53 52 56;
+    --md-rgb-surface-dim: 19 19 22;
+    --md-rgb-outline: 146 143 154;
+    --md-rgb-outline-variant: 71 70 79;
+    --md-rgb-inverse-surface: 229 225 230;
+    --md-rgb-inverse-on-surface: 49 48 52;
+    --md-rgb-inverse-primary: 77 68 227;
+    --md-rgb-error: 255 180 171;
+    --md-rgb-on-error: 105 0 5;
+    --md-rgb-error-container: 147 0 10;
+    --md-rgb-on-error-container: 255 180 171;
+
+    /* Scrollbar-Theming: Thumb surface-container-highest, Track transparent */
+    scrollbar-color: var(--md-surface-container-highest) transparent;
   }
 }
 
@@ -89,14 +261,58 @@
   }
 }
 
-/* ---------- Material Design 3 Motion Tokens (Zeitstrahl-FAB) ---------- */
+/* ---------- Material Design 3 Motion Tokens ---------- */
 
 :root {
+  --m3-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --m3-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
   --m3-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
   --m3-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
   --m3-dur-enter: 400ms;
   --m3-dur-exit: 200ms;
+  --m3-dur-short: 200ms;
+}
+
+/* ---------- Scrollbar (WebKit, Timeline-Scroll-Container) ---------- */
+
+.timeline-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.timeline-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-scroller::-webkit-scrollbar-thumb {
+  background: var(--md-outline-variant);
+  border-radius: 9999px;
+}
+
+.dark .timeline-scroller::-webkit-scrollbar-thumb {
+  background: var(--md-surface-container-highest);
+}
+
+.timeline-scroller::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* M3-Standard-Easing für elementare Interaktionen app-weit
+   (in @layer base, damit Tailwind-Utilities wie duration-150 gewinnen) */
+@layer base {
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role='button'],
+  label,
+  summary {
+    transition-property: color, background-color, border-color, opacity, transform,
+      box-shadow;
+    transition-duration: var(--m3-dur-short);
+    transition-timing-function: var(--m3-easing-standard);
+  }
 }
 
 @keyframes m3-fab-enter {
@@ -130,6 +346,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .m3-fab-enter,
   .m3-fab-exit {
     animation: none;

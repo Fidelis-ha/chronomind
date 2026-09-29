@@ -36,7 +36,7 @@ export function TimeEntryCard({ entry, onEdit, onDelete }: TimeEntryCardProps) {
 
   return (
     <div className={cn(
-      "rounded-lg border p-4 transition-colors hover:bg-muted/50",
+      "rounded-2xl border border-outline-variant bg-surface-container-low p-4 transition-colors duration-200 hover:bg-surface-container",
       isRunning && "border-l-4 border-l-green-500"
     )}>
       <div className="flex items-start justify-between gap-4">

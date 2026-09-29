@@ -55,15 +55,16 @@ export function DurationChart({ data }: DurationChartProps) {
           }}
           formatter={(value: unknown) => [`${Number(value).toFixed(1)} Stunden`, 'Dauer'] as any}
           contentStyle={{
-            backgroundColor: 'hsl(var(--card))',
-            border: '1px solid hsl(var(--border))',
-            borderRadius: '0.5rem'
+            backgroundColor: 'var(--md-surface-container-high)',
+            border: '1px solid var(--md-outline-variant)',
+            borderRadius: '1rem',
+            color: 'var(--md-on-surface)'
           }}
         />
         <Bar
           dataKey="hours"
-          fill="hsl(var(--primary))"
-          radius={[4, 4, 0, 0]}
+          fill="var(--md-primary)"
+          radius={[8, 8, 0, 0]}
           name="Stunden"
         />
       </BarChart>
@@ -82,16 +83,14 @@ interface CategoryPieChartProps {
 }
 
 const DEFAULT_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#f97316',
-  '#84cc16'
+  'var(--md-primary)',
+  'var(--md-tertiary)',
+  'var(--md-secondary)',
+  'var(--md-tertiary-container)',
+  'var(--md-primary-container)',
+  'var(--md-on-surface-variant)',
+  'var(--md-outline)',
+  'var(--md-inverse-primary)'
 ]
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
@@ -117,7 +116,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
           nameKey="name"
           // Typ-Assertion nötig, da recharts-format value als unknown typisiert ist
           label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%` as any}
-          labelLine={{ stroke: 'hsl(var(--muted-foreground))' }}
+          labelLine={{ stroke: 'var(--md-on-surface-variant)' }}
         >
           {data.map((_, index) => (
             <Cell
@@ -129,9 +128,10 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
         <Tooltip
           formatter={(value: unknown) => [`${Number(value).toFixed(1)} Std.`, 'Dauer']}
           contentStyle={{
-            backgroundColor: 'hsl(var(--card))',
-            border: '1px solid hsl(var(--border))',
-            borderRadius: '0.5rem'
+            backgroundColor: 'var(--md-surface-container-high)',
+            border: '1px solid var(--md-outline-variant)',
+            borderRadius: '1rem',
+            color: 'var(--md-on-surface)'
           }}
         />
         <Legend
@@ -161,21 +161,21 @@ export function WeeklySummary({
 }: WeeklySummaryProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="p-4 rounded-lg border bg-card">
-        <div className="text-2xl font-bold">{totalHours.toFixed(1)}h</div>
-        <div className="text-sm text-muted-foreground">Gesamt (7 Tage)</div>
+      <div className="p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
+        <div className="text-2xl font-bold text-on-surface">{totalHours.toFixed(1)}h</div>
+        <div className="text-sm text-on-surface-variant">Gesamt (7 Tage)</div>
       </div>
-      <div className="p-4 rounded-lg border bg-card">
-        <div className="text-2xl font-bold">{totalEntries}</div>
-        <div className="text-sm text-muted-foreground">Einträge</div>
+      <div className="p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
+        <div className="text-2xl font-bold text-on-surface">{totalEntries}</div>
+        <div className="text-sm text-on-surface-variant">Einträge</div>
       </div>
-      <div className="p-4 rounded-lg border bg-card">
-        <div className="text-2xl font-bold">{avgHoursPerDay.toFixed(1)}h</div>
-        <div className="text-sm text-muted-foreground">Ø pro Tag</div>
+      <div className="p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
+        <div className="text-2xl font-bold text-on-surface">{avgHoursPerDay.toFixed(1)}h</div>
+        <div className="text-sm text-on-surface-variant">Ø pro Tag</div>
       </div>
-      <div className="p-4 rounded-lg border bg-card">
-        <div className="text-2xl font-bold">{mostActiveDay}</div>
-        <div className="text-sm text-muted-foreground">Top Tag</div>
+      <div className="p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
+        <div className="text-2xl font-bold text-on-surface">{mostActiveDay}</div>
+        <div className="text-sm text-on-surface-variant">Top Tag</div>
       </div>
     </div>
   )

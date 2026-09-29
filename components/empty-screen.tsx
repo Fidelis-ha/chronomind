@@ -24,7 +24,7 @@ interface EmptyScreenProps {
 export function EmptyScreen({ setInput }: EmptyScreenProps) {
   return (
     <div className="mx-auto max-w-2xl px-4">
-      <div className="rounded-lg border bg-background p-8">
+      <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-8">
         <h1 className="mb-2 text-lg font-semibold">
           ChronoMind – KI-gestützte Zeiterfassung
         </h1>

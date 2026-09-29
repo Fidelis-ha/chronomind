@@ -49,7 +49,51 @@ module.exports = {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
-        }
+        },
+        /* ---- Material Design 3 Rollen (RGB-Triplets, Alpha-fähig) ---- */
+        surface: {
+          DEFAULT: 'rgb(var(--md-rgb-surface) / <alpha-value>)',
+          dim: 'rgb(var(--md-rgb-surface-dim) / <alpha-value>)',
+          container: {
+            DEFAULT: 'rgb(var(--md-rgb-surface-container) / <alpha-value>)',
+            lowest:
+              'rgb(var(--md-rgb-surface-container-lowest) / <alpha-value>)',
+            low: 'rgb(var(--md-rgb-surface-container-low) / <alpha-value>)',
+            high: 'rgb(var(--md-rgb-surface-container-high) / <alpha-value>)',
+            highest:
+              'rgb(var(--md-rgb-surface-container-highest) / <alpha-value>)'
+          }
+        },
+        'on-surface': {
+          DEFAULT: 'rgb(var(--md-rgb-on-surface) / <alpha-value>)',
+          variant: 'rgb(var(--md-rgb-on-surface-variant) / <alpha-value>)'
+        },
+        'primary-container':
+          'rgb(var(--md-rgb-primary-container) / <alpha-value>)',
+        'on-primary-container':
+          'rgb(var(--md-rgb-on-primary-container) / <alpha-value>)',
+        'secondary-container':
+          'rgb(var(--md-rgb-secondary-container) / <alpha-value>)',
+        'on-secondary-container':
+          'rgb(var(--md-rgb-on-secondary-container) / <alpha-value>)',
+        tertiary: 'rgb(var(--md-rgb-tertiary) / <alpha-value>)',
+        'on-tertiary': 'rgb(var(--md-rgb-on-tertiary) / <alpha-value>)',
+        'tertiary-container':
+          'rgb(var(--md-rgb-tertiary-container) / <alpha-value>)',
+        'on-tertiary-container':
+          'rgb(var(--md-rgb-on-tertiary-container) / <alpha-value>)',
+        outline: 'rgb(var(--md-rgb-outline) / <alpha-value>)',
+        'outline-variant':
+          'rgb(var(--md-rgb-outline-variant) / <alpha-value>)',
+        error: 'rgb(var(--md-rgb-error) / <alpha-value>)',
+        'on-error': 'rgb(var(--md-rgb-on-error) / <alpha-value>)',
+        'error-container': 'rgb(var(--md-rgb-error-container) / <alpha-value>)',
+        'on-error-container':
+          'rgb(var(--md-rgb-on-error-container) / <alpha-value>)',
+        'inverse-surface': 'rgb(var(--md-rgb-inverse-surface) / <alpha-value>)',
+        'inverse-on-surface':
+          'rgb(var(--md-rgb-inverse-on-surface) / <alpha-value>)',
+        'inverse-primary': 'rgb(var(--md-rgb-inverse-primary) / <alpha-value>)'
       },
       borderRadius: {
         lg: `var(--radius)`,
@@ -80,6 +124,31 @@ module.exports = {
           '100%': {
             transform: 'translateX(-100%)'
           }
+        },
+        /* ---- M3 Motion (Dialog/Sheet/Tooltip/Overlay) ---- */
+        'm3-fade-in': {
+          from: { opacity: 0 },
+          to: { opacity: 1 }
+        },
+        'm3-fade-out': {
+          from: { opacity: 1 },
+          to: { opacity: 0 }
+        },
+        'm3-dialog-in': {
+          from: { opacity: 0, transform: 'scale(0.85)' },
+          to: { opacity: 1, transform: 'scale(1)' }
+        },
+        'm3-dialog-out': {
+          from: { opacity: 1, transform: 'scale(1)' },
+          to: { opacity: 0, transform: 'scale(0.95)' }
+        },
+        'm3-sheet-in': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' }
+        },
+        'm3-sheet-out': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-100%)' }
         }
       },
       animation: {
@@ -88,7 +157,21 @@ module.exports = {
         'slide-to-left':
           'slide-to-left 0.25s cubic-bezier(0.82, 0.085, 0.395, 0.895)',
         'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out'
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        /* ---- M3 Motion: open 400ms emphasized-decelerate,
+             close 200ms emphasized-accelerate ---- */
+        'm3-fade-in':
+          'm3-fade-in 400ms var(--m3-easing-emphasized-decelerate)',
+        'm3-fade-out':
+          'm3-fade-out 200ms var(--m3-easing-emphasized-accelerate)',
+        'm3-dialog-in':
+          'm3-dialog-in 400ms var(--m3-easing-emphasized-decelerate)',
+        'm3-dialog-out':
+          'm3-dialog-out 200ms var(--m3-easing-emphasized-accelerate)',
+        'm3-sheet-in':
+          'm3-sheet-in 400ms var(--m3-easing-emphasized-decelerate)',
+        'm3-sheet-out':
+          'm3-sheet-out 200ms var(--m3-easing-emphasized-accelerate)'
       }
     }
   },

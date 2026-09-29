@@ -150,7 +150,7 @@ export function CategorySettings() {
   return (
     <div className="space-y-3">
       {cats.map(c => (
-        <div key={c.id} className="border border-border rounded-lg p-3 space-y-2">
+        <div key={c.id} className="border border-outline-variant rounded-2xl p-3 space-y-2 bg-surface">
           <div className="flex items-center gap-2">
             {/* 32px Swatch: Farbeingabe visuell versteckt darüber gelegt */}
             <div className="relative w-8 h-8 shrink-0">
@@ -205,7 +205,7 @@ export function CategorySettings() {
           </div>
 
           {expandedMains.has(c.id) && (
-            <div className="ml-3 border-l border-border pl-3 space-y-2">
+            <div className="ml-3 border-l border-outline-variant pl-3 space-y-2">
               {c.subs.length === 0 && (
                 <p className="text-xs text-muted-foreground">Noch keine Unterkategorien.</p>
               )}
@@ -248,7 +248,7 @@ export function CategorySettings() {
                     </div>
 
                     {expandedSubs.has(subKey) && (
-                      <div className="ml-3 border-l border-border pl-3 space-y-1.5">
+                      <div className="ml-3 border-l border-outline-variant pl-3 space-y-1.5">
                         {s.children.length === 0 && (
                           <p className="text-xs text-muted-foreground">Noch keine Unterunterkategorien.</p>
                         )}
@@ -312,7 +312,7 @@ export function CategorySettings() {
       ))}
 
       {/* Neue Hauptkategorie */}
-      <div className="border border-border rounded-lg p-3 space-y-2">
+      <div className="border border-outline-variant rounded-2xl p-3 space-y-2 bg-surface">
         <div className="text-sm font-medium">Neue Hauptkategorie</div>
         <div className="flex flex-wrap gap-2">
           {CATEGORY_COLOR_PALETTE.map(col => (

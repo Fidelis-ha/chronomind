@@ -155,14 +155,14 @@ export function AnalyticsClient() {
       <div className="space-y-8">
         <div>
           <h2 className="text-lg font-semibold mb-4">Stunden pro Tag (letzte 7 Tage)</h2>
-          <div className="p-6 rounded-lg border bg-card">
+          <div className="p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
             <DurationChart data={chartData} />
           </div>
         </div>
 
         <div>
           <h2 className="text-lg font-semibold mb-4">Zeit nach Kategorie</h2>
-          <div className="p-6 rounded-lg border bg-card">
+          <div className="p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
             <CategoryPieChart data={categoryData} />
           </div>
         </div>
@@ -170,10 +170,10 @@ export function AnalyticsClient() {
         {categoryData.length > 0 && (
           <div>
             <h2 className="text-lg font-semibold mb-4">Kategorie-Übersicht</h2>
-            <div className="rounded-lg border bg-card overflow-hidden">
+            <div className="rounded-2xl border border-outline-variant bg-surface-container-low overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b bg-muted/50">
+                  <tr className="border-b border-outline-variant bg-surface-container">
                     <th className="text-left p-3 font-medium">Kategorie</th>
                     <th className="text-right p-3 font-medium">Stunden</th>
                     <th className="text-right p-3 font-medium">Anteil</th>
@@ -181,7 +181,7 @@ export function AnalyticsClient() {
                 </thead>
                 <tbody>
                   {categoryData.map((cat, i) => (
-                    <tr key={cat.name} className="border-b last:border-0">
+                    <tr key={cat.name} className="border-b border-outline-variant last:border-0">
                       <td className="p-3">{cat.name}</td>
                       <td className="p-3 text-right">{cat.value.toFixed(1)} Std.</td>
                       <td className="p-3 text-right text-muted-foreground">

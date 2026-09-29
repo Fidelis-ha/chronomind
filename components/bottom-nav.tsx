@@ -78,10 +78,10 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 h-16 border-t border-outline-variant bg-surface-container md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="grid grid-cols-6">
+      <div className="grid h-16 grid-cols-6">
         {tabs.map((tab) => {
           const active =
             pathname === tab.href ||
@@ -91,12 +91,22 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-2 ${
-                active ? 'text-primary' : 'text-muted-foreground'
+              className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 py-2 transition-colors duration-200 ${
+                active
+                  ? 'text-on-surface'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              {tab.icon(active)}
-              <span className="w-full truncate text-center text-[10px] leading-tight">{tab.label}</span>
+              <span
+                className={`flex h-8 items-center justify-center rounded-full px-4 transition-colors duration-200 ${
+                  active ? 'bg-secondary-container' : ''
+                }`}
+              >
+                {tab.icon(active)}
+              </span>
+              <span className="w-full truncate text-center text-[10px] font-medium leading-tight">
+                {tab.label}
+              </span>
             </Link>
           )
         })}

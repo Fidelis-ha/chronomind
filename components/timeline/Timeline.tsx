@@ -1125,7 +1125,7 @@ export function Timeline() {
           Heute
         </Button>
         {showCreateHint && (
-          <span className="text-[10px] text-muted-foreground rounded-full bg-secondary/60 px-3 py-1">
+          <span className="text-[10px] text-on-secondary-container rounded-full bg-secondary-container px-3 py-1">
             Zum Markieren zweimal antippen (Start + Ende)
           </span>
         )}
@@ -1139,7 +1139,7 @@ export function Timeline() {
       {/* Zeitstrahl-Fläche */}
       <div
         ref={scrollerRef}
-        className="relative overflow-auto rounded-lg border bg-card select-none h-[420px] sm:h-[520px]"
+        className="timeline-scroller relative overflow-auto rounded-lg border bg-card select-none h-[420px] sm:h-[520px]"
         style={{ touchAction: 'pan-x pan-y' }}
         onScroll={handleScroll}
       >
@@ -1182,7 +1182,7 @@ export function Timeline() {
               <button
                 type="button"
                 onClick={beginCreateFlow}
-                className="flex h-12 items-center gap-2 rounded-full bg-primary pl-4 pr-5 text-primary-foreground shadow-md transition-transform hover:bg-primary/90 active:scale-[0.98]"
+                className="flex h-12 items-center gap-2 rounded-full bg-primary-container pl-4 pr-5 text-on-primary-container shadow-md transition-transform hover:bg-primary-container/90 active:scale-[0.98]"
               >
                 <Plus className="h-5 w-5" />
                 <span className="text-sm font-medium">

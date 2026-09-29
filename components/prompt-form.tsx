@@ -1,6 +1,5 @@
 import * as React from 'react'
 import Link from 'next/link'
-import Textarea from 'react-textarea-autosize'
 
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
 import { cn } from '@/lib/utils'
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/tooltip'
 import { IconArrowElbow, IconPlus } from '@/components/ui/icons'
 import { VoiceInputButton } from '@/components/chat/VoiceInputButton'
+import { MdTextField } from '@/components/m3/md-text-field'
 
 export interface PromptProps {
   input: string
@@ -27,7 +27,7 @@ export function PromptForm({
   isLoading
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit()
-  const inputRef = React.useRef<HTMLTextAreaElement>(null)
+  const inputRef = React.useRef<HTMLElement>(null)
 
   React.useEffect(() => {
     if (inputRef.current) {
@@ -47,14 +47,14 @@ export function PromptForm({
       }}
       ref={formRef}
     >
-      <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:rounded-md sm:border sm:px-12">
+      <div className="relative flex w-full items-end gap-2 rounded-[28px] border border-outline-variant bg-surface-container-low px-2 py-2 sm:px-3">
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
               href="/"
               className={cn(
-                buttonVariants({ size: 'sm', variant: 'outline' }),
-                'absolute left-0 top-4 h-8 w-8 rounded-full bg-background p-0 sm:left-4'
+                buttonVariants({ size: 'sm', variant: 'ghost' }),
+                'h-11 w-11 shrink-0 p-0'
               )}
             >
               <IconPlus />
@@ -63,29 +63,31 @@ export function PromptForm({
           </TooltipTrigger>
           <TooltipContent>New Chat</TooltipContent>
         </Tooltip>
-        <Textarea
+        <MdTextField
           ref={inputRef}
-          tabIndex={0}
-          onKeyDown={onKeyDown}
-          rows={1}
+          type="textarea"
+          rows={2}
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onInput={value => setInput(value)}
+          onKeyDown={e =>
+            onKeyDown(e as unknown as React.KeyboardEvent<HTMLTextAreaElement>)
+          }
           placeholder="Send a message."
           spellCheck={false}
-          className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
+          className="min-w-0 flex-1 [--md-outlined-text-field-container-shape:16px]"
         />
-        <div className="absolute right-0 top-4 sm:right-4 flex gap-2">
+        <div className="flex shrink-0 gap-2">
           <VoiceInputButton onResult={(text) => setInput(input + text)} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
+              <md-filled-button
                 type="submit"
-                size="icon"
                 disabled={isLoading || input === ''}
+                class="h-11 min-h-11 min-w-11 [--md-filled-button-leading-space:12px] [--md-filled-button-trailing-space:12px]"
               >
                 <IconArrowElbow />
                 <span className="sr-only">Send message</span>
-              </Button>
+              </md-filled-button>
             </TooltipTrigger>
             <TooltipContent>Send message</TooltipContent>
           </Tooltip>
