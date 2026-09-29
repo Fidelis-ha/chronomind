@@ -516,7 +516,9 @@ export function Timeline() {
     }
     setSelStart(null)
     if (aMs === bMs) return // gleiche Zelle: Auswahl abbrechen
-    startCommit(Math.min(aMs, bMs), Math.max(aMs, bMs))
+    // Volle Zellen markieren: von Zellenanfang des ersten Taps bis Zellenende
+    // des zweiten Taps (intuitive Auswahl, unabhängig von der Tap-Reihenfolge)
+    startCommit(Math.min(aMs, bMs), Math.max(aMs, bMs) + cellMin * MIN_MS)
   }
 
   const startCommit = (startMs: number, endMs: number) => {
