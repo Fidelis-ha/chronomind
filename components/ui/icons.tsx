@@ -476,6 +476,44 @@ function IconChevronUpDown({
   )
 }
 
+function IconChartBar({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn('h-6 w-6', className)}
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path d="M3 3v18h18" />
+      <path d="M7 16v-5M12 16V8M17 16v-3" />
+    </svg>
+  )
+}
+
+function IconChartPie({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn('h-6 w-6', className)}
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+      <path d="M22 12A10 10 0 0 0 12 2v10z" />
+    </svg>
+  )
+}
+
 export {
   IconEdit,
   IconNextChat,
@@ -496,6 +534,8 @@ export {
   IconSidebar,
   IconMoon,
   IconSun,
+  IconChartBar,
+  IconChartPie,
   IconCopy,
   IconCheck,
   IconDownload,

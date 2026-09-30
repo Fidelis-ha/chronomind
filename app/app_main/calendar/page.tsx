@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'react-hot-toast'
+import { AppLayout } from '@/components/app-layout'
 import { CalendarIcon, TrashIcon, RefreshCwIcon } from 'lucide-react'
 
 const STORAGE_KEY = 'chronomind_calendars'
@@ -117,10 +118,11 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
+    <AppLayout>
+      <div className="container mx-auto max-w-4xl py-6 px-4 sm:py-8">
+      <div className="flex flex-col gap-3 mb-6 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold">Kalender</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)}>
             {showForm ? 'Abbrechen' : '+ Kalender'}
           </Button>
@@ -185,7 +187,7 @@ export default function CalendarPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDeleteCalendar(cal.id)}
-                  className="text-destructive"
+                  className="h-10 w-10 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
@@ -216,6 +218,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   )
 }

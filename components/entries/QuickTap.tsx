@@ -210,7 +210,7 @@ export function QuickTap({ onCreate }: QuickTapProps) {
               </div>
               <button
                 onClick={handleStop}
-                className="mt-1 w-full px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-semibold active:scale-95 transition-transform"
+                className="mt-1 min-h-[40px] w-full rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors duration-200 hover:bg-destructive/90 active:bg-destructive/95"
               >
                 ■ Fertig
               </button>
@@ -233,10 +233,10 @@ export function QuickTap({ onCreate }: QuickTapProps) {
               key={c.id}
               onClick={() => openDialog(c)}
               style={{ borderLeftColor: c.color }}
-              className={`flex items-center gap-2 rounded-2xl border-2 border-l-4 ring-1 ring-border px-3 py-4 transition-transform active:scale-95 ${
+              className={`flex items-center gap-2 rounded-2xl border-2 border-l-4 ring-1 ring-border px-3 py-4 min-h-[48px] transition-colors duration-200 ${
                 active
                   ? 'border-primary bg-primary/10 shadow-sm'
-                  : 'border-border bg-card hover:bg-accent'
+                  : 'border-border bg-surface-container-lowest hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]'
               }`}
             >
               <span
@@ -274,7 +274,7 @@ export function QuickTap({ onCreate }: QuickTapProps) {
                   key={chip.path}
                   title={chip.path}
                   onClick={() => handleStart(parts, lastSegment(chip.path))}
-                  className={`flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border bg-card hover:bg-accent text-sm transition-transform active:scale-95 ${
+                  className={`flex items-center gap-1.5 min-h-[40px] py-2 px-3 rounded-full border bg-surface-container-lowest text-sm transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12] ${
                     isRunningChip ? 'border-primary bg-primary/10 font-semibold' : 'border-border'
                   }`}
                 >

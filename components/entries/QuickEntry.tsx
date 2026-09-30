@@ -251,24 +251,28 @@ export function QuickEntry({ onCreate, recentTitles = [] }: QuickEntryProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mb-6">
+      {/* Auf Mobilgeräten kurzer Placeholder, der Desktop-Vorschau-Hinweis entfällt dort */}
       <div className="flex gap-2">
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Schnelleingabe: 14:30-15:45 Projektarbeit @Arbeit   oder   +45m Pause   (Taste n zum Fokussieren)"
-          className="flex-1 border rounded-md px-3 py-2 text-sm bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Schnelleingabe: 14:30-15:45 @Arbeit"
+          className="flex-1 min-h-[40px] rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           autoComplete="off"
-          autoFocus
+          aria-label="Schnelleingabe"
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+          className="min-h-[40px] shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-md transition-colors duration-200 hover:bg-primary/90 active:bg-primary/95"
         >
           Hinzufügen
         </button>
       </div>
+      <p className="mt-2 hidden sm:block text-xs text-muted-foreground px-1">
+        Beispiele: <code>14:30-15:45 Projektarbeit @Arbeit</code>, <code>+45m Pause</code>, <code>gestern 10-12 Büro</code> · Taste <kbd>n</kbd> zum Fokussieren
+      </p>
       {parsed && !('error' in parsed) && (
         <div className="mt-2 text-xs text-muted-foreground px-1">
           ✓ {parsed.dateLabel}: {parsed.title}
@@ -287,7 +291,7 @@ export function QuickEntry({ onCreate, recentTitles = [] }: QuickEntryProps) {
               key={t}
               type="button"
               onClick={() => setInput(`+30m ${t}`)}
-              className="text-xs border rounded-full px-2.5 py-0.5 text-muted-foreground hover:bg-accent"
+              className="min-h-[32px] rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1 text-xs text-on-surface-variant transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
               title="Als +30m-Eintrag übernehmen"
             >
               {t}

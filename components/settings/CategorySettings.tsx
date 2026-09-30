@@ -69,7 +69,7 @@ function InlineName({
       onKeyDown={e => {
         if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
       }}
-      className="h-8 text-sm"
+      className="h-10 min-h-[40px] text-sm"
     />
   )
 }
@@ -91,9 +91,9 @@ function AddSubRow({ onAdd, placeholder }: { onAdd: (name: string) => void | fal
           if (e.key === 'Enter') submit()
         }}
         placeholder={placeholder}
-        className="h-8 text-sm"
+        className="h-10 min-h-[40px] text-sm"
       />
-      <Button size="sm" variant="outline" onClick={submit} disabled={!name.trim()}>
+      <Button size="sm" variant="outline" className="min-h-[40px]" onClick={submit} disabled={!name.trim()}>
         +
       </Button>
     </div>
@@ -182,7 +182,7 @@ export function CategorySettings() {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-9 px-2"
+              className="min-h-[40px] px-2"
               onClick={() => toggleMain(c.id)}
               aria-expanded={expandedMains.has(c.id)}
             >
@@ -191,7 +191,7 @@ export function CategorySettings() {
             <Button
               variant="ghost"
               size="sm"
-              className="w-8 h-8 p-0 text-destructive hover:text-destructive"
+              className="w-10 h-10 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
               aria-label={`${c.name} löschen`}
               title="Löschen"
               onClick={() => {
@@ -229,7 +229,7 @@ export function CategorySettings() {
                       <Button
                           variant="ghost"
                           size="sm"
-                          className="min-h-9 px-2"
+                          className="min-h-[40px] px-2"
                           onClick={() => toggleSub(subKey)}
                           aria-expanded={expandedSubs.has(subKey)}
                         >
@@ -238,7 +238,7 @@ export function CategorySettings() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-8 h-8 p-0 text-destructive hover:text-destructive"
+                        className="w-10 h-10 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
                         aria-label={`${s.name} löschen`}
                         title="Löschen"
                         onClick={() => setCats(removeSub({ mainId: c.id, subIdx }))}
@@ -272,7 +272,7 @@ export function CategorySettings() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="w-8 h-8 p-0 text-destructive hover:text-destructive"
+                              className="w-10 h-10 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
                               aria-label={`${ch.name} löschen`}
                               title="Löschen"
                               onClick={() => setCats(removeSub({ mainId: c.id, subIdx, childIdx }))}

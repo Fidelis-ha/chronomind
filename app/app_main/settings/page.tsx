@@ -11,6 +11,7 @@ import { CategorySettings } from '@/components/settings/CategorySettings'
 import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
 import { InstallHint } from '@/components/settings/InstallHint'
 import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
+import { AppLayout } from '@/components/app-layout'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -205,10 +206,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-xl py-8 px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Einstellungen</h1>
-        <div className="flex gap-2">
+    <AppLayout>
+      <div className="container mx-auto max-w-xl py-6 px-4 sm:py-8">
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold">Einstellungen</h1>
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleImport}>Import</Button>
           <Button variant="outline" size="sm" onClick={handleExportJSON}>JSON</Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV}>CSV</Button>
@@ -219,7 +221,7 @@ export default function SettingsPage() {
       <div className="space-y-8">
 
         {/* AI Settings */}
-        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">KI Einstellungen</h2>
 
           <div className="space-y-4">
@@ -280,7 +282,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Kategorien */}
-        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-1">Kategorien</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Verwalte Haupt- und Unterkategorien (bis zu 3 Ebenen). Diese erscheinen als Kacheln und Chips zum schnellen Start der Zeiterfassung.
@@ -289,7 +291,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Time Settings */}
-        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">Zeit-Einstellungen</h2>
 
           <div className="space-y-4">
@@ -334,7 +336,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Cloud Sync */}
-        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-1">Cloud-Speicher</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Wähle, wo deine Daten gesichert werden. Einträge, Einstellungen und Kategorien werden dann automatisch synchronisiert.
@@ -343,7 +345,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Install Hint */}
-        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-6">
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-1">App installieren</h2>
           <p className="text-sm text-muted-foreground mb-4">
             ChronoMind als eigenständige App auf Desktop oder Android installieren – mit automatischen Updates.
@@ -355,6 +357,7 @@ export default function SettingsPage() {
           {saving ? 'Wird gespeichert...' : 'Speichern'}
         </Button>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   )
 }

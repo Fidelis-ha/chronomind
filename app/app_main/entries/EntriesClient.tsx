@@ -131,8 +131,8 @@ export function EntriesClient() {
   ).filter(Boolean)
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto max-w-3xl py-6 px-4 sm:py-8">
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Zeiteinträge</h1>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowForm(!showForm)}>
@@ -161,7 +161,7 @@ export function EntriesClient() {
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className="rounded-full border border-outline-variant bg-surface-container-low px-4 py-1.5 text-sm text-on-surface transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="min-h-[40px] rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-1.5 text-sm text-on-surface transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         <span className="text-muted-foreground">
           Gesamt: {formatTotalDuration(filteredEntries)}

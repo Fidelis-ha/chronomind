@@ -75,7 +75,7 @@ export default function DashboardClient() {
   ).filter(Boolean)
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 px-4">
+    <div className="container mx-auto max-w-3xl py-6 px-4 sm:py-8">
       {cloud.cloudQuestion && (
         <CloudQuestionBanner
           cloudTs={cloud.cloudQuestion.cloudTs}
@@ -92,7 +92,8 @@ export default function DashboardClient() {
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between mb-6">
+      {/* Auf mobil stapeln die Buttons unter die Überschrift, ab md neben sie */}
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-bold">Heute</h1>
         <div className="flex items-center gap-2 flex-wrap">
           {cloud.syncing && <span className="text-xs text-muted-foreground animate-pulse">☁️ synchronisiere…</span>}
@@ -136,7 +137,7 @@ export default function DashboardClient() {
       <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
 
       {showDetails && (
-        <div className="mb-6 p-4 rounded-2xl border border-outline-variant bg-surface-container-low">
+        <div className="mb-6 rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <EntryForm onCreate={handleCreate} />
         </div>
       )}

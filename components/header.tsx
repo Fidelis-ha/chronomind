@@ -19,7 +19,7 @@ export function Header() {
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 w-full shrink-0 items-center justify-between bg-surface px-4">
+    <header className="sticky top-0 z-50 flex h-16 w-full shrink-0 items-center justify-between bg-surface-container px-4">
       <div className="flex items-center gap-4">
         <Link
           href="/app_main"
@@ -38,10 +38,10 @@ export function Header() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors duration-200',
+                  'inline-flex h-10 min-h-[40px] items-center justify-center rounded-full px-4 text-sm font-medium transition-colors duration-200',
                   active
                     ? 'bg-secondary-container text-on-secondary-container'
-                    : 'text-on-surface-variant hover:bg-on-surface/[0.08] hover:text-on-surface'
+                    : 'text-on-surface-variant hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12] hover:text-on-surface'
                 )}
               >
                 {item.label}

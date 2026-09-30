@@ -135,8 +135,8 @@ export function AnalyticsClient() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto max-w-4xl py-6 px-4 sm:py-8">
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Auswertung</h1>
         <Button variant="outline" asChild>
           <Link href="/app_main/entries">Alle Einträge</Link>
@@ -163,7 +163,7 @@ export function AnalyticsClient() {
         <div>
           <h2 className="text-lg font-semibold mb-4">Zeit nach Kategorie</h2>
           <div className="p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
-            <CategoryPieChart data={categoryData} />
+            <CategoryPieChart data={categoryData} totalHours={weeklyStats.totalHours} />
           </div>
         </div>
 

@@ -494,6 +494,17 @@ export function Timeline() {
     setPopover(null)
     setSelected(null)
     if (!selStart) {
+      // Antippen innerhalb einer bestehenden, unbestätigten Markierung:
+      // Dialog öffnen (wie FAB) statt die Markierung zu verwerfen
+      if (pending) {
+        const tapMs = dayIdxToDateMs(dayIdx) + minute * MIN_MS
+        const inPast = pending.past && tapMs >= pending.past.start && tapMs < pending.past.end
+        const inFuture = pending.future && tapMs >= pending.future.start && tapMs < pending.future.end
+        if (!Number.isNaN(tapMs) && (inPast || inFuture)) {
+          openCreateFlow(pending)
+          return
+        }
+      }
       // Neue Markierung starten: alte, unbestätigte Markierung + FAB still verwerfen
       if (commitFab || pending) {
         if (fabExitTimer.current) {
@@ -515,10 +526,34 @@ export function Timeline() {
       return
     }
     setSelStart(null)
-    if (aMs === bMs) return // gleiche Zelle: Auswahl abbrechen
+    if (aMs === bMs) {
+      // Gleiche Zelle erneut antippen: die Einzelzelle selbst ist der Eintrag –
+      // Bestätigungs-FAB zeigen und den Anlege-Dialog direkt öffnen
+      const parts = buildPendingParts(aMs, aMs + cellMin * MIN_MS)
+      setPending(parts)
+      setCommitFab({ ...fabPosFor(parts), kind: parts.past ? 'entry' : 'plan' })
+      openCreateFlow(parts)
+      return
+    }
     // Volle Zellen markieren: von Zellenanfang des ersten Taps bis Zellenende
     // des zweiten Taps (intuitive Auswahl, unabhängig von der Tap-Reihenfolge)
     startCommit(Math.min(aMs, bMs), Math.max(aMs, bMs) + cellMin * MIN_MS)
+  }
+
+  /** Vergangenheit/Zukunft am Jetzt-Zeitraum splitten (5-Min-Boden) */
+  const buildPendingParts = (startMs: number, endMs: number): PendingParts => {
+    const nowFloor = Math.floor(nowMs / (5 * MIN_MS)) * (5 * MIN_MS)
+    let past: Range | null = null
+    let future: Range | null = null
+    if (startMs >= nowFloor) {
+      future = { start: startMs, end: endMs }
+    } else if (endMs <= nowFloor) {
+      past = { start: startMs, end: endMs }
+    } else {
+      past = { start: startMs, end: nowFloor }
+      future = { start: nowFloor, end: endMs }
+    }
+    return { past, future, colls: [] }
   }
 
   const startCommit = (startMs: number, endMs: number) => {
@@ -531,31 +566,25 @@ export function Timeline() {
         /* ignore */
       }
     }
-    const nowFloor = Math.floor(nowMs / (5 * MIN_MS)) * (5 * MIN_MS)
-    let past: Range | null = null
-    let future: Range | null = null
-    if (startMs >= nowFloor) {
-      future = { start: startMs, end: endMs }
-    } else if (endMs <= nowFloor) {
-      past = { start: startMs, end: endMs }
-    } else {
-      past = { start: startMs, end: nowFloor }
-      future = { start: nowFloor, end: endMs }
-    }
+    const parts = buildPendingParts(startMs, endMs)
     // Nach Tap 2: KEIN Dialog mehr – Markierung bleibt + Bestätigungs-FAB erscheint
-    const parts: PendingParts = { past, future, colls: [] }
     setPending(parts)
-    setCommitFab({ ...fabPosFor(parts), kind: past ? 'entry' : 'plan' })
+    setCommitFab({ ...fabPosFor(parts), kind: parts.past ? 'entry' : 'plan' })
+  }
+
+  /** Dialog-Flow starten (Adopt → Kollision → Kategorie) für konkrete Teile */
+  const openCreateFlow = (parts: PendingParts) => {
+    if (parts.past && parts.future) {
+      setAdoptState({ past: parts.past, future: parts.future })
+      return
+    }
+    prepareCommit({ past: parts.past, future: parts.future })
   }
 
   /** FAB-Klick: bestehenden Dialog-Flow starten (Adopt → Kollision → Kategorie) */
   const beginCreateFlow = () => {
     if (!pending) return
-    if (pending.past && pending.future) {
-      setAdoptState({ past: pending.past, future: pending.future })
-      return
-    }
-    prepareCommit({ past: pending.past, future: pending.future })
+    openCreateFlow(pending)
   }
 
   const prepareCommit = (parts: { past: Range | null; future: Range | null }) => {
@@ -1128,11 +1157,13 @@ export function Timeline() {
         </Button>
         {showCreateHint && (
           <span className="text-[10px] text-on-secondary-container rounded-full bg-secondary-container px-3 py-1">
-            Zum Markieren zweimal antippen (Start + Ende)
+            Zum Markieren zweimal antippen (Start + Ende) · dieselbe Zelle zweimal = Einzel-Eintrag
           </span>
         )}
         <span className="ml-auto text-[10px] text-muted-foreground text-right">
-          {selStart ? 'Zielzelle antippen…' : 'Zoom: Pinch / Strg+Rad'}
+          {selStart
+            ? 'Zielzelle antippen… (dieselbe Zelle = Einzel-Eintrag)'
+            : <><span className="md:hidden">Pinch zum Zoomen</span><span className="hidden md:inline">Zoom: Pinch / Strg+Rad</span></>}
           <br />
           Raster: {cellMin} min
         </span>
@@ -1387,7 +1418,7 @@ export function Timeline() {
                     key={chip.path}
                     title={chip.path}
                     onClick={() => finishCreate(parts, lastSegment(chip.path))}
-                    className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-border bg-card hover:bg-accent text-sm transition-transform active:scale-95"
+                    className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
                   >
                     <span
                       className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
