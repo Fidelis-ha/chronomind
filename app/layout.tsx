@@ -25,6 +25,8 @@ export const metadata: Metadata = {
     title: 'ChronoMind'
   },
   viewport: {
+    width: 'device-width',
+    initialScale: 1,
     viewportFit: 'cover'
   } satisfies Viewport,
   themeColor: [
