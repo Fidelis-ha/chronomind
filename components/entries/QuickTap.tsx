@@ -13,7 +13,7 @@ import {
 } from '@/lib/categories'
 import { loadEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
 import { markDirty } from '@/lib/dirty-state'
-import { RUNNING_ENTRY_KEY as STORAGE_KEY } from '@/lib/cloud-sync-payload'
+import { RUNNING_ENTRY_KEY as STORAGE_KEY, RUNNING_CHANGED_EVENT } from '@/lib/cloud-sync-payload'
 import { CategoryPickerDialog } from '@/components/categories/CategoryPickerDialog'
 
 interface QuickTapProps {
@@ -99,12 +99,21 @@ export function QuickTap({ onCreate }: QuickTapProps) {
     } catch { /* ignorieren */ }
     const handler = () => refreshCategories()
     const entriesHandler = () => refreshChipsRef.current()
+    // Laufender Timer kann auch von woanders gestartet/gestoppt worden sein (z. B. Zeitstrahl)
+    const runningHandler = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        setRunning(raw ? JSON.parse(raw) : null)
+      } catch { /* ignorieren */ }
+    }
     window.addEventListener(CATEGORIES_CHANGED_EVENT, handler)
     window.addEventListener(ENTRIES_CHANGED_EVENT, entriesHandler)
+    window.addEventListener(RUNNING_CHANGED_EVENT, runningHandler)
     window.addEventListener('storage', handler)
     return () => {
       window.removeEventListener(CATEGORIES_CHANGED_EVENT, handler)
       window.removeEventListener(ENTRIES_CHANGED_EVENT, entriesHandler)
+      window.removeEventListener(RUNNING_CHANGED_EVENT, runningHandler)
       window.removeEventListener('storage', handler)
     }
   }, [refreshCategories])

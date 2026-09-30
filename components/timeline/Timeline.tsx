@@ -22,7 +22,7 @@ import {
   type TimePlan
 } from '@/lib/plans'
 import { markDirty } from '@/lib/dirty-state'
-import { RUNNING_ENTRY_KEY } from '@/lib/cloud-sync-payload'
+import { RUNNING_ENTRY_KEY, RUNNING_CHANGED_EVENT } from '@/lib/cloud-sync-payload'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -105,7 +105,7 @@ export function Timeline() {
   const [running, setRunning] = useState<{ title: string; category: string | null; started_at: string } | null>(null)
   const [nowMs, setNowMs] = useState(() => Date.now())
 
-  const [selStart, setSelStart] = useState<{ dayIdx: number; minute: number } | null>(null)
+  const [selStart, setSelStart] = useState<{ dayIdx: number; minute: number; snapped: boolean } | null>(null)
   const [pending, setPending] = useState<PendingParts | null>(null)
   const [selected, setSelected] = useState<{ kind: 'entry' | 'plan'; id: string } | null>(null)
   const [popover, setPopover] = useState<PopoverState | null>(null)
@@ -114,7 +114,7 @@ export function Timeline() {
   const [adoptState, setAdoptState] = useState<{ past: Range; future: Range } | null>(null)
   const [collisionState, setCollisionState] = useState<PendingParts | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerSource, setPickerSource] = useState<'create' | 'retitle' | null>(null)
+  const [pickerSource, setPickerSource] = useState<'create' | 'retitle' | 'timer' | null>(null)
   const [retitleTarget, setRetitleTarget] = useState<{ kind: 'entry' | 'plan'; id: string } | null>(null)
   const [deleteArmId, setDeleteArmId] = useState<string | null>(null)
   const [showTapHint, setShowTapHint] = useState(false)
@@ -122,6 +122,17 @@ export function Timeline() {
   const [commitFab, setCommitFab] = useState<{ x: number; y: number; kind: 'entry' | 'plan' } | null>(null)
   const [fabExiting, setFabExiting] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  // Punkt 2: Klick nahe „Jetzt" → Vorschlag „Zeiterfassung ab hier starten" (Kategorie wählen)
+  const [timerProposal, setTimerProposal] = useState<{ startMs: number } | null>(null)
+  // Punkt 5: offene Markierung nach Tap 2 per Ziehgriff anpassen (Start-/Endkante)
+  const [pendingDrag, setPendingDrag] = useState<{
+    edge: 'start' | 'end'
+    startY: number
+    origStartMs: number
+    origEndMs: number
+    curStartMs: number
+    curEndMs: number
+  } | null>(null)
 
   const rafRef = useRef(0)
   const extendRef = useRef<{ past?: number; future?: number } | null>(null)
@@ -486,21 +497,70 @@ export function Timeline() {
 
   /* ---------- Markieren (2-Tap) ---------- */
 
+  /* ---------- Snap-Zeiten (Einrasten an Item-Kanten / Jetzt) ---------- */
+
+  // Zeitkandidaten für das Einrasten: alle Item-Anfänge/-Enden + die Jetzt-Linie.
+  // Toleranz zoom-abhängig: ~10px Fingerradius, mind. 4 Minuten.
+  const snapToleranceMs = Math.max(4, Math.round(10 / pxPerMin)) * MIN_MS
+  const snapTargets = useMemo<number[]>(() => {
+    const set = new Set<number>()
+    for (const it of allItems) {
+      set.add(it.startMs)
+      set.add(it.endMs)
+    }
+    set.add(nowMs)
+    return Array.from(set)
+  }, [allItems, nowMs])
+
+  /** Rastet einen rohen Zeitwert an die nächste Snap-Zeit ein (null = kein Kandidat in der Nähe) */
+  const snapMs = useCallback(
+    (rawMs: number): number | null => {
+      let best: number | null = null
+      let bestDist = Infinity
+      for (const t of snapTargets) {
+        const d = Math.abs(t - rawMs)
+        if (d <= snapToleranceMs && d < bestDist) {
+          bestDist = d
+          best = t
+        }
+      }
+      return best
+    },
+    [snapTargets, snapToleranceMs]
+  )
+
   const onColumnClick = (e: React.MouseEvent<HTMLDivElement>, dayIdx: number) => {
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
-    const minute = Math.min(24 * 60 - cellMin, Math.max(0, Math.floor(y / pxPerMin / cellMin) * cellMin))
+    const day0 = dayIdxToDateMs(dayIdx)
+    const rawMs = day0 + (y / pxPerMin) * MIN_MS
+    // Einrasten: nahe an Item-Kanten oder Jetzt-Linie → exakte Zeit statt Zellraster
+    const snapped = snapMs(rawMs)
+    let targetMs: number
+    if (snapped !== null) {
+      targetMs = snapped
+    } else {
+      const clampedMin = Math.min(24 * 60 - cellMin, Math.max(0, Math.floor(y / pxPerMin / cellMin) * cellMin))
+      targetMs = day0 + clampedMin * MIN_MS
+    }
+    const targetIdx = dayIdxOfMs(targetMs)
+    const targetMin = (targetMs - dayStartMs(targetMs)) / MIN_MS
     setPopover(null)
     setSelected(null)
+    // Tap-1 nahe an der Jetzt-Linie und kein laufender Timer:
+    // Vorschlag „Zeiterfassung ab jetzt starten" (Punkt 2 der Anforderung)
+    if (!selStart && !pending && snapped === nowMs && !running) {
+      setTimerProposal({ startMs: nowMs })
+      return
+    }
     if (!selStart) {
       // Antippen innerhalb einer bestehenden, unbestätigten Markierung:
       // Dialog öffnen (wie FAB) statt die Markierung zu verwerfen
       if (pending) {
-        const tapMs = dayIdxToDateMs(dayIdx) + minute * MIN_MS
-        const inPast = pending.past && tapMs >= pending.past.start && tapMs < pending.past.end
-        const inFuture = pending.future && tapMs >= pending.future.start && tapMs < pending.future.end
-        if (!Number.isNaN(tapMs) && (inPast || inFuture)) {
+        const inPast = pending.past && targetMs >= pending.past.start && targetMs < pending.past.end
+        const inFuture = pending.future && targetMs >= pending.future.start && targetMs < pending.future.end
+        if (!Number.isNaN(targetMs) && (inPast || inFuture)) {
           openCreateFlow(pending)
           return
         }
@@ -516,28 +576,28 @@ export function Timeline() {
         setPending(null)
         setCreateDialogOpen(false)
       }
-      setSelStart({ dayIdx, minute })
+      setSelStart({ dayIdx: targetIdx, minute: targetMin, snapped: snapped !== null })
       return
     }
+    // Tap-1-Zeit: gesnappt → exakt; sonst Zellstart.
+    // Tap-2-Zeit: gesnappt → exakt; sonst Zellende (+cellMin).
     const aMs = dayIdxToDateMs(selStart.dayIdx) + selStart.minute * MIN_MS
-    const bMs = dayIdxToDateMs(dayIdx) + minute * MIN_MS
+    const bMs = snapped !== null ? targetMs : targetMs + cellMin * MIN_MS
     if (Number.isNaN(aMs) || Number.isNaN(bMs)) {
       setSelStart(null)
       return
     }
     setSelStart(null)
     if (aMs === bMs) {
-      // Gleiche Zelle erneut antippen: die Einzelzelle selbst ist der Eintrag –
-      // Bestätigungs-FAB zeigen und den Anlege-Dialog direkt öffnen
+      // Gleiche (gesnapte) Stelle zweimal: Eintrag der Rasterdauer ab dort
       const parts = buildPendingParts(aMs, aMs + cellMin * MIN_MS)
       setPending(parts)
       setCommitFab({ ...fabPosFor(parts), kind: parts.past ? 'entry' : 'plan' })
       openCreateFlow(parts)
       return
     }
-    // Volle Zellen markieren: von Zellenanfang des ersten Taps bis Zellenende
-    // des zweiten Taps (intuitive Auswahl, unabhängig von der Tap-Reihenfolge)
-    startCommit(Math.min(aMs, bMs), Math.max(aMs, bMs) + cellMin * MIN_MS)
+    // Spanne markieren: exakte Snap-Kanten bzw. volle Zellen (wie bisher)
+    startCommit(Math.min(aMs, bMs), Math.max(aMs, bMs))
   }
 
   /** Vergangenheit/Zukunft am Jetzt-Zeitraum splitten (5-Min-Boden) */
@@ -572,6 +632,59 @@ export function Timeline() {
     setCommitFab({ ...fabPosFor(parts), kind: parts.past ? 'entry' : 'plan' })
   }
 
+  /* ---------- Punkt 5: offene Markierung per Ziehgriff anpassen ---------- */
+
+  const startPendingDrag = (e: React.PointerEvent, edge: 'start' | 'end') => {
+    if (!pending) return
+    e.stopPropagation()
+    e.preventDefault()
+    const ranges = [pending.past, pending.future].filter((r): r is Range => r !== null)
+    if (!ranges.length) return
+    const s = Math.min(...ranges.map(r => r.start))
+    const en = Math.max(...ranges.map(r => r.end))
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    setPendingDrag({ edge, startY: e.clientY, origStartMs: s, origEndMs: en, curStartMs: s, curEndMs: en })
+  }
+
+  const movePendingDrag = (e: React.PointerEvent) => {
+    if (!pendingDrag) return
+    e.preventDefault()
+    const dMinutes = (e.clientY - pendingDrag.startY) / pxPerMin
+    const raw = pendingDrag.edge === 'start'
+      ? pendingDrag.origStartMs + dMinutes * MIN_MS
+      : pendingDrag.origEndMs + dMinutes * MIN_MS
+    // 5-Min-Raster + Snap an Item-Kanten/Jetzt (Punkt 1 auch beim Ziehen)
+    const floor5 = Math.round(raw / (5 * MIN_MS)) * (5 * MIN_MS)
+    const snappedT = snapMs(raw)
+    const target = snappedT ?? floor5
+    let ns = pendingDrag.curStartMs
+    let ne = pendingDrag.curEndMs
+    if (pendingDrag.edge === 'start') {
+      ns = Math.min(target, pendingDrag.origEndMs - 5 * MIN_MS)
+    } else {
+      ne = Math.max(target, pendingDrag.origStartMs + 5 * MIN_MS)
+    }
+    setPendingDrag({ ...pendingDrag, curStartMs: ns, curEndMs: ne })
+  }
+
+  const endPendingDrag = () => {
+    if (!pendingDrag) return
+    const d = pendingDrag
+    dragUntil.current = Date.now() + 250
+    setPendingDrag(null)
+    if (d.curStartMs === d.origStartMs && d.curEndMs === d.origEndMs) return
+    const parts = buildPendingParts(d.curStartMs, d.curEndMs)
+    setPending(parts)
+    setCommitFab({ ...fabPosFor(parts), kind: parts.past ? 'entry' : 'plan' })
+    toast(`${fmtHM(d.curStartMs)}–${fmtHM(d.curEndMs)} angepasst`)
+  }
+
+  // Live-Vorschau: pendingDrag übernimmt die Zeiten der Markierung
+  const effectivePending: PendingParts | null = useMemo(() => {
+    if (!pendingDrag || !pending) return pending
+    return buildPendingParts(pendingDrag.curStartMs, pendingDrag.curEndMs)
+  }, [pending, pendingDrag])
+
   /** Dialog-Flow starten (Adopt → Kollision → Kategorie) für konkrete Teile */
   const openCreateFlow = (parts: PendingParts) => {
     if (parts.past && parts.future) {
@@ -585,6 +698,24 @@ export function Timeline() {
   const beginCreateFlow = () => {
     if (!pending) return
     openCreateFlow(pending)
+  }
+
+  /** Timer-Vorschlag (Klick nahe „Jetzt"): Kategorie wählen → laufender Timer ab startMs */
+  const startTimerFromProposal = (path: string[], title: string) => {
+    if (!timerProposal) return
+    const next = {
+      title,
+      category: path.length ? path.join('/') : null,
+      started_at: toIso(timerProposal.startMs)
+    }
+    localStorage.setItem(RUNNING_ENTRY_KEY, JSON.stringify(next))
+    markDirty()
+    setRunning(next)
+    setNowMs(Date.now())
+    setTimerProposal(null)
+    // QuickTap & Co. im selben Tab informieren (storage-Event feuert nicht lokal)
+    window.dispatchEvent(new Event(RUNNING_CHANGED_EVENT))
+    toast.success(`Timer läuft: ${title} · ab ${fmtHM(timerProposal.startMs)}`, { icon: '▶️' })
   }
 
   const prepareCommit = (parts: { past: Range | null; future: Range | null }) => {
@@ -993,14 +1124,14 @@ export function Timeline() {
     const isToday = day0 === today0
     const lanes = clipAndLayout(allItems, day0, day1)
     const selCellTop = selStart?.dayIdx === idx ? selStart.minute * pxPerMin : null
-    const pendingRanges: { top: number; height: number }[] = []
-    if (pending) {
-      for (const r of [pending.past, pending.future]) {
+    const pendingRanges: { top: number; height: number; part: 'past' | 'future' }[] = []
+    if (effectivePending) {
+      for (const [part, r] of [['past', effectivePending.past], ['future', effectivePending.future]] as const) {
         if (!r) continue
         const s = Math.max(r.start, day0)
         const e2 = Math.min(r.end, day1)
         if (e2 <= s) continue
-        pendingRanges.push({ top: ((s - day0) / MIN_MS) * pxPerMin, height: Math.max(4, ((e2 - s) / MIN_MS) * pxPerMin) })
+        pendingRanges.push({ part, top: ((s - day0) / MIN_MS) * pxPerMin, height: Math.max(4, ((e2 - s) / MIN_MS) * pxPerMin) })
       }
     }
     const dateMs = day0
@@ -1034,13 +1165,46 @@ export function Timeline() {
           />
         )}
 
-        {/* Wartende Markierung (vor Kategorieauswahl) */}
+        {/* Wartende Markierung (vor Kategorieauswahl) – per Ziehgriff anpassbar (Punkt 5) */}
         {pendingRanges.map((r, i) => (
           <div
             key={i}
-            className="absolute left-0.5 right-0.5 bg-primary/15 border border-dashed border-primary rounded pointer-events-none"
+            className="absolute left-0.5 right-0.5 bg-primary/15 border border-dashed border-primary rounded"
             style={{ top: r.top, height: r.height }}
-          />
+          >
+            <span
+              className="absolute left-0 right-0 top-0 h-6 cursor-ns-resize flex items-start justify-center"
+              style={{ touchAction: 'none' }}
+              onPointerDown={e => startPendingDrag(e, 'start')}
+              onPointerMove={movePendingDrag}
+              onPointerUp={endPendingDrag}
+              onPointerCancel={endPendingDrag}
+            >
+              <div className="w-6 h-1.5 rounded-full bg-primary/60" />
+            </span>
+            <span
+              className="absolute left-0 right-0 bottom-0 h-6 cursor-ns-resize flex items-end justify-center"
+              style={{ touchAction: 'none' }}
+              onPointerDown={e => startPendingDrag(e, 'end')}
+              onPointerMove={movePendingDrag}
+              onPointerUp={endPendingDrag}
+              onPointerCancel={endPendingDrag}
+            >
+              <div className="w-6 h-1.5 rounded-full bg-primary/60" />
+            </span>
+            {/* Live-Anzeige des markierten Bereichs (Punkt 5: „wo raste ich gerade ein") */}
+            {pendingDrag && (
+              <span className="absolute left-1/2 -translate-x-1/2 -top-6 text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none">
+                {(() => {
+                  const all = [effectivePending?.past, effectivePending?.future].filter((x): x is Range => !!x)
+                  if (!all.length) return ''
+                  const s = Math.min(...all.map(x => x.start))
+                  const en = Math.max(...all.map(x => x.end))
+                  return `${fmtHM(s)}–${fmtHM(en)}`
+                })()}
+              </span>
+            )}
+          </div>
         ))}
 
         {/* Jetzt-Linie */}
@@ -1155,14 +1319,16 @@ export function Timeline() {
         <Button variant="outline" size="sm" className="h-8" onClick={() => goToDayIdx(pastDays)}>
           Heute
         </Button>
-        {showCreateHint && (
-          <span className="text-[10px] text-on-secondary-container rounded-full bg-secondary-container px-3 py-1">
-            Zum Markieren zweimal antippen (Start + Ende) · dieselbe Zelle zweimal = Einzel-Eintrag
-          </span>
-        )}
-        <span className="ml-auto text-[10px] text-muted-foreground text-right">
+        {/* Hinweis: per visibility versteckt statt unmountet – sonst Umbruch/Scroll-Sprung (Punkt 4) */}
+        <span
+          className={`text-[10px] text-on-secondary-container rounded-full bg-secondary-container px-3 py-1 whitespace-nowrap ${showCreateHint ? 'visible' : 'invisible'}`}
+          aria-hidden={!showCreateHint}
+        >
+          Zum Markieren zweimal antippen
+        </span>
+        <span className="ml-auto text-[10px] text-muted-foreground text-right whitespace-nowrap">
           {selStart
-            ? 'Zielzelle antippen… (dieselbe Zelle = Einzel-Eintrag)'
+            ? 'Zielzelle antippen…'
             : <><span className="md:hidden">Pinch zum Zoomen</span><span className="hidden md:inline">Zoom: Pinch / Strg+Rad</span></>}
           <br />
           Raster: {cellMin} min
@@ -1394,6 +1560,55 @@ export function Timeline() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog: Timer-Vorschlag (Klick nahe „Jetzt") */}
+      <Dialog open={!!timerProposal} onOpenChange={o => !o && setTimerProposal(null)}>
+        <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-medium">Zeiterfassung starten?</DialogTitle>
+            <DialogDescription>
+              Ab {timerProposal ? fmtHM(timerProposal.startMs) : ''} läuft der Timer – bereits vergangene Zeit gilt als erfasst.
+            </DialogDescription>
+          </DialogHeader>
+          {chips.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {chips.map(chip => {
+                const parts = chip.path.split('/')
+                const ambiguous = chips.filter(c2 => lastSegment(c2.path) === lastSegment(chip.path)).length > 1
+                const label = ambiguous ? `${parts[0]} / ${lastSegment(chip.path)}` : lastSegment(chip.path)
+                return (
+                  <button
+                    key={chip.path}
+                    title={chip.path}
+                    onClick={() => startTimerFromProposal(parts, lastSegment(chip.path))}
+                    className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
+                      style={{ backgroundColor: chipColor(chip.path) }}
+                    />
+                    <span className="truncate max-w-[10rem]">{label}</span>
+                    <span className="text-[10px] text-muted-foreground">{chip.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Keine häufigen Kategorien in den letzten 7 Tagen.</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" className="h-10 rounded-full px-5" onClick={() => setTimerProposal(null)}>
+              Abbrechen
+            </Button>
+            <Button variant="outline" className="h-10 rounded-full px-5" onClick={() => {
+              setPickerSource('timer')
+              setPickerOpen(true)
+            }}>
+              Andere Kategorie…
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog: Kategorieauswahl für die Markierung (häufige Chips + Kategorien-Dialog) */}
       <Dialog
         open={createDialogOpen && !!pending && !pickerOpen}
@@ -1455,8 +1670,9 @@ export function Timeline() {
           if (!open) {
             // Aus dem Anlege-Dialog geöffnet: pending aufbewahren (Abbruch ohne Auswahl)
             // und zurück zur Markierung + FAB kehren statt den Dialog wieder zu öffnen
-            if (pickerSource !== 'create') setPending(null)
-            else setCreateDialogOpen(false)
+            if (pickerSource === 'create') setCreateDialogOpen(false)
+            else if (pickerSource === 'timer') setTimerProposal({ startMs: nowMs })
+            else setPending(null)
             // Retitle-Auftrag verwerfen, sonst würde der nächste onPick fälschlich umtiteln
             setRetitleTarget(null)
             setPickerSource(null)
@@ -1465,6 +1681,8 @@ export function Timeline() {
         onPick={(path, title) => {
           if (retitleTarget) {
             applyRetitle(path, title)
+          } else if (pickerSource === 'timer') {
+            startTimerFromProposal(path, title)
           } else {
             finishCreate(path, title)
           }

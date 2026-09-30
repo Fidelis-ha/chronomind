@@ -10,6 +10,8 @@ import { type CloudPayload } from '@/lib/cloud-sync'
 
 export const SETTINGS_STORAGE_KEY = 'chronomind_settings'
 export const RUNNING_ENTRY_KEY = 'chronomind-running-entry'
+/** Event: laufender Timer wurde irgendwo gestartet/gestoppt (gleicher Tab) */
+export const RUNNING_CHANGED_EVENT = 'chronomind:running-changed'
 
 export function isTimerRunning(): boolean {
   if (typeof window === 'undefined') return false

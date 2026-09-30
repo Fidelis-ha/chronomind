@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { QuickTap } from '@/components/entries/QuickTap'
-import { QuickEntry } from '@/components/entries/QuickEntry'
-import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { Timeline } from '@/components/timeline/Timeline'
 import { type TimeEntry } from '@/lib/types'
@@ -32,7 +30,6 @@ import { CloudQuestionBanner } from '@/components/entries/CloudQuestionBanner'
 export default function DashboardClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [showDetails, setShowDetails] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [timerRunning, setTimerRunning] = useState(false)
   const cloud = useCloudSync()
@@ -67,7 +64,6 @@ export default function DashboardClient() {
     const updated = [entry, ...entries]
     setEntries(updated)
     saveEntries(updated)
-    setShowDetails(false)
   }
 
   const recentTitles = Array.from(
@@ -123,9 +119,6 @@ export default function DashboardClient() {
           <Button variant="outline" asChild>
             <Link href="/app_main/entries">Alle Einträge</Link>
           </Button>
-          <Button variant="outline" onClick={() => setShowDetails(!showDetails)}>
-            {showDetails ? 'Details ausblenden' : 'Detailliert…'}
-          </Button>
         </div>
       </div>
 
@@ -134,13 +127,6 @@ export default function DashboardClient() {
 
       <QuickTap onCreate={handleCreate} recentTitles={recentTitles} />
 
-      <QuickEntry onCreate={handleCreate} recentTitles={recentTitles} />
-
-      {showDetails && (
-        <div className="mb-6 rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
-          <EntryForm onCreate={handleCreate} />
-        </div>
-      )}
 
       {/* Einträge-Liste: standardmäßig eingeklappt */}
       <details className="group mb-6 rounded-2xl border border-outline-variant bg-surface-container-low">
