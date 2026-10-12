@@ -289,7 +289,9 @@ export function Timeline() {
   /* ---------- Bestätigungs-FAB (nach Tap 2) ---------- */
 
   /** FAB-Position im Content-Koordinatensystem: horizontal über der Markierung zentriert,
-   *  vertikal knapp oberhalb der Markierungsoberkante (mind. 8px oberer Rand). */
+   *  vertikal bevorzugt UNTERHALB der Markierung (das Zeit-Badge klebt über der Oberkante –
+   *  dort würde der FAB es überdecken). Nur wenn unten kein Platz ist: oberhalb, mit genug
+   *  Abstand für das Badge (~26px) zwischen FAB-Unterkante und Markierungsoberkante. */
   const fabPosFor = useCallback(
     (p: PendingParts): { x: number; y: number } => {
       const ranges = [p.past, p.future].filter((r): r is Range => r !== null)
@@ -299,7 +301,13 @@ export function Timeline() {
       const xStart = dayIdxOfMs(startMs) * DAY_WIDTH
       const xEnd = (dayIdxOfMs(endMs - 1) + 1) * DAY_WIDTH
       const markingTop = HEADER_H + ((startMs - dayStartMs(startMs)) / MIN_MS) * pxPerMin
-      return { x: (xStart + xEnd) / 2, y: Math.max(HEADER_H + 8, markingTop - 56) }
+      const markingBottom = HEADER_H + ((endMs - dayStartMs(endMs)) / MIN_MS) * pxPerMin
+      const contentBottom = HEADER_H + 24 * 60 * pxPerMin
+      const FAB_H = 48
+      if (markingBottom + 8 + FAB_H <= contentBottom) {
+        return { x: (xStart + xEnd) / 2, y: markingBottom + 8 }
+      }
+      return { x: (xStart + xEnd) / 2, y: Math.max(HEADER_H + 8, markingTop - 82) }
     },
     [dayIdxOfMs, pxPerMin]
   )
@@ -1209,7 +1217,7 @@ export function Timeline() {
               const above = r.top > 30
               return (
                 <span
-                  className={`absolute left-1/2 -translate-x-1/2 ${above ? '-top-6' : '-bottom-6'} text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none shadow-sm`}
+                  className={`absolute left-1/2 -translate-x-1/2 z-30 ${above ? '-top-6' : '-bottom-6'} text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none shadow-sm`}
                 >
                   <span className={pendingDrag?.edge === 'start' ? 'underline underline-offset-2' : ''}>{fmtHM(s)}</span>
                   <span className="px-0.5">–</span>
