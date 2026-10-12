@@ -55,3 +55,34 @@ export function catOf(id: string): DemoCategory {
 export function snapMin(raw: number, step = 5): number {
   return Math.round(raw / step) * step
 }
+
+export interface BerlinNow {
+  /** Minuten ab Mitternacht, Europe/Berlin (deterministisch Server+Client) */
+  min: number
+  weekdayLong: string
+  day: number
+  monthLong: string
+}
+
+/** Aktuelle Berliner Zeit als deterministischer Satz Werte — verhindert
+ *  Hydration-Mismatches (Server-TZ != Client-TZ) in den Design-Demos. */
+export function berlinNow(): BerlinNow {
+  const parts = new Intl.DateTimeFormat('de-DE', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date())
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+  const hour = parseInt(get('hour'), 10) % 24
+  const minute = parseInt(get('minute'), 10)
+  return {
+    min: hour * 60 + minute,
+    weekdayLong: get('weekday'),
+    day: parseInt(get('day'), 10),
+    monthLong: get('month')
+  }
+}

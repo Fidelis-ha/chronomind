@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+const DEMO_BASE_MIN = 960 // SSR-Basis (16:00), echte Zeit kommt nach Hydration
 import {
+  berlinNow,
   demoEntriesFor,
   DEMO_CATEGORIES,
   DEMO_DEFAULT_TITLES,
@@ -32,8 +35,7 @@ function dateLabel(d: Date): string {
 }
 
 function nowMinutes(): number {
-  const d = new Date()
-  return d.getHours() * 60 + d.getMinutes()
+  return berlinNow().min
 }
 
 interface Slot {
@@ -42,8 +44,8 @@ interface Slot {
 }
 
 export default function TaktDemo() {
-  const [nowMin] = useState(nowMinutes)
-  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(nowMinutes()))
+  const [nowMin, setNowMin] = useState(DEMO_BASE_MIN)
+  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(DEMO_BASE_MIN))
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DemoEntry | null>(null)
   const [draftCat, setDraftCat] = useState('arbeit')
@@ -54,6 +56,8 @@ export default function TaktDemo() {
   // Initial: Jetzt minus 90 Minuten in den Sichtbereich scrollen.
   useEffect(() => {
     if (scrollRef.current) {
+      setEntries(demoEntriesFor(berlinNow().min))
+      setNowMin(berlinNow().min)
       scrollRef.current.scrollTop = Math.max(0, (nowMin - 90) * PX_PER_MIN - 24)
     }
   }, [nowMin])
@@ -167,7 +171,7 @@ export default function TaktDemo() {
           Chronomind · Takt
         </span>
         <span className="tk-hlabel" style={{ fontSize: 12, fontWeight: 700 }}>
-          {dateLabel(new Date())}
+          {berlinNow().weekdayLong.slice(0,2).toUpperCase()} {String(berlinNow().day).padStart(2, '0')}.{berlinNow().monthLong.slice(0,3)}
         </span>
       </header>
 

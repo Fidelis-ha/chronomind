@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+const DEMO_BASE_MIN = 960 // SSR-Basis (16:00), echte Zeit kommt nach Hydration
 import { Plus, X } from 'lucide-react'
 import {
+  berlinNow,
   demoEntriesFor,
   DEMO_CATEGORIES,
   DEMO_DEFAULT_TITLES,
@@ -23,11 +26,8 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function FlowDemo() {
-  const [nowMin, setNowMin] = useState(() => {
-    const d = new Date()
-    return snapMin(d.getHours() * 60 + d.getMinutes())
-  })
-  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(nowMin))
+  const [nowMin, setNowMin] = useState(DEMO_BASE_MIN)
+  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(DEMO_BASE_MIN))
   const [openSlot, setOpenSlot] = useState<{ startMin: number; endMin: number } | null>(null)
   const [draftCat, setDraftCat] = useState<string>('arbeit')
   const [draftTitle, setDraftTitle] = useState('')
@@ -47,8 +47,7 @@ export default function FlowDemo() {
   // Uhr leicht weiterticken (Visual-Polish für die Jetzt-Linie)
   useEffect(() => {
     const t = setInterval(() => {
-      const d = new Date()
-      setNowMin(d.getHours() * 60 + d.getMinutes())
+      setNowMin(berlinNow().min)
     }, 30000)
     return () => clearInterval(t)
   }, [])

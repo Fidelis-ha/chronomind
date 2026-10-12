@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import {
+  berlinNow,
   demoEntriesFor,
   DEMO_CATEGORIES,
   DEMO_DEFAULT_TITLES,
@@ -11,20 +12,20 @@ import {
   type DemoEntry
 } from '@/lib/demo-design'
 
+const DEMO_BASE_MIN = 960 // SSR-Basis (16:00), echte Zeit kommt nach Hydration
 const PX_PER_H = 48
 const PX_PER_MIN = PX_PER_H / 60
 const TRACK_H = 24 * PX_PER_H // 1152px
 
 function nowMinutes(): number {
-  const d = new Date()
-  return d.getHours() * 60 + d.getMinutes()
+  return berlinNow().min
 }
 
 const clamp = (m: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, m))
 
 export default function BuehneDemo() {
-  const [nowMin, setNowMin] = useState<number>(() => nowMinutes())
-  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(nowMinutes()))
+  const [nowMin, setNowMin] = useState<number>(DEMO_BASE_MIN)
+  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(DEMO_BASE_MIN))
   const [openSlot, setOpenSlot] = useState<{ startMin: number; endMin: number } | null>(null)
   const [draftCat, setDraftCat] = useState<string>(DEMO_CATEGORIES[0].id)
   const [draftTitle, setDraftTitle] = useState<string>('')
@@ -36,7 +37,8 @@ export default function BuehneDemo() {
     const el = scrollRef.current
     if (!el) return
     const t = window.setTimeout(() => {
-      el.scrollTo({ top: Math.max(0, (nowMinutes() - 90) * PX_PER_MIN), behavior: 'smooth' })
+      setEntries(demoEntriesFor(berlinNow().min))
+      el.scrollTo({ top: Math.max(0, (berlinNow().min - 90) * PX_PER_MIN), behavior: 'smooth' })
     }, 120)
     const iv = window.setInterval(() => setNowMin(nowMinutes()), 60_000)
     return () => {
@@ -77,11 +79,8 @@ export default function BuehneDemo() {
     setOpenSlot(null)
   }
 
-  const dateLabel = new Date().toLocaleDateString('de-DE', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long'
-  })
+  const now = berlinNow()
+  const dateLabel = `${now.weekdayLong}, ${String(now.day).padStart(2, '0')}. ${now.monthLong}`
 
   const hours = Array.from({ length: 25 }, (_, h) => h)
 

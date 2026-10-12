@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+const DEMO_BASE_MIN = 960 // SSR-Basis (16:00), echte Zeit kommt nach Hydration
 import {
+  berlinNow,
   demoEntriesFor,
   DEMO_CATEGORIES,
   DEMO_DEFAULT_TITLES,
@@ -29,8 +32,7 @@ function longDate(d: Date): string {
 }
 
 function nowMinutes(): number {
-  const d = new Date()
-  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
+  return berlinNow().min
 }
 
 interface Slot {
@@ -45,7 +47,7 @@ type Popup =
 
 export default function AgendaDemo() {
   const [nowMin] = useState(nowMinutes)
-  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(Math.floor(nowMinutes())))
+  const [entries, setEntries] = useState<DemoEntry[]>(() => demoEntriesFor(DEMO_BASE_MIN))
   const [popup, setPopup] = useState<Popup>(null)
   const [draftCat, setDraftCat] = useState('arbeit')
   const [draftTitle, setDraftTitle] = useState('')
@@ -55,11 +57,12 @@ export default function AgendaDemo() {
   // Initiale Scroll-Position: 90 Minuten vor „Jetzt“
   useEffect(() => {
     if (scrollRef.current) {
+      setEntries(demoEntriesFor(berlinNow().min))
       scrollRef.current.scrollTop = Math.max(0, minutesToPx(nowMin - 90) - 12)
     }
   }, [nowMin])
 
-  const dateLabel = useMemo(() => longDate(new Date()), [])
+  const dateLabel = useMemo(() => { const n = berlinNow(); return `${n.weekdayLong}, den ${n.day}. ${n.monthLong}` }, [])
   const nowTop = minutesToPx(nowMin)
 
   function openCreateAt(clientY: number) {

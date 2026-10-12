@@ -1,7 +1,10 @@
-import type { Metadata } from 'next'
-import AgendaDemo from '@/components/design-demo/Agenda'
+'use client'
 
-export const metadata: Metadata = { title: 'Chronomind · Agenda' }
+import dynamic from 'next/dynamic'
+
+// Design-Prototyp: rein clientseitig gerendert (SSR aus), damit die
+// zeitabhängigen Demo-Daten niemals Hydration-Mismatches erzeugen.
+const AgendaDemo = dynamic(() => import('@/components/design-demo/Agenda'), { ssr: false })
 
 export default function Page() {
   return <AgendaDemo />
