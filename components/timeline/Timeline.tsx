@@ -105,7 +105,7 @@ export function Timeline() {
   const [running, setRunning] = useState<{ title: string; category: string | null; started_at: string } | null>(null)
   const [nowMs, setNowMs] = useState(() => Date.now())
 
-  const [selStart, setSelStart] = useState<{ dayIdx: number; minute: number; snapped: boolean } | null>(null)
+  const [selStart, setSelStart] = useState<{ dayIdx: number; minute: number; snapped: boolean; ms: number } | null>(null)
   const [pending, setPending] = useState<PendingParts | null>(null)
   const [selected, setSelected] = useState<{ kind: 'entry' | 'plan'; id: string } | null>(null)
   const [popover, setPopover] = useState<PopoverState | null>(null)
@@ -576,7 +576,7 @@ export function Timeline() {
         setPending(null)
         setCreateDialogOpen(false)
       }
-      setSelStart({ dayIdx: targetIdx, minute: targetMin, snapped: snapped !== null })
+      setSelStart({ dayIdx: targetIdx, minute: targetMin, snapped: snapped !== null, ms: targetMs })
       return
     }
     // Tap-1-Zeit: gesnappt → exakt; sonst Zellstart.
@@ -1157,12 +1157,20 @@ export function Timeline() {
           </div>
         ))}
 
-        {/* Startzelle der Markierung */}
+        {/* Startzelle der Markierung – mit Live-Anzeige der gesnapten Startzeit */}
         {selCellTop != null && (
           <div
             className="absolute left-0.5 right-0.5 bg-primary/25 border border-primary rounded pointer-events-none"
             style={{ top: selCellTop, height: cellMin * pxPerMin }}
-          />
+          >
+            {selStart?.dayIdx === idx && selStart.ms && (
+              <span
+                className={`absolute left-1/2 -translate-x-1/2 text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none shadow-sm ${selCellTop > 30 ? '-top-6' : '-bottom-6'}`}
+              >
+                Start {fmtHM(selStart.ms)}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Wartende Markierung (vor Kategorieauswahl) – per Ziehgriff anpassbar (Punkt 5) */}
@@ -1192,18 +1200,23 @@ export function Timeline() {
             >
               <div className="w-6 h-1.5 rounded-full bg-primary/60" />
             </span>
-            {/* Live-Anzeige des markierten Bereichs (Punkt 5: „wo raste ich gerade ein") */}
-            {pendingDrag && (
-              <span className="absolute left-1/2 -translate-x-1/2 -top-6 text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none">
-                {(() => {
-                  const all = [effectivePending?.past, effectivePending?.future].filter((x): x is Range => !!x)
-                  if (!all.length) return ''
-                  const s = Math.min(...all.map(x => x.start))
-                  const en = Math.max(...all.map(x => x.end))
-                  return `${fmtHM(s)}–${fmtHM(en)}`
-                })()}
-              </span>
-            )}
+            {/* Zeit-Badge: dauerhaft sichtbar, live beim Ziehen; gezogene Kante unterstrichen */}
+            {i === 0 && (() => {
+              const all = [effectivePending?.past, effectivePending?.future].filter((x): x is Range => !!x)
+              if (!all.length) return null
+              const s = Math.min(...all.map(x => x.start))
+              const en = Math.max(...all.map(x => x.end))
+              const above = r.top > 30
+              return (
+                <span
+                  className={`absolute left-1/2 -translate-x-1/2 ${above ? '-top-6' : '-bottom-6'} text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none shadow-sm`}
+                >
+                  <span className={pendingDrag?.edge === 'start' ? 'underline underline-offset-2' : ''}>{fmtHM(s)}</span>
+                  <span className="px-0.5">–</span>
+                  <span className={pendingDrag?.edge === 'end' ? 'underline underline-offset-2' : ''}>{fmtHM(en)}</span>
+                </span>
+              )
+            })()}
           </div>
         ))}
 
