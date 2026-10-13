@@ -968,11 +968,10 @@ export function Timeline() {
     const parts = buildPendingParts(startMs, endMs)
     const ranges = [parts.past, parts.future].filter((r): r is Range => !!r)
     if (!ranges.length) return
-    // Zuletzt genutzte Kategorie als Default (Store: neueste zuerst)
-    const lastCat = loadEntries()[0]?.category ?? null
-    const leaf = lastCat ? (lastCat.split('/').pop() || '').trim() : ''
-    const title = leaf || 'Ohne Kategorie'
-    const path = lastCat ? lastCat.split('/') : []
+    // Standardkategorie „Nicht zugeordnet" (fest im System, nicht wählbar):
+    // category bleibt null, Titel signalisiert den offenen Zustand
+    const title = 'Nicht zugeordnet'
+    const path: string[] = []
     const first = ranges[0]
     let kind: 'entry' | 'plan' = 'entry'
     let id = ''
@@ -987,8 +986,11 @@ export function Timeline() {
     setPending(null)
     setCommitFab(null)
     setSelStart(null)
+    setPopover(null)
+    // Selektion ohne Popover: Ziehgriffe sind SOFORT aktiv, um die Zeit
+    // an den Kanten anzupassen (Google-Flow). Kategorie kommt danach per
+    // Antippen des Eintrags.
     setSelected({ kind, id })
-    setPopover({ item: { id, kind, title, category: lastCat, startMs: Math.min(startMs, endMs), endMs: Math.max(startMs, endMs) }, hover: false, x, y })
   }
 
   const onItemTap = (e: React.MouseEvent<HTMLDivElement>, item: TlItem) => {
