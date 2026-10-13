@@ -997,6 +997,7 @@ export function Timeline() {
     e.stopPropagation()
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
     const rect = e.currentTarget.getBoundingClientRect()
+    const alreadySelected = !!selected && selected.kind === item.kind && selected.id === item.id
     setSelected(item.kind === 'timer' ? null : { kind: item.kind, id: item.id })
     setSelStart(null)
     // Offene Markierung + FAB still verwerfen (Auswahl wechselt zum Item)
@@ -1010,7 +1011,13 @@ export function Timeline() {
       setPending(null)
       setCreateDialogOpen(false)
     }
-    setPopover({ item, hover: false, x: rect.left, y: rect.bottom })
+    // Erster Tap = anfassen (Griffe sofort aktiv); Fenster erst beim
+    // erneuten Antippen – so lassen sich Anfang/Ende direkt verschieben.
+    if (alreadySelected || item.kind === 'timer') {
+      setPopover({ item, hover: false, x: rect.left, y: rect.bottom })
+    } else {
+      setPopover(null)
+    }
   }
 
   const onItemEnter = (e: React.PointerEvent<HTMLDivElement>, item: TlItem) => {
@@ -1171,7 +1178,7 @@ export function Timeline() {
     setDrag({ ...drag, curStartMs: ns, curEndMs: ne })
   }
 
-  const endDrag = () => {
+  const endDrag = (e?: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return
     const d = drag
     dragUntil.current = Date.now() + 250
@@ -1195,6 +1202,11 @@ export function Timeline() {
         updatePlan(d.id, { started_at: toIso(d.curStartMs), ended_at: toIso(d.curEndMs) })
       }
       toast(`${fmtHM(d.curStartMs)}–${fmtHM(d.curEndMs)} gespeichert`)
+      // Nach dem Zeit-Anpassen direkt das Fenster öffnen (Kategorie/Löschen)
+      const it = allItems.find(x => x.kind === d.kind && x.id === d.id)
+      if (it && e) {
+        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+      }
     }
     setDrag(null)
   }
