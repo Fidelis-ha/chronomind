@@ -539,6 +539,7 @@ export function Timeline() {
 
   const onColumnClick = (e: React.MouseEvent<HTMLDivElement>, dayIdx: number) => {
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
+    setPopover(null) // Klick auf freie Zelle schließt ein offenes Fenster
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
     const day0 = dayIdxToDateMs(dayIdx)
@@ -997,7 +998,6 @@ export function Timeline() {
     e.stopPropagation()
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const alreadySelected = !!selected && selected.kind === item.kind && selected.id === item.id
     setSelected(item.kind === 'timer' ? null : { kind: item.kind, id: item.id })
     setSelStart(null)
     // Offene Markierung + FAB still verwerfen (Auswahl wechselt zum Item)
@@ -1011,21 +1011,28 @@ export function Timeline() {
       setPending(null)
       setCreateDialogOpen(false)
     }
-    // Erster Tap = anfassen (Griffe sofort aktiv); Fenster erst beim
-    // erneuten Antippen – so lassen sich Anfang/Ende direkt verschieben.
-    if (alreadySelected || item.kind === 'timer') {
-      setPopover({ item, hover: false, x: rect.left, y: rect.bottom })
-    } else {
-      setPopover(null)
-    }
+    // Sofort markieren UND Fenster öffnen – gleichzeitig bleiben die Griffe
+    // bedienbar, weil das Fenster nie über dem Item liegt (openPopoverFor).
+    openPopoverFor(item, rect)
+  }
+
+  const openPopoverFor = (item: TlItem, rect: DOMRect, hover = false) => {
+    // Fenster NIE über dem Item (Griffe müssen ohne weiteren Klick bedienbar
+    // bleiben): unterhalb, sonst oberhalb; links clampen.
+    const POP_W = 240, POP_H = 215, NAV = 90
+    const vh = window.innerHeight
+    const belowTop = rect.bottom + 6
+    const top = belowTop + POP_H <= vh - NAV + 24 ? belowTop : Math.max(8, rect.top - POP_H - 6)
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - POP_W - 8))
+    setPopover({ item, hover, x: left, y: top })
   }
 
   const onItemEnter = (e: React.PointerEvent<HTMLDivElement>, item: TlItem) => {
     if (e.pointerType !== 'mouse') return
     setPopover(p => {
       if (p && !p.hover) return p
-      const rect = e.currentTarget.getBoundingClientRect()
-      return { item, hover: true, x: rect.left, y: rect.bottom }
+      openPopoverFor(item, e.currentTarget.getBoundingClientRect(), true)
+      return p
     })
   }
 
@@ -1205,15 +1212,13 @@ export function Timeline() {
       // Nach dem Zeit-Anpassen direkt das Fenster öffnen (Kategorie/Löschen)
       const it = allItems.find(x => x.kind === d.kind && x.id === d.id)
       if (it && e) {
-        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+        openPopoverFor(it, e.currentTarget.getBoundingClientRect())
       }
     } else if (e) {
-      // Kein Ziehen passiert (z. B. kurzer Tap auf einem kleinen Eintrag,
-      // dessen Griff das Item ganz überdeckt): wie zweiter Tap behandeln
-      // und das Fenster öffnen.
+      // Kein Ziehen passiert (Tap auf den Griff): Fenster öffnen.
       const it = allItems.find(x => x.kind === d.kind && x.id === d.id)
       if (it) {
-        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+        openPopoverFor(it, e.currentTarget.getBoundingClientRect())
       }
     }
     setDrag(null)
@@ -1562,19 +1567,11 @@ export function Timeline() {
       {/* Popover: Details / Bearbeiten */}
       {popover && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setPopover(null)} />
           <div
             className="fixed z-50 w-60 rounded-lg border border-border bg-card p-3 shadow-lg"
             style={{
               left: `clamp(8px, ${popover.x}px, calc(100vw - 248px))`,
-              top: (() => {
-                // Unter der unteren Leiste (Bottom-Nav ~90px) nichts abschneiden:
-                // passt das Fenster darunter nicht, kippt es über das Item.
-                const limit = window.innerHeight - 90 - 210
-                const below = popover.y + 6
-                if (below <= limit) return Math.max(8, below)
-                return Math.max(8, popover.y - 216)
-              })()
+              top: Math.max(8, popover.y)
             }}
           >
             <div className="flex items-start gap-2">
