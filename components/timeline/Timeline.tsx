@@ -1207,6 +1207,14 @@ export function Timeline() {
       if (it && e) {
         setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
       }
+    } else if (e) {
+      // Kein Ziehen passiert (z. B. kurzer Tap auf einem kleinen Eintrag,
+      // dessen Griff das Item ganz überdeckt): wie zweiter Tap behandeln
+      // und das Fenster öffnen.
+      const it = allItems.find(x => x.kind === d.kind && x.id === d.id)
+      if (it) {
+        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+      }
     }
     setDrag(null)
   }
@@ -1545,7 +1553,14 @@ export function Timeline() {
             className="fixed z-50 w-60 rounded-lg border border-border bg-card p-3 shadow-lg"
             style={{
               left: `clamp(8px, ${popover.x}px, calc(100vw - 248px))`,
-              top: Math.max(8, Math.min(popover.y + 6, window.innerHeight - 210))
+              top: (() => {
+                // Unter der unteren Leiste (Bottom-Nav ~90px) nichts abschneiden:
+                // passt das Fenster darunter nicht, kippt es über das Item.
+                const limit = window.innerHeight - 90 - 210
+                const below = popover.y + 6
+                if (below <= limit) return Math.max(8, below)
+                return Math.max(8, popover.y - 216)
+              })()
             }}
           >
             <div className="flex items-start gap-2">
