@@ -573,7 +573,7 @@ export function Timeline() {
           return
         }
       }
-      // Neue Markierung starten: alte, unbestätigte Markierung + FAB still verwerfen
+      // Alte, unbestätigte Markierung + FAB still verwerfen
       if (commitFab || pending) {
         if (fabExitTimer.current) {
           clearTimeout(fabExitTimer.current)
@@ -584,7 +584,9 @@ export function Timeline() {
         setPending(null)
         setCreateDialogOpen(false)
       }
-      setSelStart({ dayIdx: targetIdx, minute: targetMin, snapped: snapped !== null, ms: targetMs })
+      // Google-Flow: 1 Tap = Eintrag sofort angelegt (30-min-Default, zuletzt
+      // genutzte Kategorie) + Bearbeitungs-Popover direkt geöffnet
+      quickCreate(targetMs, targetMs + DEFAULT_CREATE_MIN * MIN_MS, e.clientX, e.clientY)
       return
     }
     // Tap-1-Zeit: gesnappt → exakt; sonst Zellstart.
@@ -692,6 +694,62 @@ export function Timeline() {
     if (!pendingDrag || !pending) return pending
     return buildPendingParts(pendingDrag.curStartMs, pendingDrag.curEndMs)
   }, [pending, pendingDrag])
+
+  /* ---------- Google-Style Drag-to-Create (nur Maus; Touch scrollt wie gewohnt) ---------- */
+
+  const colDragRef = useRef<{ dayIdx: number; startMs: number; startY: number; moved: boolean; captured: boolean } | null>(null)
+
+  const colDragDown = (e: React.PointerEvent<HTMLDivElement>, dayIdx: number) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const day0 = dayIdxToDateMs(dayIdx)
+    const rawMs = day0 + (y / pxPerMin) * MIN_MS
+    const snapped = snapMs(rawMs)
+    const clampedMin = Math.min(24 * 60 - cellMin, Math.max(0, Math.floor(y / pxPerMin / cellMin) * cellMin))
+    const startMs = snapped ?? day0 + clampedMin * MIN_MS
+    colDragRef.current = { dayIdx, startMs, startY: e.clientY, moved: false, captured: false }
+  }
+
+  const colDragMove = (e: React.PointerEvent<HTMLDivElement>, dayIdx: number) => {
+    const d = colDragRef.current
+    if (!d || d.dayIdx !== dayIdx) return
+    if (!d.captured) {
+      if (Math.abs(e.clientY - d.startY) < 6) return
+      d.captured = true
+      d.moved = true
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    }
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const day0 = dayIdxToDateMs(dayIdx)
+    const rawMs = day0 + (y / pxPerMin) * MIN_MS
+    const snappedT = snapMs(rawMs)
+    const clampedMin = Math.min(24 * 60, Math.max(0, Math.floor(y / pxPerMin / cellMin) * cellMin))
+    const curMs = snappedT ?? day0 + clampedMin * MIN_MS
+    // Live-Range über die pending-Markierung anzeigen (ohne FAB)
+    setPending(buildPendingParts(Math.min(d.startMs, curMs), Math.max(d.startMs, curMs)))
+  }
+
+  const colDragUp = (e: React.PointerEvent<HTMLDivElement>, dayIdx: number) => {
+    const d = colDragRef.current
+    colDragRef.current = null
+    if (!d || d.dayIdx !== dayIdx || !d.moved) return // Tap → onClick übernimmt
+    dragUntil.current = Date.now() + 250
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const day0 = dayIdxToDateMs(dayIdx)
+    const rawMs = day0 + (y / pxPerMin) * MIN_MS
+    const snappedT = snapMs(rawMs)
+    const clampedMin = Math.min(24 * 60, Math.max(0, Math.floor(y / pxPerMin / cellMin) * cellMin))
+    const curMs = snappedT ?? day0 + clampedMin * MIN_MS
+    const s = Math.min(d.startMs, curMs)
+    const en = Math.max(d.startMs, curMs)
+    setPending(null)
+    if (en - s >= 5 * MIN_MS) quickCreate(s, en, e.clientX, e.clientY)
+  }
 
   /** Dialog-Flow starten (Adopt → Kollision → Kategorie) für konkrete Teile */
   const openCreateFlow = (parts: PendingParts) => {
@@ -857,6 +915,7 @@ export function Timeline() {
     saveEntries([entry, ...loadEntries()])
     markDirty()
     toast.success(`Eintrag: ${title} · ${fmtHM(range.start)}–${fmtHM(range.end)}`)
+    return entry.id
   }
 
   const createPlan = (range: Range, path: string[], title: string) => {
@@ -870,6 +929,7 @@ export function Timeline() {
     }
     addPlan(plan)
     toast.success(`Plan: ${title} · ${fmtHM(range.start)}–${fmtHM(range.end)}`, { icon: '🗓️' })
+    return plan.id
   }
 
   const finishCreate = (path: string[], title: string) => {
@@ -899,6 +959,37 @@ export function Timeline() {
   }
 
   /* ---------- Bearbeiten ---------- */
+
+  /** Google-Style: Eintrag sofort anlegen (zuletzt genutzte Kategorie als Default),
+   *  direkt danach das Bearbeitungs-Popover öffnen – kein Dialog-Zwischenschritt. */
+  const DEFAULT_CREATE_MIN = 30
+
+  const quickCreate = (startMs: number, endMs: number, x: number, y: number) => {
+    const parts = buildPendingParts(startMs, endMs)
+    const ranges = [parts.past, parts.future].filter((r): r is Range => !!r)
+    if (!ranges.length) return
+    // Zuletzt genutzte Kategorie als Default (Store: neueste zuerst)
+    const lastCat = loadEntries()[0]?.category ?? null
+    const leaf = lastCat ? (lastCat.split('/').pop() || '').trim() : ''
+    const title = leaf || 'Ohne Kategorie'
+    const path = lastCat ? lastCat.split('/') : []
+    const first = ranges[0]
+    let kind: 'entry' | 'plan' = 'entry'
+    let id = ''
+    if (first === parts.past && parts.past) {
+      id = createEntry(parts.past, path, title)
+    } else if (parts.future) {
+      kind = 'plan'
+      id = createPlan(parts.future, path, title)
+    }
+    if (parts.past && first !== parts.past) createEntry(parts.past, path, title)
+    if (parts.future && first === parts.past) createPlan(parts.future, path, title)
+    setPending(null)
+    setCommitFab(null)
+    setSelStart(null)
+    setSelected({ kind, id })
+    setPopover({ item: { id, kind, title, category: lastCat, startMs: Math.min(startMs, endMs), endMs: Math.max(startMs, endMs) }, hover: false, x, y })
+  }
 
   const onItemTap = (e: React.MouseEvent<HTMLDivElement>, item: TlItem) => {
     e.stopPropagation()
@@ -1151,6 +1242,12 @@ export function Timeline() {
         className="absolute border-r border-border"
         style={{ left: idx * DAY_WIDTH, top: HEADER_H, width: DAY_WIDTH, height: dayHeight }}
         onClick={e => onColumnClick(e, idx)}
+        onPointerDown={e => colDragDown(e, idx)}
+        onPointerMove={e => colDragMove(e, idx)}
+        onPointerUp={e => colDragUp(e, idx)}
+        onPointerCancel={() => {
+          colDragRef.current = null
+        }}
       >
         {/* Stundenraster */}
         {Array.from({ length: 24 }, (_, h) => (
@@ -1255,7 +1352,11 @@ export function Timeline() {
           return (
             <div
               key={`${it.kind}-${it.id}`}
+              data-tl-item
               onClick={e => onItemTap(e, it)}
+              onPointerDown={e => {
+                if (e.pointerType === 'mouse') e.stopPropagation()
+              }}
               onPointerEnter={e => onItemEnter(e, it)}
               onPointerLeave={onItemLeave}
               className={`absolute rounded-md overflow-hidden cursor-pointer ${
