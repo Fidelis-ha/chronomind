@@ -144,7 +144,7 @@ export function Timeline() {
   const extendRef = useRef<{ past?: number; future?: number } | null>(null)
   const didInit = useRef(false)
   const pendingScrollTop = useRef<number | null>(null)
-  const pinchRef = useRef<{ dist: number } | null>(null)
+  const pinchRef = useRef<{ dist: number; anchorMin: number } | null>(null)
   const pinchUntil = useRef(0)
   const dragUntil = useRef(0)
   const deleteArmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -153,6 +153,9 @@ export function Timeline() {
   const fabExitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const pxPerMin = zoom
+  // Ref für Touch-Listener: immer der aktuelle Zoomstand ohne Re-Registrierung
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
   const dayHeight = 24 * 60 * pxPerMin
   const totalDays = pastDays + futureDays
 
@@ -456,16 +459,15 @@ export function Timeline() {
     pendingScrollTop.current = null
   }, [zoom])
 
-  // Exponentieller Zoom um einen Bildschirm-Anker (vis-timeline-Stil):
-  // der Zeitpunkt unter dem Anker bleibt beim Zoomen an Ort und Stelle.
-  const zoomAt = useCallback((anchorOffset: number, factor: number) => {
+  // Exponentieller Zoom um einen festgehaltenen Anker (Karten-Zoom-Stil):
+  // anchorMin = Uhrzeit (Minuten ab Mitternacht), die unter dem Anker bleibt.
+  const zoomAtAnchor = useCallback((anchorMin: number, anchorOffset: number, factor: number) => {
     const sc = scrollerRef.current
     if (!sc) return
     setZoom(prev => {
       const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prev * factor))
       if (next === prev) return prev
-      const timeMin = (sc.scrollTop + anchorOffset - HEADER_H) / prev
-      pendingScrollTop.current = Math.max(0, timeMin * next + HEADER_H - anchorOffset)
+      pendingScrollTop.current = Math.max(0, anchorMin * next + HEADER_H - anchorOffset)
       return next
     })
   }, [])
@@ -478,22 +480,30 @@ export function Timeline() {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
         // exponentiell, damit gleiche Radbewegung = gleicher Faktor (natural feel)
-        zoomAt(e.offsetY ?? sc.clientHeight / 2, Math.exp(-e.deltaY * 0.0018))
+        const anchorMin = (sc.scrollTop + (e.offsetY ?? sc.clientHeight / 2) - HEADER_H) / zoomRef.current
+        zoomAtAnchor(anchorMin, e.offsetY ?? sc.clientHeight / 2, Math.exp(-e.deltaY * 0.0018))
       }
     }
     sc.addEventListener('wheel', onWheel, { passive: false })
     return () => sc.removeEventListener('wheel', onWheel)
-  }, [zoomAt])
+  }, [zoomAtAnchor])
 
-  // Pinch mit 2 Fingern = kontinuierlicher Zoom um die Fingermitte
+  // Pinch mit 2 Fingern = kontinuierlicher Zoom um die Fingermitte.
+  // Die Anker-Zeit wird beim Pinch-START festgenagelt — so driftet der
+  // Zeitstrahl nicht, selbst wenn dazwischen Scroll-Events einsickern.
   useEffect(() => {
     const sc = scrollerRef.current
     if (!sc) return
     const dist = (t: TouchList) =>
       Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+    const midOffsetY = (t: TouchList) => {
+      const rect = sc.getBoundingClientRect()
+      return (t[0].clientY + t[1].clientY) / 2 - rect.top
+    }
     const onStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        pinchRef.current = { dist: dist(e.touches) }
+        const mid = midOffsetY(e.touches)
+        pinchRef.current = { dist: dist(e.touches), anchorMin: (sc.scrollTop + mid - HEADER_H) / zoomRef.current }
         pinchUntil.current = Date.now() + 600
       }
     }
@@ -502,11 +512,9 @@ export function Timeline() {
       e.preventDefault()
       const d = dist(e.touches)
       const factor = d / pinchRef.current.dist
-      pinchRef.current = { dist: d }
+      pinchRef.current = { dist: d, anchorMin: pinchRef.current.anchorMin }
       if (Math.abs(factor - 1) < 0.01) return
-      const rect = sc.getBoundingClientRect()
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
-      zoomAt(midY, factor)
+      zoomAtAnchor(pinchRef.current.anchorMin, midOffsetY(e.touches), factor)
     }
     const onEnd = (e: TouchEvent) => {
       if (e.touches.length < 2) pinchRef.current = null
@@ -521,7 +529,7 @@ export function Timeline() {
       sc.removeEventListener('touchend', onEnd)
       sc.removeEventListener('touchcancel', onEnd)
     }
-  }, [zoomAt])
+  }, [zoomAtAnchor])
 
   /* ---------- Markieren (2-Tap) ---------- */
 
