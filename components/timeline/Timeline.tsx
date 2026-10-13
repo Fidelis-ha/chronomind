@@ -94,7 +94,13 @@ function clipAndLayout(items: TlItem[], day0: number, day1: number) {
 
 export function Timeline() {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
-  const [cellMin, setCellMin] = useState<CellMin>(30)
+  // Kontinuierlicher Zoom (px pro Minute) — wie in vis-timeline/DayPilot:
+  // exponentiell stufenlos um einen Ankerpunkt statt ruckartiger Stufen.
+  // Das Klick-Raster (cellMin) springt diskret auf Zoom-Schwellen.
+  const [zoom, setZoom] = useState(1.2)
+  const ZOOM_MIN = 0.6
+  const ZOOM_MAX = 9.6
+  const cellMin: CellMin = zoom >= 4.8 ? 5 : zoom >= 1.8 ? 15 : 30
   const [pastDays, setPastDays] = useState(PAST_DAYS_INIT)
   const [futureDays, setFutureDays] = useState(FUTURE_DAYS_INIT)
   const [scrollLeft, setScrollLeft] = useState(0)
@@ -146,7 +152,7 @@ export function Timeline() {
   const fabWrapRef = useRef<HTMLDivElement | null>(null)
   const fabExitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const pxPerMin = PX_PER_MIN[cellMin]
+  const pxPerMin = zoom
   const dayHeight = 24 * 60 * pxPerMin
   const totalDays = pastDays + futureDays
 
@@ -422,24 +428,25 @@ export function Timeline() {
 
   const zoomBy = useCallback(
     (dir: 1 | -1) => {
-      const idx = ZOOM_LEVELS.indexOf(cellMin)
-      const nextIdx = Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))
-      if (nextIdx === idx) return
-      const next = ZOOM_LEVELS[nextIdx]
+      // Stufen-Buttons: auf die nächstliegende Standardstufe in Richtung dir
+      const LEVELS = [1.2, 2.4, 7.2]
+      const idx = LEVELS.reduce((best, l, i) =>
+        Math.abs(l - zoom) < Math.abs(LEVELS[best] - zoom) ? i : best, 0)
+      const nextIdx = Math.min(LEVELS.length - 1, Math.max(0, idx + dir))
+      const next = LEVELS[nextIdx]
       const sc = scrollerRef.current
       if (!sc) {
-        setCellMin(next)
+        setZoom(next)
         return
       }
       // Zoom um die Bildschirmmitte: Uhrzeit am Ankerpunkt bleibt stehen
-      const rect = sc.getBoundingClientRect()
       const anchorOffset = sc.clientHeight / 2
       const contentY = sc.scrollTop + anchorOffset
       const timeMin = (contentY - HEADER_H) / pxPerMin
-      pendingScrollTop.current = Math.max(0, timeMin * PX_PER_MIN[next] + HEADER_H - anchorOffset)
-      setCellMin(next)
+      pendingScrollTop.current = Math.max(0, timeMin * next + HEADER_H - anchorOffset)
+      setZoom(next)
     },
-    [cellMin, pxPerMin]
+    [zoom, pxPerMin]
   )
 
   useLayoutEffect(() => {
@@ -447,23 +454,38 @@ export function Timeline() {
     const sc = scrollerRef.current
     if (sc) sc.scrollTop = pendingScrollTop.current
     pendingScrollTop.current = null
-  }, [cellMin])
+  }, [zoom])
 
-  // Mausrad mit Strg/Cmd = Zoom (nativ, passive:false wegen preventDefault)
+  // Exponentieller Zoom um einen Bildschirm-Anker (vis-timeline-Stil):
+  // der Zeitpunkt unter dem Anker bleibt beim Zoomen an Ort und Stelle.
+  const zoomAt = useCallback((anchorOffset: number, factor: number) => {
+    const sc = scrollerRef.current
+    if (!sc) return
+    setZoom(prev => {
+      const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prev * factor))
+      if (next === prev) return prev
+      const timeMin = (sc.scrollTop + anchorOffset - HEADER_H) / prev
+      pendingScrollTop.current = Math.max(0, timeMin * next + HEADER_H - anchorOffset)
+      return next
+    })
+  }, [])
+
+  // Mausrad mit Strg/Cmd = stufenloser Zoom (nativ, passive:false wegen preventDefault)
   useEffect(() => {
     const sc = scrollerRef.current
     if (!sc) return
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
-        zoomBy(e.deltaY < 0 ? 1 : -1)
+        // exponentiell, damit gleiche Radbewegung = gleicher Faktor (natural feel)
+        zoomAt(e.offsetY ?? sc.clientHeight / 2, Math.exp(-e.deltaY * 0.0018))
       }
     }
     sc.addEventListener('wheel', onWheel, { passive: false })
     return () => sc.removeEventListener('wheel', onWheel)
-  }, [zoomBy])
+  }, [zoomAt])
 
-  // Pinch mit 2 Fingern = Zoom
+  // Pinch mit 2 Fingern = kontinuierlicher Zoom um die Fingermitte
   useEffect(() => {
     const sc = scrollerRef.current
     if (!sc) return
@@ -479,14 +501,12 @@ export function Timeline() {
       if (!pinchRef.current || e.touches.length !== 2) return
       e.preventDefault()
       const d = dist(e.touches)
-      const ratio = d / pinchRef.current.dist
-      if (ratio > 1.25) {
-        zoomBy(1)
-        pinchRef.current = { dist: d }
-      } else if (ratio < 0.8) {
-        zoomBy(-1)
-        pinchRef.current = { dist: d }
-      }
+      const factor = d / pinchRef.current.dist
+      pinchRef.current = { dist: d }
+      if (Math.abs(factor - 1) < 0.01) return
+      const rect = sc.getBoundingClientRect()
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+      zoomAt(midY, factor)
     }
     const onEnd = (e: TouchEvent) => {
       if (e.touches.length < 2) pinchRef.current = null
@@ -501,7 +521,7 @@ export function Timeline() {
       sc.removeEventListener('touchend', onEnd)
       sc.removeEventListener('touchcancel', onEnd)
     }
-  }, [zoomBy])
+  }, [zoomAt])
 
   /* ---------- Markieren (2-Tap) ---------- */
 
