@@ -1415,6 +1415,14 @@ export function Timeline() {
                     onPointerMove={moveDrag}
                     onPointerUp={endDrag}
                     onPointerCancel={endDrag}
+                    onClick={e => {
+                      // Klick ohne Ziehen am Griff (kleine Eintraege: der Griff
+                      // ueberdeckt das Item) = Fenster oeffnen, nicht nur anfassen
+                      e.stopPropagation()
+                      if (selected && selected.kind === it.kind && selected.id === it.id) {
+                        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+                      }
+                    }}
                   >
                     <div className="w-5 h-1 rounded-full bg-black/40 dark:bg-white/50" />
                   </div>
@@ -1425,6 +1433,12 @@ export function Timeline() {
                     onPointerMove={moveDrag}
                     onPointerUp={endDrag}
                     onPointerCancel={endDrag}
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (selected && selected.kind === it.kind && selected.id === it.id) {
+                        setPopover({ item: it, hover: false, x: e.clientX, y: e.clientY + 24 })
+                      }
+                    }}
                   >
                     <div className="w-5 h-1 rounded-full bg-black/40 dark:bg-white/50" />
                   </div>
