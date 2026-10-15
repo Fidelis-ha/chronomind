@@ -3,7 +3,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.0'
+export const APP_VERSION = '1.1.1'
 
 export interface ChangelogEntry {
   version: string
@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.1',
+    date: '15.10.2026',
+    changes: [
+      'Klick neben einem geöffneten Dialog legt keinen versehentlichen Eintrag mehr an',
+      'Beim Ziehen langer Einträge bleibt die Von-bis-Zeit immer sichtbar (klebt am Bildschirmrand und wandert mit)',
+      'Nach Timer-Ende erscheint der neue Eintrag nur noch einmal (kein Doppel-Balken); Timer aus QuickTap zeigen nun auch im Zeitstrahl',
+      'Direkt angrenzende Einträge derselben Aktivität werden automatisch zu einem zusammengefasst'
+    ]
+  },
   {
     version: '1.1.0',
     date: '15.10.2026',
