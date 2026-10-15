@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { TailwindIndicator } from '@/components/tailwind-indicator'
 import { Providers } from '@/components/providers'
 import { PwaRegister } from '@/components/pwa-register'
+import { WakeReminder } from '@/components/wake-reminder'
 import { Header } from '@/components/header'
 import { M3Provider } from '@/components/m3/m3-provider'
 
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       >
         <Toaster />
         <PwaRegister />
+        <WakeReminder />
         <M3Provider />
         <Providers attribute="class" defaultTheme="system" enableSystem>
           <div className="flex min-h-screen flex-col">

@@ -20,6 +20,20 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIPWAITING') self.skipWaiting()
 })
 
+// Wake-Reminder-Push: Tap fokussiert die App (öffnet sie notfalls neu)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = (event.notification.data && event.notification.data.url) || '/app_main'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if ('focus' in client) return client.focus()
+      }
+      return self.clients.openWindow(url)
+    })
+  )
+})
+
 self.addEventListener('fetch', (event) => {
   const req = event.request
   if (req.method !== 'GET') return
