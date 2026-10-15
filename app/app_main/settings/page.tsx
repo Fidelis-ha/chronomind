@@ -10,6 +10,7 @@ import { type TimeEntry } from '@/lib/types'
 import { CategorySettings } from '@/components/settings/CategorySettings'
 import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
 import { InstallHint } from '@/components/settings/InstallHint'
+import { VersionInfo } from '@/components/settings/VersionInfo'
 import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
 import { AppLayout } from '@/components/app-layout'
 
@@ -352,6 +353,9 @@ export default function SettingsPage() {
           </p>
           <InstallHint />
         </div>
+
+        {/* Version & Changelog */}
+        <VersionInfo />
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? 'Wird gespeichert...' : 'Speichern'}
