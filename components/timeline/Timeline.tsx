@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, Fragment } from 'react'
 import { toast } from 'react-hot-toast'
 import { Plus, X } from 'lucide-react'
 import { type TimeEntry } from '@/lib/types'
@@ -11,7 +11,7 @@ import {
   CATEGORIES_CHANGED_EVENT,
   type MainCategory
 } from '@/lib/categories'
-import { loadEntries, saveEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
+import { loadEntries, saveEntries, saveEntryMergingAdjacent, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
 import {
   loadPlans,
   savePlans,
@@ -128,6 +128,12 @@ export function Timeline() {
   const [commitFab, setCommitFab] = useState<{ x: number; y: number; kind: 'entry' | 'plan' } | null>(null)
   const [fabExiting, setFabExiting] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  // Klick-Guard: Ein Klick, der einen Dialog außerhalbschließt, darf nicht
+  // durchfallen und im Zeitstrahl einen neuen Eintrag anlegen (Bug-Report).
+  const dialogClickGuardUntil = useRef(0)
+  const guardDialogDismiss = () => {
+    dialogClickGuardUntil.current = Date.now() + 600
+  }
   // Punkt 2: Klick nahe „Jetzt" → Vorschlag „Zeiterfassung ab hier starten" (Kategorie wählen)
   const [timerProposal, setTimerProposal] = useState<{ startMs: number } | null>(null)
   // Punkt 5: offene Markierung nach Tap 2 per Ziehgriff anpassen (Start-/Endkante)
@@ -179,11 +185,13 @@ export function Timeline() {
     window.addEventListener(ENTRIES_CHANGED_EVENT, handler)
     window.addEventListener(PLANS_CHANGED_EVENT, handler)
     window.addEventListener(CATEGORIES_CHANGED_EVENT, handler)
+    window.addEventListener(RUNNING_CHANGED_EVENT, handler)
     window.addEventListener('storage', handler)
     return () => {
       window.removeEventListener(ENTRIES_CHANGED_EVENT, handler)
       window.removeEventListener(PLANS_CHANGED_EVENT, handler)
       window.removeEventListener(CATEGORIES_CHANGED_EVENT, handler)
+      window.removeEventListener(RUNNING_CHANGED_EVENT, handler)
       window.removeEventListener('storage', handler)
     }
   }, [refreshAll])
@@ -566,6 +574,7 @@ export function Timeline() {
   )
 
   const onColumnClick = (e: React.MouseEvent<HTMLDivElement>, dayIdx: number) => {
+    if (Date.now() < dialogClickGuardUntil.current) return // Klick hat gerade einen Dialog geschlossen
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
     setPopover(null) // Klick auf freie Zelle schließt ein offenes Fenster
     const rect = e.currentTarget.getBoundingClientRect()
@@ -941,10 +950,15 @@ export function Timeline() {
       recurrence_parent_id: null,
       recurrence_index: null
     }
-    saveEntries([entry, ...loadEntries()])
+    const saved = saveEntryMergingAdjacent(entry)
     markDirty()
-    toast.success(`Eintrag: ${title} · ${fmtHM(range.start)}–${fmtHM(range.end)}`)
-    return entry.id
+    if (saved.id !== entry.id) {
+      // Direkt angrenzender Eintrag derselben Aktivität wurde zusammengeführt
+      toast.success(`Zusammengeführt: ${title} · ${fmtHM(Date.parse(saved.started_at))}–${fmtHM(Date.parse(saved.ended_at || ''))}`)
+    } else {
+      toast.success(`Eintrag: ${title} · ${fmtHM(range.start)}–${fmtHM(range.end)}`)
+    }
+    return saved.id
   }
 
   const createPlan = (range: Range, path: string[], title: string) => {
@@ -1404,7 +1418,8 @@ export function Timeline() {
           const isSel = !!selected && selected.id === it.id && selected.kind === it.kind
           const isPlan = it.kind === 'plan'
           const editable = it.kind !== 'timer'
-          return (
+          const draggingThis = !!drag && drag.kind === it.kind && drag.id === it.id
+          const itemBlock = (
             <div
               key={`${it.kind}-${it.id}`}
               data-tl-item
@@ -1478,6 +1493,33 @@ export function Timeline() {
                 </>
               )}
             </div>
+          )
+          // Live-von-bis-Badge beim Ziehen: klebt am sichtbaren oberen Rand des
+          // Eintrags, auch wenn dessen Oberkante weit außerhalb des Viewports liegt
+          // (lange Einträge) – wandert beim Scrollen mit.
+          const badge = draggingThis && drag ? (() => {
+            const sc = scrollerRef.current
+            if (!sc) return null
+            const visTop = sc.scrollTop - HEADER_H + 6
+            const visBot = visTop + sc.clientHeight - 34
+            const itemTop = ((it.startMs - day0) / MIN_MS) * pxPerMin
+            const badgeTop = Math.min(Math.max(itemTop, visTop), Math.max(visTop, visBot))
+            return (
+              <span
+                className="absolute z-30 -translate-x-1/2 text-[10px] font-semibold text-primary bg-background/95 border border-outline-variant rounded-full px-2 py-0.5 whitespace-nowrap pointer-events-none shadow-sm"
+                style={{ top: Math.max(0, badgeTop), left: it.lane * w + w / 2 }}
+              >
+                <span className={drag.edge === 'start' ? 'underline underline-offset-2' : ''}>{fmtHM(drag.curStartMs)}</span>
+                <span className="px-0.5">–</span>
+                <span className={drag.edge === 'end' ? 'underline underline-offset-2' : ''}>{fmtHM(drag.curEndMs)}</span>
+              </span>
+            )
+          })() : null
+          return (
+            <Fragment key={`${it.kind}-${it.id}`}>
+              {itemBlock}
+              {badge}
+            </Fragment>
           )
         })}
       </div>
@@ -1676,7 +1718,7 @@ export function Timeline() {
       )}
 
       {/* Dialog: Markierung reicht über „jetzt" hinaus */}
-      <Dialog open={!!adoptState} onOpenChange={o => !o && setAdoptState(null)}>
+      <Dialog open={!!adoptState} onOpenChange={o => { if (!o) { guardDialogDismiss(); setAdoptState(null) } }}>
         <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-medium">Als Eintrag übernehmen?</DialogTitle>
@@ -1718,7 +1760,7 @@ export function Timeline() {
       </Dialog>
 
       {/* Dialog: Kollisionen */}
-      <Dialog open={!!collisionState} onOpenChange={o => !o && setCollisionState(null)}>
+      <Dialog open={!!collisionState} onOpenChange={o => { if (!o) { guardDialogDismiss(); setCollisionState(null) } }}>
         <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-medium">Überschreiben?</DialogTitle>
@@ -1751,7 +1793,7 @@ export function Timeline() {
       </Dialog>
 
       {/* Dialog: Timer-Vorschlag (Klick nahe „Jetzt") */}
-      <Dialog open={!!timerProposal} onOpenChange={o => !o && setTimerProposal(null)}>
+      <Dialog open={!!timerProposal} onOpenChange={o => { if (!o) { guardDialogDismiss(); setTimerProposal(null) } }}>
         <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-medium">Zeiterfassung starten?</DialogTitle>
@@ -1804,7 +1846,10 @@ export function Timeline() {
         open={createDialogOpen && !!pending && !pickerOpen}
         onOpenChange={o => {
           // Abbruch: zurück zur Markierung + FAB (pending bleibt bestehen)
-          if (!o) setCreateDialogOpen(false)
+          if (!o) {
+            guardDialogDismiss() // Klick außerhalb darf keinen Eintrag anlegen
+            setCreateDialogOpen(false)
+          }
         }}
       >
         <DialogContent className="sm:max-w-md rounded-[28px] sm:rounded-[28px]">
@@ -1858,6 +1903,7 @@ export function Timeline() {
         onOpenChange={open => {
           setPickerOpen(open)
           if (!open) {
+            guardDialogDismiss() // Klick außerhalb darf keinen Eintrag anlegen
             // Aus dem Anlege-Dialog geöffnet: pending aufbewahren (Abbruch ohne Auswahl)
             // und zurück zur Markierung + FAB kehren statt den Dialog wieder zu öffnen
             if (pickerSource === 'create') setCreateDialogOpen(false)

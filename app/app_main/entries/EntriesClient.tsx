@@ -6,6 +6,7 @@ import { QuickEntry } from '@/components/entries/QuickEntry'
 import { EntryForm } from '@/components/entries/EntryForm'
 import { TimeEntryCard } from '@/components/entries/TimeEntryCard'
 import { type TimeEntry } from '@/lib/types'
+import { saveEntryMergingAdjacent } from '@/lib/entries-store'
 import { Button } from '@/components/ui/button'
 
 function formatTotalDuration(entries: TimeEntry[]): string {
@@ -111,8 +112,8 @@ export function EntriesClient() {
   }
 
   const handleCreate = (entry: TimeEntry) => {
-    const updated = [entry, ...loadEntries()]
-    saveEntries(updated)
+    // Direkt angrenzende Einträge derselben Aktivität automatisch zusammenführen
+    saveEntryMergingAdjacent(entry)
     setShowForm(false)
   }
 

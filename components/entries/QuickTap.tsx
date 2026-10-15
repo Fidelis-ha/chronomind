@@ -149,9 +149,13 @@ export function QuickTap({ onCreate }: QuickTapProps) {
       recurrence_parent_id: null,
       recurrence_index: null
     }
+    // WICHTIG: laufenden Timer VOR dem Speichern entfernen – sonst liest der
+    // Zeitstrahl beim ENTRIES_CHANGED-Event den Key noch gesetzt und zeigt
+    // zusätzlich zum neuen Eintrag den alten Timer-Balken (zwei Balken).
+    localStorage.removeItem(STORAGE_KEY)
+    window.dispatchEvent(new Event(RUNNING_CHANGED_EVENT))
     onCreateRef.current(entry)
     toast.success(`${running.title} · ${fmtSaved(duration)}`)
-    localStorage.removeItem(STORAGE_KEY)
     return running
   }
 
@@ -176,6 +180,8 @@ export function QuickTap({ onCreate }: QuickTapProps) {
     markDirty() // laufender Timer wäre beim Schließen verloren -> Warnung nötig
     setRunning(next)
     setNow(Date.now())
+    // Zeitstrahl & Co. im selben Tab informieren (storage-Event feuert nicht lokal)
+    window.dispatchEvent(new Event(RUNNING_CHANGED_EVENT))
     if (wasRunning) toast(`Jetzt: ${title}`, { icon: '▶️' })
   }
 

@@ -21,7 +21,7 @@ function formatTotalDuration(entries: TimeEntry[]): string {
   return `${minutes}m`
 }
 
-import { loadEntries, saveEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
+import { loadEntries, saveEntries, saveEntryMergingAdjacent, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
 import { isDirty, DIRTY_CHANGED_EVENT } from '@/lib/dirty-state'
 import { useCloudSync } from '@/lib/hooks/useCloudSync'
 import { isTimerRunning } from '@/lib/cloud-sync-payload'
@@ -61,9 +61,8 @@ export default function DashboardClient() {
   }
 
   const handleCreate = (entry: TimeEntry) => {
-    const updated = [entry, ...entries]
-    setEntries(updated)
-    saveEntries(updated)
+    // Direkt angrenzende Einträge derselben Aktivität automatisch zusammenführen
+    saveEntryMergingAdjacent(entry)
   }
 
   const recentTitles = Array.from(
