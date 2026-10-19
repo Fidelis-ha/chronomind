@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls",
+               "delegate_permission/common.use_as_origin"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "de.gemeinsamwalter.chronomind",
+    "sha256_cert_fingerprints": ["0E:6C:12:79:3A:03:90:77:F7:4B:66:35:D0:9E:E5:4C:8D:92:BB:E9:91:35:51:C5:21:91:4C:A6:5A:A7:31:45"]
+  }
+}]
