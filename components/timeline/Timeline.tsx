@@ -1859,30 +1859,31 @@ export function Timeline() {
             </DialogDescription>
           </DialogHeader>
           {chips.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {chips.map(chip => {
-                const parts = chip.path.split('/')
-                const ambiguous = chips.filter(c2 => lastSegment(c2.path) === lastSegment(chip.path)).length > 1
-                const label = ambiguous ? `${parts[0]} / ${lastSegment(chip.path)}` : lastSegment(chip.path)
-                return (
-                  <button
-                    key={chip.path}
-                    title={chip.path}
-                    onClick={() => startTimerFromProposal(parts, lastSegment(chip.path))}
-                    className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
-                      style={{ backgroundColor: chipColor(chip.path) }}
-                    />
-                    <span className="truncate max-w-[10rem]">{label}</span>
-                    <span className="text-[10px] text-muted-foreground">{chip.count}</span>
-                  </button>
-                )
-              })}
+            <div className="max-h-[40vh] overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
+                {chips.map(chip => {
+                  const parts = chip.path.split('/')
+                  const ambiguous = chips.filter(c2 => lastSegment(c2.path) === lastSegment(chip.path)).length > 1
+                  const label = ambiguous ? `${parts[0]} / ${lastSegment(chip.path)}` : lastSegment(chip.path)
+                  return (
+                    <button
+                      key={chip.path}
+                      title={chip.path}
+                      onClick={() => startTimerFromProposal(parts, lastSegment(chip.path))}
+                      className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
+                        style={{ backgroundColor: chipColor(chip.path) }}
+                      />
+                      <span className="truncate max-w-[10rem]">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Keine häufigen Kategorien in den letzten 7 Tagen.</p>
+            <p className="text-sm text-muted-foreground">Noch keine häufigen Kategorien.</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" className="h-10 rounded-full px-5" onClick={() => setTimerProposal(null)}>
@@ -1916,30 +1917,31 @@ export function Timeline() {
             <DialogDescription>{pendingLabel} – Kategorie wählen</DialogDescription>
           </DialogHeader>
           {chips.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {chips.map(chip => {
-                const parts = chip.path.split('/')
-                const ambiguous = chips.filter(c2 => lastSegment(c2.path) === lastSegment(chip.path)).length > 1
-                const label = ambiguous ? `${parts[0]} / ${lastSegment(chip.path)}` : lastSegment(chip.path)
-                return (
-                  <button
-                    key={chip.path}
-                    title={chip.path}
-                    onClick={() => finishCreate(parts, lastSegment(chip.path))}
-                    className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
-                      style={{ backgroundColor: chipColor(chip.path) }}
-                    />
-                    <span className="truncate max-w-[10rem]">{label}</span>
-                    <span className="text-[10px] text-muted-foreground">{chip.count}</span>
-                  </button>
-                )
-              })}
+            <div className="max-h-[40vh] overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
+                {chips.map(chip => {
+                  const parts = chip.path.split('/')
+                  const ambiguous = chips.filter(c2 => lastSegment(c2.path) === lastSegment(chip.path)).length > 1
+                  const label = ambiguous ? `${parts[0]} / ${lastSegment(chip.path)}` : lastSegment(chip.path)
+                  return (
+                    <button
+                      key={chip.path}
+                      title={chip.path}
+                      onClick={() => finishCreate(parts, lastSegment(chip.path))}
+                      className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
+                        style={{ backgroundColor: chipColor(chip.path) }}
+                      />
+                      <span className="truncate max-w-[10rem]">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Keine häufigen Kategorien in den letzten 7 Tagen.</p>
+            <p className="text-sm text-muted-foreground">Noch keine häufigen Kategorien.</p>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" className="h-10 rounded-full px-5" onClick={() => setCreateDialogOpen(false)}>

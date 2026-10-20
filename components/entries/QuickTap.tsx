@@ -63,23 +63,26 @@ export function QuickTap({ onCreate }: QuickTapProps) {
   }, [])
 
   const refreshChips = useCallback(() => {
+    // Cutoff dient nur als Sortierkriterium: 7-Tage-Nutzung zuerst, danach Gesamt-Nutzung
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
-    const counts = new Map<string, number>()
+    const recentCounts = new Map<string, number>()
+    const totalCounts = new Map<string, number>()
     // Erstes Segment jeder bekannten Hauptkategorie (case-insensitive, getrimmt)
     const knownMains = new Set(categories.map(c => c.name.trim().toLowerCase()))
     for (const e of loadEntries()) {
       // Chip-Kandidat: Pfad mit '/' ODER erstes Segment entspricht einer bekannten Hauptkategorie
       if (!e.category) continue
+      if (e.category.trim().toLowerCase() === 'nicht zugeordnet') continue
       const first = e.category.split('/')[0]?.trim().toLowerCase() || ''
       if (!e.category.includes('/') && !knownMains.has(first)) continue
       const t = e.started_at ? new Date(e.started_at).getTime() : 0
-      if (t < cutoff) continue
-      counts.set(e.category, (counts.get(e.category) || 0) + 1)
+      totalCounts.set(e.category, (totalCounts.get(e.category) || 0) + 1)
+      if (t >= cutoff) recentCounts.set(e.category, (recentCounts.get(e.category) || 0) + 1)
     }
-    const sorted = Array.from(counts.entries())
-      .map(([path, count]) => ({ path, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
+    // Unbeschränkt: alle jemals genutzten Pfade, 7-Tage-Nutzung absteigend, Tiebreak Gesamt + alphabetisch
+    const sorted = Array.from(totalCounts.entries())
+      .map(([path, count]) => ({ path, count, recent: recentCounts.get(path) || 0 }))
+      .sort((a, b) => b.recent - a.recent || b.count - a.count || a.path.localeCompare(b.path))
     setChips(sorted)
   }, [categories])
   // Event-Listener sollen immer die aktuelle refreshChips-Instanz nutzen, ohne den Mount-Effect neu zu triggern
@@ -274,10 +277,11 @@ export function QuickTap({ onCreate }: QuickTapProps) {
         <div className="mt-4 px-1">
           {chips.length > 0 && (
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              Häufig – in den letzten 7 Tagen
+              Häufig
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="max-h-[40vh] overflow-y-auto">
+            <div className="flex flex-wrap gap-2">
             {chips.map(chip => {
               const isRunningChip = running?.category === chip.path
               // Mehrdeutiger Kurzname (gleicher Name unter mehreren Hauptkategorien) → Pfad-Präfix zeigen
@@ -298,13 +302,13 @@ export function QuickTap({ onCreate }: QuickTapProps) {
                     style={{ backgroundColor: colorFor(chip.path) }}
                   />
                   <span className="truncate max-w-[10rem]">{label}</span>
-                  {isRunningChip && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" title="läuft" aria-label="läuft" />
-                  )}
-                  <span className="text-[10px] text-muted-foreground">{chip.count}</span>
-                </button>
-              )
-            })}
+                    {isRunningChip && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" title="läuft" aria-label="läuft" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       )}

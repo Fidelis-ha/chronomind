@@ -161,26 +161,32 @@ export function layoutLanes<T extends { startMs: number; endMs: number }>(
   return out
 }
 
-/** Häufigste Kategorien der letzten 7 Tage (gleiche Logik wie QuickTap-Chips) */
+/**
+ * Häufige Kategorien-Chips: ALLE jemals genutzten Kategorien-Pfade (unbeschränkt).
+ * Sortierung: Nutzung in den letzten 7 Tagen absteigend (cutoff nur als Sortierkriterium),
+ * Tiebreak: Gesamt-Nutzung absteigend, dann alphabetisch.
+ * 'keine Kategorie' (null) und 'Nicht zugeordnet' erscheinen nie.
+ */
 export function computeFrequentChips(
   entries: TimeEntry[],
   knownMainNames: string[]
 ): { path: string; count: number }[] {
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
-  const counts = new Map<string, number>()
+  const recentCounts = new Map<string, number>()
+  const totalCounts = new Map<string, number>()
   const knownMains = new Set(knownMainNames.map(n => n.trim().toLowerCase()))
   for (const e of entries) {
     if (!e.category) continue
+    if (e.category.trim().toLowerCase() === 'nicht zugeordnet') continue
     const first = e.category.split('/')[0]?.trim().toLowerCase() || ''
     if (!e.category.includes('/') && !knownMains.has(first)) continue
     const t = e.started_at ? Date.parse(e.started_at) : 0
-    if (t < cutoff) continue
-    counts.set(e.category, (counts.get(e.category) || 0) + 1)
+    totalCounts.set(e.category, (totalCounts.get(e.category) || 0) + 1)
+    if (t >= cutoff) recentCounts.set(e.category, (recentCounts.get(e.category) || 0) + 1)
   }
-  return Array.from(counts.entries())
-    .map(([path, count]) => ({ path, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6)
+  return Array.from(totalCounts.entries())
+    .map(([path, count]) => ({ path, count, recent: recentCounts.get(path) || 0 }))
+    .sort((a, b) => b.recent - a.recent || b.count - a.count || a.path.localeCompare(b.path))
 }
 
 export const MIN_DURATION_MS = 5 * MIN
