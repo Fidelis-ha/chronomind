@@ -1,9 +1,10 @@
-// App-Version: EINMALIG pro Release hier pflegen (Changelog kurz und übersichtlich halten).
+// App-Version: Bei JEDER Änderung (auch nicht nutzersichtbaren) hier pflegen:
+// Versions-Bump + Changelog-Eintrag. Changelog kurz und übersichtlich halten.
 // Commit-SHA und Build-Zeitpunkt werden beim Build injiziert (next.config.js):
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.1'
+export const APP_VERSION = '1.1.2'
 
 export interface ChangelogEntry {
   version: string
@@ -12,6 +13,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.2',
+    date: '20.10.2026',
+    changes: [
+      'App-Link-Verifizierung für den Android-TWA-Wrapper: assetlinks.json für de.gemeinsamwalter.chronomind hinzugefügt (keine Änderung in der App-Oberfläche)'
+    ]
+  },
   {
     version: '1.1.1',
     date: '15.10.2026',
