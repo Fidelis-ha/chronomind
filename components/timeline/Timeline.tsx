@@ -387,6 +387,9 @@ export function Timeline() {
       rafRef.current = 0
       const sc = scrollerRef.current
       if (!sc) return
+      // Scrollen beginnt: offenes Fenster schließen (nur das Fenster –
+      // Selektion/Markierung bleiben bestehen)
+      setPopover(null)
       setScrollLeft(sc.scrollLeft)
       const total = (pastDays + futureDays) * DAY_WIDTH
       if (sc.scrollLeft < DAY_WIDTH * 2 && pastDays > 0) {
@@ -420,7 +423,16 @@ export function Timeline() {
     const update = () => setViewportW(sc.clientWidth)
     update()
     window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
+    // Wheel/Touch-Scroll-Gesten: offenes Fenster sofort schließen,
+    // bevor das erste Scroll-Event eintrifft (nur das Fenster)
+    const closePopoverOnScrollGesture = () => setPopover(null)
+    sc.addEventListener('wheel', closePopoverOnScrollGesture, { passive: true })
+    sc.addEventListener('touchmove', closePopoverOnScrollGesture, { passive: true })
+    return () => {
+      window.removeEventListener('resize', update)
+      sc.removeEventListener('wheel', closePopoverOnScrollGesture)
+      sc.removeEventListener('touchmove', closePopoverOnScrollGesture)
+    }
   }, [])
 
   // Anfangsposition: heute (zentriert), Zeit um „jetzt"
@@ -574,9 +586,16 @@ export function Timeline() {
   )
 
   const onColumnClick = (e: React.MouseEvent<HTMLDivElement>, dayIdx: number) => {
-    if (Date.now() < dialogClickGuardUntil.current) return // Klick hat gerade einen Dialog geschlossen
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
-    setPopover(null) // Klick auf freie Zelle schließt ein offenes Fenster
+    // Offenes Fenster (auch Hover-Popover): Klick auf freie Zelle schließt es
+    // NUR – kein neuer Eintrag, keine Markierung (Google-Flow). Muss VOR dem
+    // dialogClickGuardUntil stehen, damit der Outside-Klick das Fenster auch
+    // dann schließt, wenn gerade ein Dialog außerhalb geschlossen wurde.
+    if (popover) {
+      setPopover(null)
+      return
+    }
+    if (Date.now() < dialogClickGuardUntil.current) return // Klick hat gerade einen Dialog geschlossen
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
     const day0 = dayIdxToDateMs(dayIdx)
@@ -592,7 +611,6 @@ export function Timeline() {
     }
     const targetIdx = dayIdxOfMs(targetMs)
     const targetMin = (targetMs - dayStartMs(targetMs)) / MIN_MS
-    setPopover(null)
     setSelected(null)
     // Tap-1 nahe an der Jetzt-Linie und kein laufender Timer:
     // Vorschlag „Zeiterfassung ab jetzt starten" (Punkt 2 der Anforderung)
@@ -1843,6 +1861,7 @@ export function Timeline() {
 
       {/* Dialog: Kategorieauswahl für die Markierung (häufige Chips + Kategorien-Dialog) */}
       <Dialog
+        modal={false}
         open={createDialogOpen && !!pending && !pickerOpen}
         onOpenChange={o => {
           // Abbruch: zurück zur Markierung + FAB (pending bleibt bestehen)

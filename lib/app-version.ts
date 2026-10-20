@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.2'
+export const APP_VERSION = '1.1.3'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.3',
+    date: '20.10.2026',
+    changes: [
+      'Eintrag-Fenster: Antippen daneben schließt nur noch das Fenster (kein versehentlicher Eintrag mehr) – Regression behoben',
+      'Eintrag-Fenster schließt sich beim Scrollen; der Kategorien-Dialog blockiert die Umgebung nicht mehr'
+    ]
+  },
   {
     version: '1.1.2',
     date: '20.10.2026',
