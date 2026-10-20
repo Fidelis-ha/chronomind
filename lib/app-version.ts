@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.6'
+export const APP_VERSION = '1.1.7'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.7',
+    date: '20.10.2026',
+    changes: [
+      'Reiter „Einträge" aufgeräumt: nur noch die Liste und ein Datums-Filter (leer = alle Einträge, neueste zuerst)'
+    ]
+  },
   {
     version: '1.1.6',
     date: '20.10.2026',
