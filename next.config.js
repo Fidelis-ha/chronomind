@@ -18,6 +18,9 @@ module.exports = {
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString()
   },
   reactStrictMode: true,
+  // Dev-Tools-Indikator aus: sein Full-Screen-Hit-Area frisst CDP-Maus-Events
+  // im Browser-Test und bricht bei Klick die Dev-Seite (verifiziert 20.10.2026)
+  devIndicators: false,
   experimental: {
     serverActions: true,
     serverComponentsExternalPackages: ['better-sqlite3', 'drizzle-orm']

@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.3'
+export const APP_VERSION = '1.1.4'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.4',
+    date: '20.10.2026',
+    changes: [
+      'Keine Lücken mehr: Neue Einträge und Timer starten automatisch am Ende des letzten Eintrags (bis 10 Minuten Abstand)',
+      'Einrasten präziser: snappt abhängig vom Zoom (nah = fein, weit = grob), auch beim Vergrößern/Verkleinern von Einträgen'
+    ]
+  },
   {
     version: '1.1.3',
     date: '20.10.2026',

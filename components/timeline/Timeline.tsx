@@ -556,8 +556,14 @@ export function Timeline() {
   /* ---------- Snap-Zeiten (Einrasten an Item-Kanten / Jetzt) ---------- */
 
   // Zeitkandidaten für das Einrasten: alle Item-Anfänge/-Enden + die Jetzt-Linie.
-  // Toleranz zoom-abhängig: ~10px Fingerradius, mind. 4 Minuten.
-  const snapToleranceMs = Math.max(4, Math.round(10 / pxPerMin)) * MIN_MS
+  // Toleranz (Anforderung 5+6): Richtschnur ist der PIXEL-Abstand zum anderen
+  // Item, nicht die Minutenzahl – daher Toleranz rein aus Pixeln ableiten
+  // (12px Fingerradius / pxPerMin). Bewusst KEIN 4-Min-Floor mehr: Der Floor
+  // griff bei nahem Zoom (großes pxPerMin) auch dann, wenn der Klick deutlich
+  // weniger als 4 Minuten entfernt war, und fühlte sich dadurch träge/schlecht
+  // an (Anforderung 2). Untergrenze 1 Minute verhindert nur Sub-Minuten-
+  // Rauschen (z.B. Jitter beim Ziehen), ohne das Pixel-Gefühl zu verfälschen.
+  const snapToleranceMs = Math.max(1, 12 / pxPerMin) * MIN_MS
   const snapTargets = useMemo<number[]>(() => {
     const set = new Set<number>()
     for (const it of allItems) {
@@ -584,6 +590,31 @@ export function Timeline() {
     },
     [snapTargets, snapToleranceMs]
   )
+
+  // Anforderung 1 (Lückenfüllung): Schwelle – Lücken bis 10 min werden zugemacht
+  const GAP_FILL_MAX_MS = 10 * MIN_MS
+
+  /**
+   * Anforderung 1 (Lückenfüllung): Startet man einen neuen Eintrag/Timer kurz
+   * nach dem Ende des letzten Eintrags (paar Sekunden bis GAP_FILL_MAX_MS) und
+   * zwischen beiden liegt nichts, dann startet der neue Eintrag automatisch
+   * EXAKT am Ende des letzten Eintrags – keine Lücke.
+   * Es wird nur gezogen, wenn der Zeitraum (prevEnd, startMs) wirklich leer ist.
+   */
+  const fillGapStart = (startMs: number): number => {
+    let prevEnd: number | null = null
+    for (const it of allItems) {
+      if (it.endMs >= startMs) continue // endet nicht vor dem neuen Start
+      if (prevEnd === null || it.endMs > prevEnd) prevEnd = it.endMs
+    }
+    if (prevEnd === null) return startMs
+    const gap = startMs - prevEnd
+    if (gap <= 0 || gap > GAP_FILL_MAX_MS) return startMs
+    // Nur ziehen, wenn der Zeitraum wirklich leer ist (kein Item schneidet ihn)
+    const occupied = allItems.some(it => it.startMs < startMs && it.endMs > prevEnd!)
+    if (occupied) return startMs
+    return prevEnd
+  }
 
   const onColumnClick = (e: React.MouseEvent<HTMLDivElement>, dayIdx: number) => {
     if (Date.now() < pinchUntil.current || Date.now() < dragUntil.current) return
@@ -828,7 +859,9 @@ export function Timeline() {
     const next = {
       title,
       category: path.length ? path.join('/') : null,
-      started_at: toIso(timerProposal.startMs)
+      // Lückenfüllung: Timer startet exakt am Ende des letzten Eintrags,
+      // wenn die Lücke klein und wirklich leer ist (Anforderung 1)
+      started_at: toIso(fillGapStart(timerProposal.startMs))
     }
     localStorage.setItem(RUNNING_ENTRY_KEY, JSON.stringify(next))
     markDirty()
@@ -949,6 +982,8 @@ export function Timeline() {
 
   const createEntry = (range: Range, path: string[], title: string) => {
     const nowIso = new Date().toISOString()
+    // Lückenfüllung (Anforderung 1) für den Create-Flow (Dialog bestätigt)
+    const startMs = fillGapStart(range.start)
     const entry: TimeEntry = {
       id: nanoid(),
       user_id: 'local-user',
@@ -956,9 +991,9 @@ export function Timeline() {
       description: null,
       category: path.length ? path.join('/') : null,
       tags: null,
-      started_at: toIso(range.start),
+      started_at: toIso(startMs),
       ended_at: toIso(range.end),
-      duration_seconds: Math.round((range.end - range.start) / 1000),
+      duration_seconds: Math.round((range.end - startMs) / 1000),
       source: 'manual',
       calendar_event_id: null,
       metadata: null,
@@ -974,7 +1009,7 @@ export function Timeline() {
       // Direkt angrenzender Eintrag derselben Aktivität wurde zusammengeführt
       toast.success(`Zusammengeführt: ${title} · ${fmtHM(Date.parse(saved.started_at))}–${fmtHM(Date.parse(saved.ended_at || ''))}`)
     } else {
-      toast.success(`Eintrag: ${title} · ${fmtHM(range.start)}–${fmtHM(range.end)}`)
+      toast.success(`Eintrag: ${title} · ${fmtHM(startMs)}–${fmtHM(range.end)}`)
     }
     return saved.id
   }
@@ -1026,6 +1061,8 @@ export function Timeline() {
   const DEFAULT_CREATE_MIN = 30
 
   const quickCreate = (startMs: number, endMs: number, x: number, y: number) => {
+    // Lückenfüllung (Anforderung 1) VOR dem Past/Future-Split
+    startMs = fillGapStart(startMs)
     const parts = buildPendingParts(startMs, endMs)
     const ranges = [parts.past, parts.future].filter((r): r is Range => !!r)
     if (!ranges.length) return
@@ -1227,9 +1264,11 @@ export function Timeline() {
     const dMinutes = (e.clientY - drag.startY) / pxPerMin
     const day0 = drag.day0
     const raw = drag.edge === 'start' ? drag.origStartMs + dMinutes * MIN_MS : drag.origEndMs + dMinutes * MIN_MS
-    // 5-Minuten-Raster; Mitternacht erlaubt – Kante darf über 00:00 hinaus
-    // (nur grob auf ±1 Tag um den sichtbaren Tag begrenzt, kein Zuschneiden mehr)
-    let m = Math.round((raw - day0) / MIN_MS / 5) * 5
+    // Anforderung 4: Snap an Item-Kanten/Jetzt auch beim Vergrößern/Verkleinern
+    // bestehender Einträge – gleichberechtigt zum 5-Min-Raster (Snap gewinnt).
+    // Die Live-Badge-Anzeige zeigt die gesnappte Zeit, da sie curStart/EndMs liest.
+    const snappedT = snapMs(raw)
+    let m = snappedT !== null ? (snappedT - day0) / MIN_MS : Math.round((raw - day0) / MIN_MS / 5) * 5
     m = Math.min(48 * 60, Math.max(-24 * 60, m))
     const origStartMin = (drag.origStartMs - day0) / MIN_MS
     const origEndMin = (drag.origEndMs - day0) / MIN_MS
