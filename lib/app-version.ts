@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.8'
+export const APP_VERSION = '1.1.9'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.9',
+    date: '20.10.2026',
+    changes: [
+      'Chat-Reiter zeigt ohne eingerichtete KI nur einen Hinweis mit Direktauweisung zur KI-Einrichtung',
+      'Sicherheit: API-Keys, Passwörter und Tokens werden auf dem Gerät verschlüsselt gespeichert (nicht mehr im Klartext lesbar)',
+      'Backups verschlüsseln alle Zugangsdaten mit einer Passphrase – KI-Zugang überlebt Backup-Wiederherstellung'
+    ]
+  },
   {
     version: '1.1.8',
     date: '20.10.2026',

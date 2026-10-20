@@ -17,6 +17,7 @@ import {
   pullFromCloud
 } from '@/lib/cloud-sync'
 import { buildPayload } from '@/lib/cloud-sync-payload'
+import { encryptSecretFields } from '@/lib/secrets-crypto'
 
 const PROVIDERS = [
   { id: 'nextcloud', label: 'Nextcloud (empfohlen)' },
@@ -31,9 +32,19 @@ export function CloudSyncSettings() {
   const [pushing, setPushing] = useState(false)
   const [pulling, setPulling] = useState(false)
 
+  const [hasConfig, setHasConfig] = useState(false)
+
   useEffect(() => {
-    const saved = loadCloudConfig()
-    if (saved) setConfig(saved)
+    let cancelled = false
+    void loadCloudConfig().then(saved => {
+      if (!cancelled && saved) {
+        setConfig(saved)
+        setHasConfig(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const set = (patch: Partial<CloudConfig>) => setConfig(prev => ({ ...prev, ...patch }))
@@ -45,7 +56,8 @@ export function CloudSyncSettings() {
       const result = await testCloudConnection(config)
       setTestResult(result)
       if (result.ok) {
-        saveCloudConfig(config)
+        await saveCloudConfig(config)
+        setHasConfig(true)
         window.dispatchEvent(new CustomEvent('chronomind:cloud-config-changed'))
         toast.success(result.detail ? `Verbindung ok (${result.detail})` : 'Verbindung erfolgreich – Konfiguration gespeichert')
       } else {
@@ -61,10 +73,12 @@ export function CloudSyncSettings() {
   const handlePush = async () => {
     setPushing(true)
     try {
-      // buildPayload() statt Handbau: enthält auch Pläne (v3) und stript Settings-Secrets
-      const result = await pushToCloud(config, buildPayload())
+      // buildPayload() statt Handbau: enthält auch Pläne (v3); Secrets werden
+      // mit dem Device-Key verschluesselt (encryptSecret) in die Cloud geschickt.
+      const result = await pushToCloud(config, await buildPayload())
       if (result.ok) {
-        saveCloudConfig(config)
+        await saveCloudConfig(config)
+        setHasConfig(true)
         window.dispatchEvent(new CustomEvent('chronomind:cloud-config-changed'))
         toast.success('Alle Daten in die Cloud hochgeladen')
       } else {
@@ -89,9 +103,15 @@ export function CloudSyncSettings() {
       }
       if (!confirm(`Cloud-Stand vom ${new Date(result.data.timestamp).toLocaleString('de-DE')} übernehmen? Lokale Daten werden ersetzt.`)) return
       // Übernehmen und neu laden
-      saveCloudConfig(config)
+      await saveCloudConfig(config)
+      setHasConfig(true)
       if (Array.isArray(result.data.entries)) localStorage.setItem('chronomind_entries', JSON.stringify(result.data.entries))
-      if (result.data.settings && typeof result.data.settings === 'object') localStorage.setItem('chronomind_settings', JSON.stringify(result.data.settings))
+      if (result.data.settings && typeof result.data.settings === 'object') {
+        // Secret-Felder sind im Cloud-Stand mit dem Device-Key verschluesselt;
+        // Legacy-Klartext-Werte werden vor dem Schreiben nachverschluesselt.
+        const encrypted = await encryptSecretFields(result.data.settings as Record<string, unknown>)
+        localStorage.setItem('chronomind_settings', JSON.stringify(encrypted))
+      }
       // v1-Cloud-Stände ohne categories: lokale Kategorien bleiben unangetastet,
       // werden beim nächsten Push als v2 hochgeladen.
       if (Array.isArray(result.data.categories)) localStorage.setItem('chronomind_categories', JSON.stringify(result.data.categories))
@@ -104,10 +124,11 @@ export function CloudSyncSettings() {
     }
   }
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (!confirm('Cloud-Anbindung entfernen? Daten bleiben lokal erhalten.')) return
     clearCloudConfig()
     setConfig({ provider: 'nextcloud' })
+    setHasConfig(false)
     setTestResult(null)
     window.dispatchEvent(new CustomEvent('chronomind:cloud-config-changed'))
     toast.success('Cloud-Anbindung entfernt')
@@ -211,7 +232,7 @@ export function CloudSyncSettings() {
         <Button variant="outline" onClick={handlePull} disabled={pulling}>
           {pulling ? 'Lade…' : 'Aus Cloud laden'}
         </Button>
-        {loadCloudConfig() && (
+        {hasConfig && (
           <Button variant="ghost" onClick={handleRemove} className="text-destructive hover:text-destructive">
             Cloud entfernen
           </Button>

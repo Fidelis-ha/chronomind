@@ -1,12 +1,17 @@
 'use client'
 
 // Gemeinsame Payload-Erstellung für Cloud-Sync (Watcher + Hook).
-// WICHTIG: Secret-Felder werden vor dem Upload aus den Settings entfernt.
+// WICHTIG: Secret-Felder werden vor dem Upload mit dem Device-Key verschluesselt
+// (encryptSecret / 'enc:v1:'). Der Device-Key verlaesst das Geraet nie, daher sind
+// die Werte in der Cloud ohne dieses Geraet nicht lesbar – anders als bei den
+// passphrasenbasierten Exporten (encryptForBackup) ist hier keine Nutzereingabe
+// moeglich, weil Auto-Push unbeaufsichtigt laeuft.
 
 import { loadEntries } from '@/lib/entries-store'
 import { loadPlans } from '@/lib/plans'
 import { loadCategories } from '@/lib/categories'
 import { type CloudPayload } from '@/lib/cloud-sync'
+import { encryptSecretFields } from '@/lib/secrets-crypto'
 
 export const SETTINGS_STORAGE_KEY = 'chronomind_settings'
 export const RUNNING_ENTRY_KEY = 'chronomind-running-entry'
@@ -18,25 +23,14 @@ export function isTimerRunning(): boolean {
   return localStorage.getItem(RUNNING_ENTRY_KEY) !== null
 }
 
-function stripSecrets(settings: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {}
-  for (const key of Object.keys(settings)) {
-    const lower = key.toLowerCase()
-    if (lower.includes('key') || lower.includes('secret') || lower.includes('password') || lower.includes('token')) {
-      continue
-    }
-    result[key] = settings[key]
-  }
-  return result
-}
-
-export function buildPayload(): Omit<CloudPayload, 'timestamp' | 'device'> {
+export async function buildPayload(): Promise<Omit<CloudPayload, 'timestamp' | 'device'>> {
   let settings: unknown = {}
   try {
     settings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}')
   } catch { /* ignore */ }
   if (settings && typeof settings === 'object' && !Array.isArray(settings)) {
-    settings = stripSecrets(settings as Record<string, unknown>)
+    // Secret-Felder (ai_api_key_*, aws_secret_access_key, ...) verschluesselt senden
+    settings = await encryptSecretFields(settings as Record<string, unknown>)
   } else {
     settings = {}
   }

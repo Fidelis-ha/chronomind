@@ -22,10 +22,10 @@ function scheduleAutoPush() {
   pushTimer = setTimeout(async () => {
     pushTimer = null
     try {
-      const cfg = loadCloudConfig()
+      const cfg = await loadCloudConfig()
       if (!cfg) return
       const capturedCounter = getChangeCounter()
-      const result = await pushToCloud(cfg, buildPayload())
+      const result = await pushToCloud(cfg, await buildPayload())
       if (result.ok) {
         retryScheduled = false
         // Nur clearDirty, wenn sich seit Push-Start nichts geändert hat
@@ -68,7 +68,8 @@ export function initCloudSyncWatcher(): void {
   // Warnung beim Schließen nur bei ungespeicherten Änderungen UND
   // konfiguriertem Cloud-Speicher (reine Lokal-Nutzer nicht nerven)
   window.addEventListener('beforeunload', (e: BeforeUnloadEvent) => {
-    if (isDirty() && loadCloudConfig()) {
+    // Sync-Check nur als grober Hinweis (loadCloudConfig ist async); dirty-Flag reicht
+    if (isDirty() && localStorage.getItem('chronomind_cloud_config')) {
       e.preventDefault()
       e.returnValue = '' // Chrome/Edge verlangen returnValue
     }

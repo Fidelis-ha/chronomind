@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { timeEntries, chats, calendars, calendarEvents, userSettings, users } from '@/lib/db/schema'
+import { encryptSecretFields, isSecretField } from '@/lib/secrets-crypto'
 
 export interface BackupData {
   version: number
@@ -12,6 +13,31 @@ export interface BackupData {
     calendarEvents: any[]
     userSettings: any[]
   }
+}
+
+/**
+ * Verschluesselt Secret-Felder in userSettings-Zeilen (aiApiKeyMistral,
+ * aiApiKeyRouterlab, aws keys in backupConfig, ...) mit dem Device-Key.
+ * Diese Backups laufen unbeaufsichtigt (S3/WebDAV-Auto-Backup), daher ist keine
+ * Passphrase-Abfrage moeglich – es gilt das Device-Key-Verfahren (encryptSecret):
+ * ohne das Er-Geraet sind die Secrets im Backup nicht lesbar. Portable,
+ * passphrasenbasierte Exporte laufen stattdessen ueber encryptForBackup
+ * (siehe Settings-Seite).
+ */
+async function encryptUserSettingsSecrets(rows: any[]): Promise<any[]> {
+  return Promise.all(
+    rows.map(async row => {
+      const result = { ...row }
+      for (const key of Object.keys(result)) {
+        if (typeof result[key] === 'string' && isSecretField(key)) {
+          result[key] = (await encryptSecretFields({ v: result[key] })).v
+        } else if (result[key] && typeof result[key] === 'object' && isSecretField(key)) {
+          result[key] = await encryptSecretFields(result[key])
+        }
+      }
+      return result
+    })
+  )
 }
 
 export async function exportDatabase(): Promise<BackupData> {
@@ -31,7 +57,7 @@ export async function exportDatabase(): Promise<BackupData> {
       chats: allChats,
       calendars: allCalendars,
       calendarEvents: allCalendarEvents,
-      userSettings: allSettings
+      userSettings: await encryptUserSettingsSecrets(allSettings)
     }
   }
 }

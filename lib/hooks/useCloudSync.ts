@@ -45,7 +45,7 @@ export function useCloudSync(): CloudSyncState & {
   const configVersion = useRef(0)
 
   const refreshConfig = useCallback(() => {
-    setConfig(loadCloudConfig())
+    void loadCloudConfig().then(cfg => setConfig(cfg))
     configVersion.current += 1
   }, [])
 
@@ -61,12 +61,12 @@ export function useCloudSync(): CloudSyncState & {
   }, [refreshConfig])
 
   const pushNow = useCallback(async (): Promise<void> => {
-    const cfg = loadCloudConfig()
+    const cfg = await loadCloudConfig()
     if (!cfg) return
     setSyncing(true)
     try {
       const capturedCounter = getChangeCounter()
-      const result = await pushToCloud(cfg, buildPayload())
+      const result = await pushToCloud(cfg, await buildPayload())
       if (result.ok) {
         setLastResult('ok')
         setLastError(null)
@@ -134,7 +134,7 @@ function newestLocalIso(entries: TimeEntry[], plans: TimePlan[]): string | null 
 
 /** Beim Laden der Seite: Cloud-Stand prüfen */
   const checkCloudOnLoad = useCallback(async () => {
-    const cfg = loadCloudConfig()
+    const cfg = await loadCloudConfig()
     if (!cfg) return
     setSyncing(true)
     try {

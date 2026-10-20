@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +12,13 @@ import { CloudSyncSettings } from '@/components/settings/CloudSyncSettings'
 import { InstallHint } from '@/components/settings/InstallHint'
 import { VersionInfo } from '@/components/settings/VersionInfo'
 import { SETTINGS_CHANGED_EVENT, markDirty } from '@/lib/dirty-state'
+import {
+  encryptSecretFields,
+  decryptSecretFields,
+  encryptForBackup,
+  decryptFromBackup,
+  isSecretField
+} from '@/lib/secrets-crypto'
 import { AppLayout } from '@/components/app-layout'
 
 const TIMEZONES = [
@@ -49,19 +56,45 @@ interface AppSettings {
   routerlab_base_url: string
 }
 
-function loadSettings(): AppSettings | null {
+/**
+ * Laedt die Settings aus dem localStorage. Persistierte Secret-Felder
+ * (ai_api_key_*, aws_secret_access_key) sind mit dem Device-Key verschluesselt
+ * ('enc:v1:') und werden hier fuer den React-State entschluesselt.
+ * Migration: Klartext-Secrets (ohne Prefix) werden beim Laden einmalig
+ * verschluesselt zurueckgeschrieben.
+ */
+async function loadSettings(): Promise<AppSettings | null> {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const stored = JSON.parse(raw) as AppSettings & Record<string, unknown>
+    const decrypted = (await decryptSecretFields(stored as unknown as Record<string, unknown>)) as unknown as AppSettings
+    // Einmalige Migration: Klartext-Secrets verschluesselt zurückschreiben.
+    // Vergleich gegen die NORMIERTE Form (verschlüsselt), denn decryptSecretFields
+    // lässt Klartext unverändert – der alte Vergleich stored!==decrypted griff nie.
+    const normalized = (await encryptSecretFields(
+      decrypted as unknown as Record<string, unknown>
+    )) as unknown as AppSettings
+    if (JSON.stringify(stored) !== JSON.stringify(normalized)) {
+      await persistSettings(decrypted)
+    }
+    return decrypted
   } catch {
     return null
   }
 }
 
-function saveSettings(settings: AppSettings) {
+/**
+ * Schreibt die Settings verschluesselt in den localStorage (at rest):
+ * alle Secret-Felder werden vor dem JSON.stringify mit encryptSecret bearbeitet.
+ */
+async function persistSettings(settings: AppSettings) {
   if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  const encrypted = (await encryptSecretFields(
+    settings as unknown as Record<string, unknown>
+  )) as unknown as AppSettings
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(encrypted))
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -82,18 +115,24 @@ const DEFAULT_SETTINGS: AppSettings = {
 }
 
 export default function SettingsPage() {
-  const saved = loadSettings()
-  const [settings, setSettings] = useState<AppSettings>({
-    ...DEFAULT_SETTINGS,
-    ...(saved || {})
-  })
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
 
-  const handleSave = () => {
+  // Settings (inkl. Entschlüsselung + Migration) asynchron nach dem Mount laden
+  useEffect(() => {
+    let cancelled = false
+    void loadSettings().then(saved => {
+      if (!cancelled && saved) setSettings({ ...DEFAULT_SETTINGS, ...saved })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleSave = async () => {
     setSaving(true)
     try {
-      saveSettings(settings)
-      localStorage.setItem('chronomind_settings', JSON.stringify(settings))
+      await persistSettings(settings)
       markDirty()
       window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT))
       toast.success('Einstellungen gespeichert')
@@ -104,17 +143,39 @@ export default function SettingsPage() {
     }
   }
 
-  const handleExportJSON = () => {
+  const handleExportJSON = async () => {
     const entries = localStorage.getItem('chronomind_entries') || '[]'
-    const data = JSON.stringify({ entries: JSON.parse(entries), settings }, null, 2)
-    const blob = new Blob([data], { type: 'application/json' })
+    const data = { entries: JSON.parse(entries), settings }
+
+    // Pruefen, ob Secrets enthalten sind (KI-Keys, Cloud-Credentials)
+    const hasSecrets = Object.keys(settings).some(
+      k => isSecretField(k) && typeof settings[k as keyof AppSettings] === 'string' &&
+        (settings[k as keyof AppSettings] as string)
+    )
+
+    let payload: string
+    if (hasSecrets) {
+      // Export mit Secrets NUR passphrasenbasiert verschluesselt – niemals im Klartext.
+      const passphrase = window.prompt(
+        'Die Einstellungen enthalten Secrets (API-Keys, Zugangsdaten).\nBitte eine Passphrase für die Verschlüsselung des Exports eingeben:'
+      )
+      if (!passphrase) {
+        toast.error('Export abgebrochen – ohne Passphrase werden Secrets nicht unverschlüsselt exportiert')
+        return
+      }
+      payload = await encryptForBackup(data, passphrase)
+    } else {
+      payload = JSON.stringify(data, null, 2)
+    }
+
+    const blob = new Blob([payload], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `chronomind-backup-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('JSON Export erstellt')
+    toast.success(hasSecrets ? 'Verschlüsselter JSON Export erstellt' : 'JSON Export erstellt')
   }
 
   const handleExportCSV = () => {
@@ -194,10 +255,40 @@ export default function SettingsPage() {
       if (!file) return
       try {
         const text = await file.text()
-        const data = JSON.parse(text)
+        let data: { entries?: unknown; settings?: AppSettings & Record<string, unknown> }
+        try {
+          const parsed = JSON.parse(text) as { enc?: string }
+          if (parsed.enc === 'v1') {
+            // Verschluesselter Export: Passphrase abfragen und entschlüsseln
+            const passphrase = window.prompt('Passphrase für den verschlüsselten Export:')
+            if (!passphrase) {
+              toast.error('Import abgebrochen – Passphrase erforderlich')
+              return
+            }
+            const decrypted = await decryptFromBackup(text, passphrase)
+            if (!decrypted || typeof decrypted !== 'object') {
+              toast.error('Entschlüsselung fehlgeschlagen – falsche Passphrase?')
+              return
+            }
+            data = decrypted as typeof data
+          } else {
+            data = parsed as typeof data
+          }
+        } catch {
+          toast.error('Import fehlgeschlagen')
+          return
+        }
         if (data.entries) {
           localStorage.setItem('chronomind_entries', JSON.stringify(data.entries))
           toast.success(`Importiert: ${Array.isArray(data.entries) ? data.entries.length : 0} Einträge`)
+        }
+        if (data.settings && typeof data.settings === 'object') {
+          // Secrets verschlüsselt at-rest zurückschreiben -> KI bleibt eingerichtet
+          await persistSettings({ ...DEFAULT_SETTINGS, ...data.settings } as AppSettings)
+          setSettings({ ...DEFAULT_SETTINGS, ...data.settings } as AppSettings)
+          markDirty()
+          window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT))
+          toast.success('Einstellungen übernommen (Secrets verschlüsselt gespeichert)')
         }
       } catch {
         toast.error('Import fehlgeschlagen')

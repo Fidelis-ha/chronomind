@@ -5,6 +5,9 @@
 
 export type CloudProvider = 'nextcloud' | 'webdav' | 's3'
 
+import { encryptSecretFields, decryptSecretFields } from '@/lib/secrets-crypto'
+
+
 export interface CloudConfig {
   provider: CloudProvider
   // Nextcloud
@@ -47,18 +50,38 @@ function getDeviceId(): string {
   return id
 }
 
-export function loadCloudConfig(): CloudConfig | null {
+/**
+ * Laedt die CloudConfig aus dem localStorage. Persistiert sind die Secret-Felder
+ * (password/token/access keys) mit dem Device-Key verschluesselt ('enc:v1:');
+ * hier werden sie fuer die Nutzung in Memory entschluesselt. Klartext-Altbestaende
+ * werden beim Laden einmalig verschluesselt zurueckgeschrieben (Migration).
+ */
+export async function loadCloudConfig(): Promise<CloudConfig | null> {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(SYNC_CONFIG_KEY)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const config = JSON.parse(raw) as unknown as CloudConfig
+    const decrypted = (await decryptSecretFields(config as unknown as Record<string, unknown>)) as unknown as CloudConfig
+    // Migration: Klartext-Secrets (ohne 'enc:v1:') verschluesselt zurueckschreiben
+    if (JSON.stringify(config) !== JSON.stringify(decrypted)) {
+      await saveCloudConfig(decrypted)
+    }
+    return decrypted
   } catch {
     return null
   }
 }
 
-export function saveCloudConfig(config: CloudConfig) {
-  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(config))
+/**
+ * Speichert die CloudConfig im localStorage – Secret-Felder werden vor dem
+ * Schreiben mit dem Device-Key verschluesselt (encryptSecret), nie im Klartext.
+ */
+export async function saveCloudConfig(config: CloudConfig) {
+  const encrypted = (await encryptSecretFields(
+    config as unknown as Record<string, unknown>
+  )) as unknown as CloudConfig
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(encrypted))
 }
 
 export function clearCloudConfig() {
