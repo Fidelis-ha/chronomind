@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.5'
+export const APP_VERSION = '1.1.6'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.1.6',
+    date: '20.10.2026',
+    changes: [
+      'Erinnerungsfenster ist jetzt bildschirmfüllend mit Schließen-X oben rechts (liegt auf dem Inhalt) und Android-Zurücktaste',
+      'Erinnerungsliste: alle Zeiteinträge, sortiert nach letzter Aktivierung; Tippen des laufenden Eintrags lässt ihn weiterlaufen'
+    ]
+  },
   {
     version: '1.1.5',
     date: '20.10.2026',

@@ -2,9 +2,12 @@
 
 // Wake-Reminder: Läuft eine Zeiterfassung und die App war >= 5 min nicht
 // sichtbar (Sperre/Hintergrund), meldet sie sich beim Wiederaufwachen:
-// System-Push + direkter Dialog mit Auswahl der häufigsten Aktivitäten
-// der letzten 7 Tage und allen Aktivitäten von heute.
-// Auswahl = laufende Erfassung stoppt bis jetzt, neue startet ab jetzt.
+// System-Push + bildschirmfüllender Dialog mit allen bisherigen Titeln
+// (sortiert nach letzter Aktivierung). Ziel der App ist durchgehende
+// Zeiterfassung – Beenden ist bewusst nicht prominent: Klick auf den
+// laufenden Eintrag lässt den Timer einfach weiterlaufen; Klick auf einen
+// anderen Eintrag stoppt die laufende Erfassung bis jetzt und startet
+// die neue ab jetzt.
 
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -27,9 +30,6 @@ interface RunningEntry {
 interface Suggestion {
   title: string
   category: string | null
-  /** Treffer in den letzten 7 Tagen; null = nur heute gesehen */
-  count: number | null
-  isToday: boolean
 }
 
 function readRunning(): RunningEntry | null {
@@ -52,48 +52,22 @@ function fmtElapsed(startIso: string, now: number): string {
 }
 
 function buildSuggestions(): Suggestion[] {
-  const nowMs = Date.now()
-  const cutoff = nowMs - 7 * 24 * 60 * 60 * 1000
-  const startOfToday = new Date()
-  startOfToday.setHours(0, 0, 0, 0)
-  const startOfTodayMs = startOfToday.getTime()
-
-  interface Stat { count: number; category: string | null; lastStart: number }
+  interface Stat { category: string | null; lastStart: number }
   const stats = new Map<string, Stat>()
-  const todayLastStart = new Map<string, number>()
 
   for (const e of loadEntries()) {
     if (!e.title) continue
     const t = e.started_at ? new Date(e.started_at).getTime() : 0
     if (t <= 0) continue
-    if (t >= startOfTodayMs) {
-      const prev = todayLastStart.get(e.title) ?? 0
-      if (t > prev) todayLastStart.set(e.title, t)
-    }
-    if (t < cutoff) continue
     const prev = stats.get(e.title)
-    const count = (prev?.count ?? 0) + 1
-    const lastStart = Math.max(prev?.lastStart ?? 0, t)
     const category = !prev || t > prev.lastStart ? e.category : prev.category
-    stats.set(e.title, { count, category, lastStart })
+    stats.set(e.title, { category, lastStart: Math.max(prev?.lastStart ?? 0, t) })
   }
 
-  const top = Array.from(stats.entries())
-    .map(([title, s]) => ({ title, category: s.category, count: s.count, lastStart: s.lastStart }))
-    .sort((a, b) => b.count - a.count || b.lastStart - a.lastStart)
-    .slice(0, 10)
-    .map<Suggestion>(s => ({ title: s.title, category: s.category, count: s.count, isToday: todayLastStart.has(s.title) }))
-
-  const topTitles = new Set(top.map(s => s.title))
-  const extras = Array.from(todayLastStart.entries())
-    .filter(([title]) => !topTitles.has(title))
-    .sort((a, b) => b[1] - a[1])
-    .map<Suggestion>(([title]) => {
-      const stat = stats.get(title)
-      return { title, category: stat?.category ?? null, count: null, isToday: true }
-    })
-
-  return [...top, ...extras]
+  return Array.from(stats.entries())
+    .map(([title, s]) => ({ title, category: s.category, lastStart: s.lastStart }))
+    .sort((a, b) => b.lastStart - a.lastStart)
+    .map<Suggestion>(({ title, category }) => ({ title, category }))
 }
 
 function showPush(running: RunningEntry): void {
@@ -126,6 +100,9 @@ export function WakeReminder() {
   const [now, setNow] = useState(() => Date.now())
   const runningRef = useRef<RunningEntry | null>(null)
   runningRef.current = running
+  const openRef = useRef(false)
+  openRef.current = open
+  const pushedRef = useRef(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -142,6 +119,9 @@ export function WakeReminder() {
       setRunning(r)
       setSuggestions(buildSuggestions())
       setOpen(true)
+      // Android-Zurücktaste soll das Fenster schliessen
+      history.pushState({ chronomindWake: true }, '')
+      pushedRef.current = true
       showPush(r)
     }
 
@@ -153,9 +133,17 @@ export function WakeReminder() {
       }
     }
 
+    // Zurücktaste: History-Eintrag konsumieren und Fenster schliessen
+    const onPopState = () => {
+      if (!openRef.current) return
+      pushedRef.current = false
+      setOpen(false)
+    }
+
     // App-Kill-Fall: beim nächsten Öffnen ist der Zeitstempel noch da
     if (document.visibilityState === 'visible') evaluate()
     document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('popstate', onPopState)
 
     // Push-Berechtigung einmalig bei erster Nutzer-Interaktion anfragen
     // (Android braucht eine User-Geste; nach dem Aufwachen gibt es keine)
@@ -172,6 +160,7 @@ export function WakeReminder() {
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('popstate', onPopState)
       removeAsk?.()
     }
   }, [])
@@ -183,10 +172,24 @@ export function WakeReminder() {
     return () => clearInterval(t)
   }, [open, running])
 
+  const close = () => {
+    setOpen(false)
+    if (pushedRef.current) {
+      pushedRef.current = false
+      history.back()
+    }
+  }
+
   const selectActivity = (s: Suggestion) => {
     const current = runningRef.current
-    setOpen(false)
+    close()
     if (!current) return
+    const same =
+      s.title === current.title && (s.category ?? null) === (current.category ?? null)
+    if (same) {
+      // Laufende Erfassung läuft einfach weiter – nichts tun
+      return
+    }
     const endIso = new Date().toISOString()
     const end = new Date(endIso)
     const start = new Date(current.started_at)
@@ -211,18 +214,10 @@ export function WakeReminder() {
       recurrence_index: null
     }
     saveEntries([entry, ...loadEntries()])
-    const same =
-      s.title === current.title && (s.category ?? null) === (current.category ?? null)
-    if (!same) {
-      const next: RunningEntry = { title: s.title, category: s.category, started_at: endIso }
-      localStorage.setItem(RUNNING_ENTRY_KEY, JSON.stringify(next))
-      markDirty() // laufender Timer wäre beim Schließen verloren -> Warnung nötig
-      toast(`Jetzt: ${s.title}`, { icon: '▶️' })
-    } else {
-      // Nur stoppen: laufenden Timer beenden, keinen neuen starten
-      localStorage.removeItem(RUNNING_ENTRY_KEY)
-      toast.success(`${current.title} · ${fmtMin(duration)}`)
-    }
+    const next: RunningEntry = { title: s.title, category: s.category, started_at: endIso }
+    localStorage.setItem(RUNNING_ENTRY_KEY, JSON.stringify(next))
+    markDirty() // laufender Timer wäre beim Schließen verloren -> Warnung nötig
+    toast(`Jetzt: ${s.title}`, { icon: '▶️' })
     // QuickTap & Co. im selben Tab informieren (storage-Event feuert nicht lokal)
     window.dispatchEvent(new Event(RUNNING_CHANGED_EVENT))
   }
@@ -232,12 +227,12 @@ export function WakeReminder() {
   const same = (s: Suggestion) =>
     s.title === running.title && (s.category ?? null) === (running.category ?? null)
 
-  const row = (s: Suggestion) => (
+  const row = (s: Suggestion, isRunning: boolean) => (
     <button
       key={`${s.title}|${s.category ?? ''}`}
       onClick={() => selectActivity(s)}
       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 min-h-[48px] text-left transition-colors duration-200 ${
-        same(s)
+        isRunning
           ? 'bg-primary/10 ring-1 ring-primary'
           : 'bg-surface-container-lowest hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]'
       }`}
@@ -254,27 +249,34 @@ export function WakeReminder() {
           </span>
         )}
       </span>
-      {same(s) ? (
-        <span className="shrink-0 text-[11px] font-semibold text-primary">läuft · nur stoppen</span>
-      ) : s.count !== null ? (
-        <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">×{s.count}</span>
-      ) : (
-        <span className="shrink-0 text-[11px] font-semibold text-primary">heute</span>
+      {isRunning && (
+        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">läuft</span>
       )}
     </button>
   )
 
-  const frequent = suggestions.filter(s => s.count !== null)
-  const todayOnly = suggestions.filter(s => s.count === null)
+  // Laufender Eintrag immer oben, auch wenn er noch kein gespeicherter Entry ist
+  const rows: Array<{ s: Suggestion; isRunning: boolean }> = [
+    { s: { title: running.title, category: running.category }, isRunning: true },
+    ...suggestions
+      .filter(s => !same(s))
+      .map(s => ({ s, isRunning: false }))
+  ]
 
   return (
     <div className="fixed inset-0 z-[60]">
       <div
         className="absolute inset-0 bg-black/[0.32] animate-m3-fade-in"
-        onClick={() => setOpen(false)}
+        onClick={close}
       />
-      <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[28px] bg-surface-container-low p-5 pb-8 shadow-lg animate-m3-fade-in">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-outline-variant" />
+      <div className="absolute inset-0 flex flex-col bg-surface-container-low p-5 pb-8 shadow-lg animate-m3-fade-in">
+        <button
+          onClick={close}
+          aria-label="Schliessen"
+          className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+        >
+          ✕
+        </button>
         <h2 className="text-base font-semibold leading-snug">
           Zeiterfassung für „{running.title}“ läuft noch
           <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
@@ -285,30 +287,14 @@ export function WakeReminder() {
           Machst du jetzt etwas anderes?
         </p>
 
-        {frequent.length > 0 && (
-          <div className="mt-4">
-            <div className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Häufig · letzte 7 Tage
-            </div>
-            <div className="flex flex-col gap-1.5">{frequent.map(row)}</div>
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+          <div className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Letzte Zeiteinträge
           </div>
-        )}
-
-        {todayOnly.length > 0 && (
-          <div className="mt-4">
-            <div className="mb-2 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Heute
-            </div>
-            <div className="flex flex-col gap-1.5">{todayOnly.map(row)}</div>
+          <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+            {rows.map(({ s, isRunning }) => row(s, isRunning))}
           </div>
-        )}
-
-        <button
-          onClick={() => setOpen(false)}
-          className="mt-5 min-h-[48px] w-full rounded-full border border-outline-variant px-4 py-3 text-sm font-semibold transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
-        >
-          Nein, läuft weiter
-        </button>
+        </div>
       </div>
     </div>
   )
