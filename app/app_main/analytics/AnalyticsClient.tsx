@@ -2,137 +2,86 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { type TimeEntry } from '@/lib/types'
+import { loadEntries, ENTRIES_CHANGED_EVENT } from '@/lib/entries-store'
 import {
-  DurationChart,
-  CategoryPieChart,
-  WeeklySummary
+  WeeklySummary,
+  CategoryDonut,
+  DailyStackedBars,
+  TopActivities,
+  HourlyProfile,
+  WeeklyTrend
 } from '@/components/analytics/ChartComponents'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 
-const STORAGE_KEY = 'chronomind_entries'
+type RangeKey = '7' | '30' | '90' | 'all'
 
-function loadEntries(): TimeEntry[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
+const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
+  { key: '7', label: '7 Tage', days: 7 },
+  { key: '30', label: '30 Tage', days: 30 },
+  { key: '90', label: '90 Tage', days: 90 },
+  { key: 'all', label: 'Alles', days: null }
+]
 
-interface DayData {
-  date: string
-  hours: number
-}
-
-interface CategoryData {
-  name: string
-  value: number
-  color: string
-}
-
-function getLast7Days(): string[] {
-  const days: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    days.push(date.toISOString().split('T')[0])
-  }
-  return days
-}
-
-function formatWeekday(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('de-DE', { weekday: 'short' })
-}
-
-function getMostActiveDay(dayMap: Map<string, number>): string {
-  let maxDay = ''
-  let maxHours = 0
-  dayMap.forEach((hours, day) => {
-    if (hours > maxHours) {
-      maxHours = hours
-      maxDay = formatWeekday(day)
-    }
-  })
-  return maxDay || '-'
+function withinRange(entry: TimeEntry, days: number | null): boolean {
+  if (days === null) return true
+  const cutoff = Date.now() - days * 86_400_000
+  return new Date(entry.started_at).getTime() >= cutoff
 }
 
 export function AnalyticsClient() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [range, setRange] = useState<RangeKey>('30')
 
   useEffect(() => {
-    setEntries(loadEntries())
+    const update = () => setEntries(loadEntries())
+    update()
     setLoading(false)
+    window.addEventListener(ENTRIES_CHANGED_EVENT, update)
+    return () => window.removeEventListener(ENTRIES_CHANGED_EVENT, update)
   }, [])
 
-  const last7Days = useMemo(() => getLast7Days(), [])
+  const filtered = useMemo(
+    () => entries.filter(e => withinRange(e, RANGES.find(r => r.key === range)!.days)),
+    [entries, range]
+  )
 
-  const chartData = useMemo((): DayData[] => {
+  const stats = useMemo(() => {
+    const totalHours = filtered.reduce((s, e) => s + (e.duration_seconds || 0) / 3600, 0)
     const dayMap = new Map<string, number>()
-
-    last7Days.forEach(day => dayMap.set(day, 0))
-
-    entries.forEach(entry => {
-      if (!entry.duration_seconds) return
-      const entryDate = new Date(entry.started_at).toISOString().split('T')[0]
-      if (dayMap.has(entryDate)) {
-        const current = dayMap.get(entryDate) || 0
-        dayMap.set(entryDate, current + entry.duration_seconds / 3600)
+    filtered.forEach(e => {
+      if (!e.duration_seconds) return
+      const d = new Date(e.started_at).toISOString().split('T')[0]
+      dayMap.set(d, (dayMap.get(d) || 0) + e.duration_seconds / 3600)
+    })
+    let maxHours = 0
+    let maxDay = '-'
+    dayMap.forEach((h, d) => {
+      if (h > maxHours) {
+        maxHours = h
+        maxDay = new Date(d).toLocaleDateString('de-DE', { weekday: 'short' })
       }
     })
-
-    return last7Days.map(day => ({
-      date: day,
-      hours: Math.round((dayMap.get(day) || 0) * 10) / 10
-    }))
-  }, [entries, last7Days])
-
-  const categoryData = useMemo((): CategoryData[] => {
-    const catMap = new Map<string, number>()
-
-    entries.forEach(entry => {
-      const cat = entry.category || 'Ohne Kategorie'
-      const current = catMap.get(cat) || 0
-      catMap.set(cat, current + (entry.duration_seconds || 0) / 3600)
-    })
-
-    return Array.from(catMap.entries())
-      .map(([name, value]) => ({ name, value: Math.round(value * 10) / 10, color: '' }))
-      .sort((a, b) => b.value - a.value)
-  }, [entries])
-
-  const weeklyStats = useMemo(() => {
-    const totalHours = chartData.reduce((sum, d) => sum + d.hours, 0)
-    const totalEntries = entries.filter(e => {
-      const entryDate = new Date(e.started_at).toISOString().split('T')[0]
-      return last7Days.includes(entryDate)
-    }).length
-
-    const dayMap = new Map<string, number>()
-    chartData.forEach(d => dayMap.set(d.date, d.hours))
-
+    const dayCount = Math.max(dayMap.size, 1)
     return {
       totalHours: Math.round(totalHours * 10) / 10,
-      totalEntries,
-      avgHoursPerDay: Math.round((totalHours / 7) * 10) / 10,
-      mostActiveDay: getMostActiveDay(dayMap)
+      totalEntries: filtered.length,
+      avgHoursPerDay: Math.round((totalHours / dayCount) * 10) / 10,
+      mostActiveDay: maxDay
     }
-  }, [chartData, entries, last7Days])
+  }, [filtered])
 
   if (loading) {
     return (
       <div className="container mx-auto max-w-4xl py-8 px-4">
-        <div className="text-center py-8 text-muted-foreground">
-          Wird geladen...
-        </div>
+        <div className="text-center py-8 text-muted-foreground">Wird geladen...</div>
       </div>
     )
   }
+
+  const rangeDays = RANGES.find(r => r.key === range)!.days
 
   return (
     <div className="container mx-auto max-w-4xl py-6 px-4 sm:py-8">
@@ -143,59 +92,69 @@ export function AnalyticsClient() {
         </Button>
       </div>
 
+      {/* Zeitraum-Filter */}
+      <div className="flex flex-wrap gap-2 mb-6" role="group" aria-label="Zeitraum wählen">
+        {RANGES.map(r => (
+          <button
+            key={r.key}
+            type="button"
+            onClick={() => setRange(r.key)}
+            aria-pressed={range === r.key}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors [font-variant-numeric:tabular-nums] ${
+              range === r.key
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:bg-surface-container'
+            }`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       <WeeklySummary
-        totalHours={weeklyStats.totalHours}
-        totalEntries={weeklyStats.totalEntries}
-        avgHoursPerDay={weeklyStats.avgHoursPerDay}
-        mostActiveDay={weeklyStats.mostActiveDay}
+        totalHours={stats.totalHours}
+        totalEntries={stats.totalEntries}
+        avgHoursPerDay={stats.avgHoursPerDay}
+        mostActiveDay={stats.mostActiveDay}
       />
 
       <Separator className="my-8" />
 
       <div className="space-y-8">
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Stunden pro Tag (letzte 7 Tage)</h2>
-          <div className="p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
-            <DurationChart data={chartData} />
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Verteilung nach Hauptkategorie</h2>
+          <div className="p-4 sm:p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
+            <CategoryDonut entries={filtered} />
           </div>
-        </div>
+        </section>
 
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Zeit nach Kategorie</h2>
-          <div className="p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
-            <CategoryPieChart data={categoryData} totalHours={weeklyStats.totalHours} />
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Zeit pro Tag nach Hauptkategorie</h2>
+          <div className="p-4 sm:p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
+            <DailyStackedBars entries={filtered} days={rangeDays ?? 90} />
           </div>
-        </div>
+        </section>
 
-        {categoryData.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Kategorie-Übersicht</h2>
-            <div className="rounded-2xl border border-outline-variant bg-surface-container-low overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-outline-variant bg-surface-container">
-                    <th className="text-left p-3 font-medium">Kategorie</th>
-                    <th className="text-right p-3 font-medium">Stunden</th>
-                    <th className="text-right p-3 font-medium">Anteil</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categoryData.map((cat, i) => (
-                    <tr key={cat.name} className="border-b border-outline-variant last:border-0">
-                      <td className="p-3">{cat.name}</td>
-                      <td className="p-3 text-right">{cat.value.toFixed(1)} Std.</td>
-                      <td className="p-3 text-right text-muted-foreground">
-                        {weeklyStats.totalHours > 0
-                          ? `${((cat.value / weeklyStats.totalHours) * 100).toFixed(1)}%`
-                          : '0%'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Top 8 Aktivitäten</h2>
+          <div className="p-4 sm:p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
+            <TopActivities entries={filtered} />
           </div>
-        )}
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Tageszeit-Profil</h2>
+          <div className="p-4 sm:p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
+            <HourlyProfile entries={filtered} />
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Wochenverlauf (letzte 12 Wochen)</h2>
+          <div className="p-4 sm:p-6 rounded-2xl border border-outline-variant bg-surface-container-low">
+            <WeeklyTrend entries={filtered} />
+          </div>
+        </section>
       </div>
     </div>
   )
