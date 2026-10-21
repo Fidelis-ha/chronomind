@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.1.9'
+export const APP_VERSION = '1.2.0'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.0',
+    date: '20.10.2026',
+    changes: [
+      'Kalender: beim Öffnen wird automatisch eine aktuelle Kalender-Datei (.ics) erzeugt und bei jeder Änderung nachgeführt',
+      'Kalender: optionale Nextcloud-Verknüpfung – Kalender anlegen/wählen und ohne Doppel-Einträge abgleichen (überschreiben oder übernehmen)'
+    ]
+  },
   {
     version: '1.1.9',
     date: '20.10.2026',
