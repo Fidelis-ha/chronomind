@@ -114,14 +114,19 @@ export function WakeReminder() {
       const hiddenAt = raw ? Number(raw) : 0
       if (!hiddenAt) return
       if (Date.now() - hiddenAt < MIN_HIDDEN_MS) return
+      // Bereits offen: kein zweiter history-Eintrag (sonst verlässt die
+      // Zurücktaste nach dem Schliessen die App statt nur das Fenster zu schliessen)
+      if (openRef.current) return
       const r = readRunning()
       if (!r) return
       setRunning(r)
       setSuggestions(buildSuggestions())
       setOpen(true)
       // Android-Zurücktaste soll das Fenster schliessen
-      history.pushState({ chronomindWake: true }, '')
-      pushedRef.current = true
+      if (!pushedRef.current) {
+        history.pushState({ chronomindWake: true }, '')
+        pushedRef.current = true
+      }
       showPush(r)
     }
 

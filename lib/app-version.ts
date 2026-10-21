@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.0'
+export const APP_VERSION = '1.2.1'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,19 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.1',
+    date: '21.10.2026',
+    changes: [
+      'Sicherheit: Cloud-Zugangsdaten werden beim ersten Laden verschlüsselt (Migration repariert)',
+      'Sicherheit: nicht entschlüsselbare Zugangsdaten gelten als nicht vorhanden statt als eingerichtet',
+      'Zeitachse: Lückenfüllung bezieht sich nur auf Einträge, nicht auf Pläne',
+      'Zeitachse: Hinweis im Bestätigungstext, wenn eine Lücke automatisch geschlossen wurde',
+      'Erinnerungsfenster: Zurücktaste schließt weiterhin nur das Fenster (kein doppelter Verlaufseintrag)',
+      'Kalender: Import liest Zeitangaben mit Zeitzone korrekt, Titel mit Sonderzeichen sauber, Dauer wird berechnet',
+      'Kalender: Zeilenumbrüche in der Datei entsprechen der Norm (auch bei Umlauten)'
+    ]
+  },
   {
     version: '1.2.0',
     date: '20.10.2026',

@@ -228,6 +228,8 @@ export default function CalendarPage() {
           if (byId.has(localId)) continue // kein Doppel-Eintrag via UID-Vergleich
           const startIso = icsUtcToIso(ev.dtstart) || ev.dtstart
           const endIso = (ev.dtend ? icsUtcToIso(ev.dtend) : '') || startIso
+          const durMs = Date.parse(endIso) - Date.parse(startIso)
+          const durationSeconds = Number.isFinite(durMs) && durMs > 0 ? Math.round(durMs / 1000) : null
           const entry: TimeEntry = {
             id: localId,
             user_id: 'local-user',
@@ -237,7 +239,7 @@ export default function CalendarPage() {
             tags: null,
             started_at: startIso,
             ended_at: endIso,
-            duration_seconds: null,
+            duration_seconds: durationSeconds,
             source: 'calendar',
             calendar_event_id: null,
             metadata: null,

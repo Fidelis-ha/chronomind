@@ -183,14 +183,18 @@ export async function encryptSecretFields<T extends Record<string, unknown>>(obj
 
 /**
  * Entschluesselt alle 'enc:v1:'-Secret-Felder eines Objekts (Device-Key).
- * Klartext-Felder und nicht entschlüsselbare Werte bleiben unveraendert.
+ * Klartext-Felder bleiben unveraendert. NICHT entschluesselbare Werte
+ * (z. B. Device-Key verloren, Backup von einem anderen Geraet) werden auf ''
+ * gesetzt statt den Ciphertext zu behalten – sonst gilt eine KI als
+ * "eingerichtet" und schickt 'enc:v1:...' als API-Key an den Provider.
  */
 export async function decryptSecretFields<T extends Record<string, unknown>>(obj: T): Promise<T> {
   const result: Record<string, unknown> = { ...obj }
   for (const key of Object.keys(result)) {
     const value = result[key]
     if (typeof value === 'string' && isEncryptedSecret(value) && isSecretField(key)) {
-      result[key] = (await decryptSecret(value)) ?? value
+      const plain = await decryptSecret(value)
+      result[key] = plain ?? ''
     }
   }
   return result as T

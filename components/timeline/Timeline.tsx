@@ -603,7 +603,10 @@ export function Timeline() {
    */
   const fillGapStart = (startMs: number): number => {
     let prevEnd: number | null = null
-    for (const it of allItems) {
+    // Nur ECHTE Einträge als Bezugspunkt: Pläne sind Vorhaben, kein Ist-Zustand.
+    // (Vorher zog auch ein Plan den neuen Start an das Ende des letzten Plans.)
+    const entriesOnly = allItems.filter(it => it.kind === 'entry')
+    for (const it of entriesOnly) {
       if (it.endMs >= startMs) continue // endet nicht vor dem neuen Start
       if (prevEnd === null || it.endMs > prevEnd) prevEnd = it.endMs
     }
@@ -1005,11 +1008,14 @@ export function Timeline() {
     }
     const saved = saveEntryMergingAdjacent(entry)
     markDirty()
+    const gapNote = startMs !== range.start ? ` (Lücke ab ${fmtHM(range.start)} geschlossen)` : ''
     if (saved.id !== entry.id) {
       // Direkt angrenzender Eintrag derselben Aktivität wurde zusammengeführt
-      toast.success(`Zusammengeführt: ${title} · ${fmtHM(Date.parse(saved.started_at))}–${fmtHM(Date.parse(saved.ended_at || ''))}`)
+      toast.success(
+        `Zusammengeführt: ${title} · ${fmtHM(Date.parse(saved.started_at))}–${fmtHM(Date.parse(saved.ended_at || ''))}${gapNote}`
+      )
     } else {
-      toast.success(`Eintrag: ${title} · ${fmtHM(startMs)}–${fmtHM(range.end)}`)
+      toast.success(`Eintrag: ${title} · ${fmtHM(startMs)}–${fmtHM(range.end)}${gapNote}`)
     }
     return saved.id
   }
@@ -1061,8 +1067,10 @@ export function Timeline() {
   const DEFAULT_CREATE_MIN = 30
 
   const quickCreate = (startMs: number, endMs: number, x: number, y: number) => {
-    // Lückenfüllung (Anforderung 1) VOR dem Past/Future-Split
-    startMs = fillGapStart(startMs)
+    // Lückenfüllung (Anforderung 1) VOR dem Past/Future-Split – nur für
+    // Einträge in der Vergangenheit; ein Zukunfts-Plan soll nicht ans Ende
+    // des letzten Eintrags rücken.
+    if (startMs <= Date.now()) startMs = fillGapStart(startMs)
     const parts = buildPendingParts(startMs, endMs)
     const ranges = [parts.past, parts.future].filter((r): r is Range => !!r)
     if (!ranges.length) return
@@ -1870,7 +1878,7 @@ export function Timeline() {
                       key={chip.path}
                       title={chip.path}
                       onClick={() => startTimerFromProposal(parts, lastSegment(chip.path))}
-                      className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+                      className="flex items-center gap-1.5 min-h-[40px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
                     >
                       <span
                         className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"
@@ -1928,7 +1936,7 @@ export function Timeline() {
                       key={chip.path}
                       title={chip.path}
                       onClick={() => finishCreate(parts, lastSegment(chip.path))}
-                      className="flex items-center gap-1.5 min-h-[36px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+                      className="flex items-center gap-1.5 min-h-[40px] py-2 px-3 rounded-full border border-outline-variant bg-surface-container-lowest text-sm text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
                     >
                       <span
                         className="w-2 h-2 rounded-full shrink-0 border border-black/10 dark:border-white/20"

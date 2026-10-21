@@ -32,14 +32,27 @@ export function icsUtc(date: Date): string {
 
 /** Zeilen auf max. 75 Oktets falten (RFC 5545 3.1) */
 function foldLine(line: string): string[] {
-  if (line.length <= 73) return [line]
+  // RFC 5545: max. 75 OKTETS pro Zeile (nicht Zeichen) – UTF-8-Titel wuerden
+  // bei Zeichenzaehlung das Limit sprengen. Fortsetzungszeilen beginnen mit Space.
+  const enc = new TextEncoder()
+  if (enc.encode(line).length <= 75) return [line]
   const parts: string[] = []
-  let rest = line
-  while (rest.length > 73) {
-    parts.push(rest.slice(0, 73))
-    rest = ' ' + rest.slice(73)
+  let current = ''
+  let currentBytes = 0
+  for (const ch of line) {
+    const bytes = enc.encode(ch).length
+    // 74 Oktets fuer den Inhalt, 1 Oktett ist der fuehrende Space der Folgezeile
+    const limit = parts.length === 0 ? 75 : 74
+    if (currentBytes + bytes > limit) {
+      parts.push(parts.length === 0 ? current : ' ' + current)
+      current = ch
+      currentBytes = bytes
+    } else {
+      current += ch
+      currentBytes += bytes
+    }
   }
-  parts.push(rest)
+  if (current) parts.push(parts.length === 0 ? current : ' ' + current)
   return parts
 }
 
@@ -47,7 +60,7 @@ function eventLines(uid: string, summary: string, description: string, start: Da
   return [
     'BEGIN:VEVENT',
     `UID:${uid}`,
-    `DTSTAMP:${icsUtc(new Date(start.getTime()))}`,
+    `DTSTAMP:${icsUtc(new Date())}`,
     `DTSTART:${icsUtc(start)}`,
     `DTEND:${icsUtc(end)}`,
     `SUMMARY:${escIcs(summary)}`,

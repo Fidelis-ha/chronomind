@@ -11,7 +11,7 @@ export interface RemoteCalendar {
 export interface RemoteEvent {
   uid: string
   summary: string
-  dtstart: string // ICS-Zeitstring (UTC)
+  dtstart: string // ICS-Zeitstring (UTC, 'Z') – TZID-Werte werden bereits nach UTC normalisiert
   dtend: string
   data: string // komplette VEVENT-ICS-Repraesentation (roh)
 }
@@ -130,13 +130,78 @@ export async function fetchRemoteEvents(config: CloudConfig, calendarUrl: string
     if (!uid) continue
     events.push({
       uid,
-      summary: data.match(/SUMMARY:(.+)/)?.[1]?.trim() || '',
-      dtstart: data.match(/DTSTART[^:]*:(.+)/)?.[1]?.trim() || '',
-      dtend: data.match(/DTEND[^:]*:(.+)/)?.[1]?.trim() || '',
+      summary: unescapeIcsText(data.match(/SUMMARY:(.+)/)?.[1]?.trim() || ''),
+      dtstart: normalizeIcsDateTime(data, 'DTSTART'),
+      dtend: normalizeIcsDateTime(data, 'DTEND'),
       data
     })
   }
   return events
+}
+
+/** RFC-5545-Unescaping fuer Textwerte (\\n, \\,, \\;, \\\\) */
+export function unescapeIcsText(value: string): string {
+  return value
+    .replace(/\\n/gi, ' ')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\\\/g, '\\')
+    .trim()
+}
+
+/**
+ * Liest eine DTSTART/DTEND-Zeile und normalisiert sie auf UTC ('...Z').
+ * Unterstuetzt: 'YYYYMMDDTHHMMSSZ' (UTC), 'YYYYMMDDTHHMMSS' (lokal) und
+ * 'TZID=Europe/Berlin:YYYYMMDDTHHMMSS' (wird ueber Intl korrekt umgerechnet).
+ */
+export function normalizeIcsDateTime(data: string, prop: 'DTSTART' | 'DTEND'): string {
+  const line = data.match(new RegExp(`${prop}([^:\\r\\n]*):([^\\r\\n]+)`))
+  if (!line) return ''
+  const params = line[1] || ''
+  const value = line[2].trim()
+  // Ganztagesdatum (VALUE=DATE) oder reines Datum: auf 00:00 UTC setzen
+  if (/^\d{8}$/.test(value)) {
+    return `${value.slice(0, 4)}${value.slice(4, 6)}${value.slice(6, 8)}T000000Z`
+  }
+  const m = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/)
+  if (!m) return value
+  const [, y, mo, d, h, mi, s, z] = m
+  if (z === 'Z') return value
+  const tzid = params.match(/TZID=([^;:]+)/)?.[1]?.replace(/^"|"$/g, '')
+  if (!tzid) {
+    // Kein TZID, kein Z: laut RFC "floating" (Ortszeit des Nutzers) – als Ortszeit behandeln
+    const local = new Date(+y, +mo - 1, +d, +h, +mi, +s)
+    return icsUtc(local)
+  }
+  try {
+    // Ortszeit in der Zielzone -> UTC: Datum in der Zone "vortäuschen" und Offset korrigieren
+    const naive = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s)
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: tzid,
+      hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    })
+    const parts = dtf.formatToParts(new Date(naive))
+    const get = (t: string) => Number(parts.find(p => p.type === t)?.value)
+    const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'))
+    const offset = asUtc - naive // Zonen-Offset in ms
+    return icsUtc(new Date(naive - offset))
+  } catch {
+    return value
+  }
+}
+
+/** Date -> ICS-UTC-String */
+function icsUtc(date: Date): string {
+  return (
+    date.getUTCFullYear().toString().padStart(4, '0') +
+    String(date.getUTCMonth() + 1).padStart(2, '0') +
+    String(date.getUTCDate()).padStart(2, '0') + 'T' +
+    String(date.getUTCHours()).padStart(2, '0') +
+    String(date.getUTCMinutes()).padStart(2, '0') +
+    String(date.getUTCSeconds()).padStart(2, '0') + 'Z'
+  )
 }
 
 /** Ein VEVENT in den Nextcloud-Kalender legen (PUT, stabile UID = Dateiname) */

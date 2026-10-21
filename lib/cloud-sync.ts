@@ -63,8 +63,13 @@ export async function loadCloudConfig(): Promise<CloudConfig | null> {
     if (!raw) return null
     const config = JSON.parse(raw) as unknown as CloudConfig
     const decrypted = (await decryptSecretFields(config as unknown as Record<string, unknown>)) as unknown as CloudConfig
-    // Migration: Klartext-Secrets (ohne 'enc:v1:') verschluesselt zurueckschreiben
-    if (JSON.stringify(config) !== JSON.stringify(decrypted)) {
+    // Migration: Klartext-Secrets (ohne 'enc:v1:') verschluesselt zurueckschreiben.
+    // Vergleich gegen die NORMIERTE (verschluesselte) Form – decryptSecretFields
+    // laesst Klartext unveraendert, daher griff der Vergleich config!==decrypted nie.
+    const normalized = (await encryptSecretFields(
+      decrypted as unknown as Record<string, unknown>
+    )) as unknown as CloudConfig
+    if (JSON.stringify(config) !== JSON.stringify(normalized)) {
       await saveCloudConfig(decrypted)
     }
     return decrypted
