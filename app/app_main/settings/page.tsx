@@ -430,7 +430,13 @@ export default function SettingsPage() {
               <Label htmlFor="vibration_pattern">Vibrationsmuster</Label>
               <Select
                 value={settings.vibration ?? 'doppelt'}
-                onValueChange={value => setSettings(prev => ({ ...prev, vibration: value }))}
+                onValueChange={value => {
+                  const next = { ...settings, vibration: value }
+                  setSettings(next)
+                  void persistSettings(next).then(() => {
+                    window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT))
+                  })
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

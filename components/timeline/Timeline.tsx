@@ -1131,7 +1131,7 @@ export function Timeline({
   const openPopoverFor = (item: TlItem, rect: DOMRect, hover = false) => {
     // Fenster NIE über dem Item (Griffe müssen ohne weiteren Klick bedienbar
     // bleiben): unterhalb, sonst oberhalb; links clampen.
-    const POP_W = 240, POP_H = 215, NAV = 110
+    const POP_W = 240, POP_H = 215, NAV = 150
     const vh = window.innerHeight
     const belowTop = rect.bottom + 6
     const top = belowTop + POP_H <= vh - NAV + 24 ? belowTop : Math.max(8, rect.top - POP_H - 6)

@@ -22,7 +22,7 @@ export default function DashboardClient() {
   const togglePanel = (p: Panel) => setPanel(cur => (cur === p ? 'none' : p))
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] md:h-[calc(100dvh-6rem)] min-h-0 flex-col px-2 sm:px-4">
+    <div className="relative flex h-[calc(100vh-9rem-env(safe-area-inset-bottom))] supports-[height:100dvh]:h-[calc(100dvh-9rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-6rem)] md:supports-[height:100dvh]:h-[calc(100dvh-6rem)] min-h-0 flex-col px-2 sm:px-4">
       {cloud.cloudQuestion && (
         <CloudQuestionBanner
           cloudTs={cloud.cloudQuestion.cloudTs}
@@ -30,6 +30,18 @@ export default function DashboardClient() {
           onUseCloud={cloud.cloudQuestion.onUseCloud}
           onDismiss={cloud.dismissCloudQuestion}
         />
+      )}
+
+      {/* Cloud-Sync-Fehler: kompakter Retry-Knopf */}
+      {cloud.lastResult === 'error' && (
+        <button
+          type="button"
+          onClick={() => void cloud.pushNow()}
+          aria-label="Cloud-Sync-Fehler - erneut versuchen"
+          className="pointer-events-auto absolute right-1 top-1 z-50 flex h-11 w-11 items-center justify-center rounded-full"
+        >
+          <span className="h-3 w-3 rounded-full bg-red-600" />
+        </button>
       )}
 
       {/* Zeitstrahl als Haupt-Element, füllt die Seite */}
@@ -40,7 +52,7 @@ export default function DashboardClient() {
 
       {/* Schwebende Bedienleiste über der Bottom-Nav */}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 md:items-end md:pr-4"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 md:items-end md:pr-4 md:pb-8"
         style={{ paddingBottom: 'calc(5.25rem + env(safe-area-inset-bottom))' }}
       >
         {panel === 'quick' && (

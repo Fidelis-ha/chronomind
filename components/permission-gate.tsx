@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { loadVibrationPattern, vibratePattern } from '@/lib/vibration'
 
 const DISMISS_KEY = 'chronomind-permission-hint-dismissed'
 
@@ -28,8 +29,8 @@ export function PermissionGate() {
   if (dismissed) return null
   // 'unsupported' + Vibration vorhanden -> nichts anzeigen
   if (notif === 'unsupported' && vibrate) return null
-  // Alles erteilt/verfügbar -> Leiste nicht anzeigen
-  if (notif === 'granted') return null
+  // 'granted' + Vibration verfuegbar -> nichts anzeigen; ohne Vibration: Hinweis
+  if (notif === 'granted' && vibrate) return null
   // 'unsupported' ohne Vibration: kurzer Hinweis
   const unsupportedHint = notif === 'unsupported'
 
@@ -45,7 +46,7 @@ export function PermissionGate() {
 
   const testVibration = () => {
     try {
-      navigator.vibrate([0, 120, 80, 120])
+      vibratePattern(loadVibrationPattern())
     } catch {
       /* ignorieren */
     }
@@ -61,18 +62,22 @@ export function PermissionGate() {
   }
 
   return (
-    <div className="fixed inset-x-2 top-[calc(4rem+env(safe-area-inset-top))] z-40 flex flex-wrap items-center gap-2 rounded-2xl border border-outline-variant bg-surface-container px-3 py-2 text-sm shadow-lg">
+    <div role="status" className="fixed inset-x-2 top-[calc(4rem+env(safe-area-inset-top))] z-40 flex flex-wrap items-center gap-1.5 rounded-2xl border border-outline-variant bg-surface-container px-2.5 py-1.5 text-[13px] shadow-lg">
       {unsupportedHint ? (
         <span className="min-w-0 flex-1 text-on-surface-variant">
-          Dieses Geraet unterstuetzt keine Erinnerungs-Benachrichtigungen
+          Keine Erinnerungen auf diesem Geraet
         </span>
       ) : notif === 'denied' ? (
         <span className="min-w-0 flex-1 text-on-surface-variant">
-          Benachrichtigungen sind im Browser blockiert - in den Website-Einstellungen erlauben
+          Benachrichtigungen blockiert - im Browser erlauben
+        </span>
+      ) : notif === 'granted' ? (
+        <span className="min-w-0 flex-1 text-on-surface-variant">
+          Keine Vibration auf diesem Gerät
         </span>
       ) : (
         <span className="min-w-0 flex-1 text-on-surface-variant">
-          Benachrichtigungen für Wake-Reminder aktivieren{!vibrate && ' (Vibration auf diesem Gerät nicht verfügbar)'}
+          Erinnerungen erlauben{!vibrate && ' (Keine Vibration auf diesem Gerät)'}
         </span>
       )}
       {!unsupportedHint && notif === 'default' && (
@@ -88,13 +93,13 @@ export function PermissionGate() {
           onClick={testVibration}
           className="min-h-[40px] rounded-full border border-outline-variant px-4 text-sm font-medium text-on-surface transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
         >
-          Vibration testen
+          Test
         </button>
       )}
       <button
         onClick={dismiss}
         aria-label="Hinweis schliessen"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-on-surface/[0.08] active:bg-on-surface/[0.12]"
       >
         ✕
       </button>

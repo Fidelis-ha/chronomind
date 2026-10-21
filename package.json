@@ -1,6 +1,6 @@
 {
   "name": "@supabase-community/vercel-ai-chatbot",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "private": true,
   "scripts": {
     "dev": "next dev",

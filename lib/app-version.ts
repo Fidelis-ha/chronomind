@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.7'
+export const APP_VERSION = '1.2.8'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.8',
+    date: '21.10.2026',
+    changes: [
+      'Startseite: Höhe berücksichtigt jetzt Geräte mit Gestenleiste, ältere Browser bekommen einen Rückfallwert – die Seite scrollt nicht mehr',
+      'Startseite: Cloud-Sync-Fehler zeigt wieder einen kleinen roten Punkt zum erneuten Versuchen',
+      'Berechtigungs-Leiste kompakter (eine Zeile), „Test“ spielt das eingestellte Vibrationsmuster',
+      'Einstellungen: Vibrationsmuster wirkt sofort beim Auswählen, nicht erst nach dem Speichern',
+      'Erinnerung: Vibrationsmuster wird verlässlich über die App ausgelöst'
+    ]
+  },
   {
     version: '1.2.7',
     date: '21.10.2026',
