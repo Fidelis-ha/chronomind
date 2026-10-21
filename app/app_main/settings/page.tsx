@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -120,6 +121,17 @@ const DEFAULT_SETTINGS: AppSettings = {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
+  const { theme, setTheme } = useTheme()
+  // Hydration-Schutz: aktiven Theme-Wert erst nach dem Mount anzeigen,
+  // da next-themes serverseitig immer undefined liefert (Mismatch-Gefahr).
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const themeOptions: { id: 'light' | 'dark' | 'system'; label: string }[] = [
+    { id: 'light', label: 'Hell' },
+    { id: 'dark', label: 'Dunkel' },
+    { id: 'system', label: 'System' }
+  ]
 
   // Settings (inkl. Entschlüsselung + Migration) asynchron nach dem Mount laden
   useEffect(() => {
@@ -313,6 +325,31 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-8">
+
+        {/* Darstellung */}
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
+          <h2 className="text-lg font-semibold mb-4">Darstellung</h2>
+          <div className="flex gap-2 flex-wrap">
+            {themeOptions.map(option => {
+              const active = mounted && theme === option.id
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setTheme(option.id)}
+                  className={
+                    active
+                      ? 'inline-flex h-9 items-center rounded-full px-4 text-sm font-medium bg-secondary-container text-on-secondary-container'
+                      : 'inline-flex h-9 items-center rounded-full px-4 text-sm font-medium border border-outline-variant text-on-surface'
+                  }
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         {/* AI Settings */}
         <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">

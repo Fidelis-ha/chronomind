@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.6'
+export const APP_VERSION = '1.2.7'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.7',
+    date: '21.10.2026',
+    changes: [
+      'Darstellung: Hell, Dunkel oder System jetzt in den Einstellungen wählbar – der Schalter oben im Kopf entfällt'
+    ]
+  },
   {
     version: '1.2.6',
     date: '21.10.2026',

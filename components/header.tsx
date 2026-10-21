@@ -4,7 +4,6 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 const navItems = [
   { href: '/app_main', label: 'Home', exact: true },
@@ -49,9 +48,6 @@ export function Header() {
             )
           })}
         </nav>
-      </div>
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
       </div>
     </header>
   )
