@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 const navItems = [
-  { href: '/app_main', label: 'Heute', exact: true },
+  { href: '/app_main', label: 'Home', exact: true },
   { href: '/app_main/entries', label: 'Einträge', exact: false },
   { href: '/app_main/analytics', label: 'Auswertung', exact: false },
   { href: '/app_main/chat', label: 'Chat', exact: false },

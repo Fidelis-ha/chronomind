@@ -92,7 +92,14 @@ function clipAndLayout(items: TlItem[], day0: number, day1: number) {
   return layoutLanes(clipped)
 }
 
-export function Timeline() {
+export function Timeline({
+  collapsibleHeader = false,
+  headerOpen = false,
+}: {
+  collapsibleHeader?: boolean
+  headerOpen?: boolean
+}) {
+  const headerHidden = collapsibleHeader && !headerOpen
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   // Kontinuierlicher Zoom (px pro Minute) — wie in vis-timeline/DayPilot:
   // exponentiell stufenlos um einen Ankerpunkt statt ruckartiger Stufen.
@@ -1124,7 +1131,7 @@ export function Timeline() {
   const openPopoverFor = (item: TlItem, rect: DOMRect, hover = false) => {
     // Fenster NIE über dem Item (Griffe müssen ohne weiteren Klick bedienbar
     // bleiben): unterhalb, sonst oberhalb; links clampen.
-    const POP_W = 240, POP_H = 215, NAV = 90
+    const POP_W = 240, POP_H = 215, NAV = 110
     const vh = window.innerHeight
     const belowTop = rect.bottom + 6
     const top = belowTop + POP_H <= vh - NAV + 24 ? belowTop : Math.max(8, rect.top - POP_H - 6)
@@ -1594,9 +1601,9 @@ export function Timeline() {
   const centerDateMs = dayIdxToDateMs(centerIdx)
 
   return (
-    <div className="mb-6">
+    <div className={collapsibleHeader ? 'flex min-h-0 flex-1 flex-col' : 'mb-6'}>
       {/* Kopfzeile: Navigation */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+      <div className={headerHidden ? 'hidden' : 'flex items-center gap-1.5 flex-wrap mb-2'}>
         <Button variant="outline" size="sm" className="h-8 w-8 px-0" aria-label="Tag zurück" onClick={() => goToDayIdx(centerIdx - 1)}>
           ‹
         </Button>
@@ -1636,7 +1643,11 @@ export function Timeline() {
       {/* Zeitstrahl-Fläche */}
       <div
         ref={scrollerRef}
-        className="timeline-scroller relative overflow-auto rounded-lg border bg-card select-none h-[420px] sm:h-[520px]"
+        className={`timeline-scroller relative overflow-auto rounded-lg border bg-card select-none ${
+          collapsibleHeader
+            ? 'h-auto min-h-0 flex-1'
+            : 'h-[420px] sm:h-[520px]'
+        }`}
         style={{ touchAction: 'pan-x pan-y' }}
         onScroll={handleScroll}
       >

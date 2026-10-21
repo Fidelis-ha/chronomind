@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 const tabs = [
   {
     href: '/app_main',
-    label: 'Heute',
+    label: 'Home',
     exact: true,
     icon: (active: boolean) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -78,7 +78,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="fixed inset-x-0 bottom-0 z-50 h-16 border-t border-outline-variant bg-surface-container md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 mx-3 mb-2 rounded-2xl border border-outline-variant bg-surface-container/95 shadow-lg backdrop-blur md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="grid h-16 grid-cols-6">

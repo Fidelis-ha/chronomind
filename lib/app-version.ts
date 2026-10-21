@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.4'
+export const APP_VERSION = '1.2.5'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.5',
+    date: '21.10.2026',
+    changes: [
+      'Startseite heißt jetzt „Home“ statt „Heute“',
+      'Startseite: Der Zeitstrahl füllt die ganze Seite – kein Scrollen der Seite mehr, nur noch im Zeitstrahl',
+      'Startseite: Datum und Kategorien sind schwebende Knöpfe über dem Zeitstrahl, die sich aus- und einklappen lassen',
+      'Startseite: Die Zeilen „Timer läuft“, „noch nicht gesichert“ und die eingebettete Einträge-Liste sind entfernt – alle Einträge stehen im Reiter Einträge',
+      'Reiterleiste unten schwebt jetzt auf allen Seiten über dem Inhalt'
+    ]
+  },
   {
     version: '1.2.4',
     date: '21.10.2026',
