@@ -20,6 +20,7 @@ import {
   isSecretField
 } from '@/lib/secrets-crypto'
 import { AppLayout } from '@/components/app-layout'
+import { VIBRATION_PATTERNS, playVibrationPreview } from '@/lib/vibration'
 
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
@@ -54,6 +55,7 @@ interface AppSettings {
   ai_api_key_mistral: string
   ai_api_key_routerlab: string
   routerlab_base_url: string
+  vibration?: string
 }
 
 /**
@@ -111,7 +113,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   ai_model: 'mistral-large-latest',
   ai_api_key_mistral: '',
   ai_api_key_routerlab: '',
-  routerlab_base_url: 'https://routerlab.ch/v1'
+  routerlab_base_url: 'https://routerlab.ch/v1',
+  vibration: 'doppelt'
 }
 
 export default function SettingsPage() {
@@ -380,6 +383,44 @@ export default function SettingsPage() {
             Verwalte Haupt- und Unterkategorien (bis zu 3 Ebenen). Diese erscheinen als Kacheln und Chips zum schnellen Start der Zeiterfassung.
           </p>
           <CategorySettings />
+        </div>
+
+        {/* Erinnerung & Vibration */}
+        <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
+          <h2 className="text-lg font-semibold mb-4">Erinnerung &amp; Vibration</h2>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="vibration_pattern">Vibrationsmuster</Label>
+              <Select
+                value={settings.vibration ?? 'doppelt'}
+                onValueChange={value => setSettings(prev => ({ ...prev, vibration: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VIBRATION_PATTERNS.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => playVibrationPreview(settings.vibration ?? 'doppelt')}
+              >
+                Muster testen
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Die Vibration läuft über die App. Ist das Gerät gesperrt, kann das System sie unterdrücken; auf iOS ohne Vibrations-Unterstützung entfällt sie.
+            </p>
+          </div>
         </div>
 
         {/* Time Settings */}

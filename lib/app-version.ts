@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.3'
+export const APP_VERSION = '1.2.4'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.4',
+    date: '21.10.2026',
+    changes: [
+      'Erinnerung: Das Handy vibriert beim Erinnerungsfenster mit einem eigenen Muster statt mit dem Standardmuster',
+      'Einstellungen: Neuer Bereich „Erinnerung & Vibration“ – Muster wählbar (Kurz, Doppelt, Dreifach, Lang, Herzschlag, Aus) mit Test-Knopf'
+    ]
+  },
   {
     version: '1.2.3',
     date: '21.10.2026',

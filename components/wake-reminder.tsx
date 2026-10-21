@@ -17,6 +17,7 @@ import { colorForPath, lastSegment } from '@/lib/categories'
 import { loadEntries, saveEntries } from '@/lib/entries-store'
 import { markDirty } from '@/lib/dirty-state'
 import { RUNNING_ENTRY_KEY, RUNNING_CHANGED_EVENT } from '@/lib/cloud-sync-payload'
+import { getVibrationSequence, loadVibrationPattern, vibratePattern } from '@/lib/vibration'
 
 const LAST_HIDDEN_KEY = 'chronomind-wake-last-hidden'
 const MIN_HIDDEN_MS = 5 * 60 * 1000
@@ -74,11 +75,17 @@ function showPush(running: RunningEntry): void {
   if (typeof window === 'undefined' || !('Notification' in window)) return
   if (Notification.permission !== 'granted') return
   const body = `Zeiterfassung für „${running.title}“ läuft noch. Machst du jetzt etwas anderes?`
-  const options: NotificationOptions & { badge?: string } = {
+  // Die Vibration der System-Benachrichtigung setzt der Browser selbst –
+  // das Muster ist dort nicht kontrollierbar. 'vibrate' ist nur ein
+  // Fallback; verlässlich läuft die Vibration über navigator.vibrate()
+  // in evaluate() (Seiten-Kontext). Typ per Cast, da TS 'vibrate' in
+  // NotificationOptions nicht kennt.
+  const options: NotificationOptions & { badge?: string; vibrate?: number[] } = {
     body,
     tag: 'chronomind-wake',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
+    vibrate: getVibrationSequence(loadVibrationPattern()) as number[],
     // Damit der Tap die App öffnet, auch wenn sie ganz zu war
     data: { url: '/app_main' }
   }
@@ -119,6 +126,10 @@ export function WakeReminder() {
       if (openRef.current) return
       const r = readRunning()
       if (!r) return
+      // Vibration aus der Seite – das einzige verlässlich steuerbare Muster
+      // (bei gesperrtem Geraet kann das System sie während der Sperre
+      // unterdrücken, deshalb zusätzlich Fallback im Push).
+      vibratePattern(loadVibrationPattern())
       setRunning(r)
       setSuggestions(buildSuggestions())
       setOpen(true)
