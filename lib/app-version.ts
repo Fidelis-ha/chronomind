@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.9'
+export const APP_VERSION = '1.2.10'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.10',
+    date: '21.10.2026',
+    changes: [
+      'Neu: Diagnose-Seite zur Vibration unter „/app_main/vibration-test“ – zeigt, ob das Gerät die Vibrations-API überhaupt zulässt, und gibt den Rückgabewert des Tests aus',
+      'Diese Seite ist ein Messwerkzeug, kein Feature: Sie hilft, die Ursache der fehlenden Vibration einzugrenzen'
+    ]
+  },
   {
     version: '1.2.9',
     date: '21.10.2026',
