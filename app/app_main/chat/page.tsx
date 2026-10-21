@@ -56,7 +56,7 @@ export default function ChatPage() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-5rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-4rem)]">
         <div className="flex-1 flex items-center justify-center p-4">
           {configured === false ? (
             <div className="max-w-sm w-full rounded-2xl border border-outline-variant bg-surface-container-low p-6 text-center">

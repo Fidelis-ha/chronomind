@@ -62,7 +62,7 @@ export function PermissionGate() {
   }
 
   return (
-    <div role="status" className="fixed inset-x-2 top-[calc(4rem+env(safe-area-inset-top))] z-40 flex flex-wrap items-center gap-1.5 rounded-2xl border border-outline-variant bg-surface-container px-2.5 py-1.5 text-[13px] shadow-lg">
+    <div role="status" className="fixed inset-x-2 top-[calc(0.5rem+env(safe-area-inset-top))] z-40 flex flex-wrap items-center gap-1.5 rounded-2xl border border-outline-variant bg-surface-container px-2.5 py-1.5 text-[13px] shadow-lg md:top-[calc(4rem+env(safe-area-inset-top))]">
       {unsupportedHint ? (
         <span className="min-w-0 flex-1 text-on-surface-variant">
           Keine Erinnerungen auf diesem Geraet

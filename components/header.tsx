@@ -18,14 +18,10 @@ export function Header() {
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 w-full shrink-0 items-center justify-between bg-surface-container px-4">
+    // Kopf nur auf Desktop: auf dem Handy enthaelt er nur die Navigation,
+    // die dort die schwebende Reiterleiste uebernimmt - 64px gespart.
+    <header className="sticky top-0 z-50 hidden h-16 w-full shrink-0 items-center justify-between bg-surface-container px-4 md:flex">
       <div className="flex items-center gap-4">
-        <Link
-          href="/app_main"
-          className="text-lg font-bold text-on-surface transition-colors duration-200"
-        >
-          ChronoMind
-        </Link>
         <nav className="hidden items-center gap-1 md:flex" aria-label="Haupt">
           {navItems.map(item => {
             const active =

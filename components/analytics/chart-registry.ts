@@ -6,9 +6,12 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  BarController,
   ArcElement,
+  DoughnutController,
   PointElement,
   LineElement,
+  LineController,
   Tooltip,
   Legend,
   Filler,
@@ -17,7 +20,15 @@ import {
 
 let registered = false
 
-if (typeof window !== 'undefined' && !registered) {
+// Registrierung NICHT an `typeof window` koppeln: laeuft das Modul zuerst
+// serverseitig (RSC), bleibt `registered` sonst im Client-Bundle-Bereich nie
+// gesetzt und Chart.js kennt den Controller nicht -> "doughnut is not a
+// registered controller" (weisser Bildschirm auf /app_main/analytics).
+// ChartJS.register ist idempotent, doppelte Aufrufe sind harmlos.
+// Controller + Elemente werden explizit registriert (Baum-Shaking entfernt
+// ungenutzte Imports). Zusaetzlich einmal als Seiteneffekt IM Modul, damit
+// das Registrieren unabhaengig von der Import-Reihenfolge passiert.
+if (!registered) {
   ChartJS.register(
     CategoryScale,
     LinearScale,
@@ -27,7 +38,11 @@ if (typeof window !== 'undefined' && !registered) {
     LineElement,
     Tooltip,
     Legend,
-    Filler
+    Filler,
+    // Controller: werden von react-chartjs-2 ueber den type-String gesucht
+    BarController,
+    DoughnutController,
+    LineController
   )
   registered = true
 }

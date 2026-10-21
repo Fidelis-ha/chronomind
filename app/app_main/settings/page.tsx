@@ -523,7 +523,7 @@ export default function SettingsPage() {
         <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-1">App installieren</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            ChronoMind als eigenständige App auf Desktop oder Android installieren – mit automatischen Updates.
+            Als eigenständige App auf Desktop oder Android installieren – mit automatischen Updates.
           </p>
           <InstallHint />
         </div>

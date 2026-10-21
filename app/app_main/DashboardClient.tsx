@@ -22,7 +22,7 @@ export default function DashboardClient() {
   const togglePanel = (p: Panel) => setPanel(cur => (cur === p ? 'none' : p))
 
   return (
-    <div className="relative flex h-[calc(100vh-9rem-env(safe-area-inset-bottom))] supports-[height:100dvh]:h-[calc(100dvh-9rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-6rem)] md:supports-[height:100dvh]:h-[calc(100dvh-6rem)] min-h-0 flex-col px-2 sm:px-4">
+    <div className="relative flex h-[calc(100vh-5rem-env(safe-area-inset-bottom))] supports-[height:100dvh]:h-[calc(100dvh-5rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-6rem)] md:supports-[height:100dvh]:h-[calc(100dvh-6rem)] min-h-0 flex-col px-2 sm:px-4">
       {cloud.cloudQuestion && (
         <CloudQuestionBanner
           cloudTs={cloud.cloudQuestion.cloudTs}

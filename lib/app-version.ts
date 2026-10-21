@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.8'
+export const APP_VERSION = '1.2.9'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.9',
+    date: '21.10.2026',
+    changes: [
+      'Behoben: Auswertung zeigte einen weißen Bildschirm mit Fehlermeldung, sobald Einträge vorhanden waren – alle fünf Diagramme werden wieder angezeigt',
+      'Der Schriftzug „ChronoMind“ ist aus den Seiten entfernt',
+      'Auf dem Handy entfällt die obere Leiste ganz – die Navigation übernimmt die schwebende Reiterleiste. Der Zeitstrahl bekommt dadurch 64 Pixel mehr Höhe',
+      'Nicht mehr erreichbare Altseiten (alte Einträge-Seite, Anmeldung, Teilen-Links) sind entfernt'
+    ]
+  },
   {
     version: '1.2.8',
     date: '21.10.2026',

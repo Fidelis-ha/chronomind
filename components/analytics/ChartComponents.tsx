@@ -1,7 +1,23 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Chart as ChartJS, type ChartData, type ChartOptions } from 'chart.js'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarController,
+  BarElement,
+  CategoryScale,
+  DoughnutController,
+  Filler,
+  Legend,
+  LineController,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  type ChartData,
+  type ChartOptions
+} from 'chart.js'
 import { Chart } from 'react-chartjs-2'
 import { baseChartOptions, themeColors } from './chart-registry'
 import { colorForPath } from '@/lib/categories'
@@ -9,6 +25,26 @@ import { useChartThemeVersion } from './useChartTheme'
 import { SONSTIGE_LABEL, mainCategory, mainCategoryColor } from './chart-helpers'
 import { IconChartBar } from '@/components/ui/icons'
 import type { TimeEntry } from '@/lib/types'
+
+// Absicherung: Chart.js braucht pro Diagrammtyp den Controller. Die
+// Registrierung steht in chart-registry.ts, aber react-chartjs-2 sucht ihn
+// beim ersten Render – deshalb hier explizit (idempotent aufrufen ist
+// erlaubt und billig). Ohne das: "doughnut is not a registered controller"
+// und ein weisser Bildschirm, sobald Daten vorhanden sind.
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  BarController,
+  ArcElement,
+  DoughnutController,
+  PointElement,
+  LineElement,
+  LineController,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 const SONSTIGE_COLOR = '#9e9e9e'
 const CHART_HEIGHT = 240
