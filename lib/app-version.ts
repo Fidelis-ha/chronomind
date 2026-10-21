@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.2'
+export const APP_VERSION = '1.2.3'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.3',
+    date: '21.10.2026',
+    changes: [
+      'Berechtigungen: Die App fragt beim Öffnen nach der Benachrichtigungs-Erlaubnis, wenn sie fehlt – als schmale, schwebende Leiste mit Erlauben-Knopf, nicht als Popup',
+      'Berechtigungen: Ist die Benachrichtigung im Browser blockiert oder gar nicht vorhanden, sagt die Leiste das im Klartext; ein Knopf prüft die Vibration direkt am Gerät'
+    ]
+  },
   {
     version: '1.2.2',
     date: '21.10.2026',

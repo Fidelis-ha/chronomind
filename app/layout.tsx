@@ -10,6 +10,7 @@ import { TailwindIndicator } from '@/components/tailwind-indicator'
 import { Providers } from '@/components/providers'
 import { PwaRegister } from '@/components/pwa-register'
 import { WakeReminder } from '@/components/wake-reminder'
+import { PermissionGate } from '@/components/permission-gate'
 import { Header } from '@/components/header'
 import { M3Provider } from '@/components/m3/m3-provider'
 
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <div className="flex min-h-screen flex-col">
             {/* @ts-ignore */}
             <Header />
+            <PermissionGate />
             <div className="flex flex-1 flex-col bg-surface">{children}</div>
           </div>
           <TailwindIndicator />

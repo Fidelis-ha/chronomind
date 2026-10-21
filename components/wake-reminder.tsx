@@ -149,24 +149,12 @@ export function WakeReminder() {
     if (document.visibilityState === 'visible') evaluate()
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('popstate', onPopState)
-
-    // Push-Berechtigung einmalig bei erster Nutzer-Interaktion anfragen
-    // (Android braucht eine User-Geste; nach dem Aufwachen gibt es keine)
-    let removeAsk: (() => void) | null = null
-    if ('Notification' in window && Notification.permission === 'default') {
-      const ask = () => {
-        window.removeEventListener('pointerdown', ask)
-        removeAsk = null
-        Notification.requestPermission().catch(() => { /* ignorieren */ })
-      }
-      window.addEventListener('pointerdown', ask, { once: true })
-      removeAsk = () => window.removeEventListener('pointerdown', ask)
-    }
+    // Hinweis: Berechtigungs-Anfrage (Notifications/Vibration) zentral in
+    // components/permission-gate.tsx – hier keine doppelte Anfrage mehr.
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('popstate', onPopState)
-      removeAsk?.()
     }
   }, [])
 
