@@ -85,8 +85,7 @@ export function AnalyticsClient() {
 
   return (
     <div className="container mx-auto max-w-4xl py-6 px-4 sm:py-8">
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Auswertung</h1>
+      <div className="flex justify-end mb-4">
         <Button variant="outline" asChild>
           <Link href="/app_main/entries">Alle Einträge</Link>
         </Button>

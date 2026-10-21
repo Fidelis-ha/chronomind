@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.5'
+export const APP_VERSION = '1.2.6'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.6',
+    date: '21.10.2026',
+    changes: [
+      'Seiten-Titel entfernt (Auswertung, Kalender, Einstellungen) – der Inhalt beginnt direkt unter dem Kopf, dadurch mehr Platz'
+    ]
+  },
   {
     version: '1.2.5',
     date: '21.10.2026',

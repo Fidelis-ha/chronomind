@@ -303,8 +303,7 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       <div className="container mx-auto max-w-xl py-6 px-4 sm:py-8">
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Einstellungen</h1>
+      <div className="flex justify-end mb-4">
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleImport}>Import</Button>
           <Button variant="outline" size="sm" onClick={handleExportJSON}>JSON</Button>

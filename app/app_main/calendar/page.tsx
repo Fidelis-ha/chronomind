@@ -295,7 +295,6 @@ export default function CalendarPage() {
   return (
     <AppLayout>
       <div className="container mx-auto max-w-4xl py-6 px-4 sm:py-8">
-        <h1 className="text-2xl font-bold mb-6">Kalender</h1>
 
         {/* Export-Karte – sofort beim Oeffnen erzeugt, automatisch aktuell gehalten */}
         <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 sm:p-6 mb-8">
