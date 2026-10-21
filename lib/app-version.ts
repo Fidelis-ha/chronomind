@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.1'
+export const APP_VERSION = '1.2.2'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.2',
+    date: '21.10.2026',
+    changes: [
+      'Chat: antwortet jetzt auch ohne Anmeldung (lokaler Modus) und nutzt die auf dem Gerät hinterlegten KI-Einstellungen',
+      'Chat: bricht nicht mehr ab, wenn die lokale Datenbank nicht verfügbar ist',
+      'Kalender: Nextcloud-Verknüpfung funktioniert (Server-Proxy gegen Browser-Blockade), Kalenderliste, Anlegen, Hochladen und Übernehmen geprüft',
+      'Kalender: Fehler beim Laden der Kalender bleiben sichtbar stehen statt nur kurz aufzublitzen'
+    ]
+  },
   {
     version: '1.2.1',
     date: '21.10.2026',

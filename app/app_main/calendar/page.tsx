@@ -189,7 +189,10 @@ export default function CalendarPage() {
         setSelectedCal(preferred.url)
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Kalender konnten nicht geladen werden')
+      // Fehler auch dauerhaft in der Seite anzeigen, nicht nur als kurzlebigen Toast
+      const msg = err instanceof Error ? err.message : 'Kalender konnten nicht geladen werden'
+      setNcStatus(`Kalender konnten nicht geladen werden: ${msg}`)
+      toast.error(msg)
     }
   }, [selectedCal])
 

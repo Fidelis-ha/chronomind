@@ -1,6 +1,8 @@
 'use client'
 
 import { useChat, type UIMessage, Chat as AIChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
+import { loadAiSettings } from '@/lib/settings-store'
 
 import { cn } from '@/lib/utils'
 import { ChatList } from '@/components/chat-list'
@@ -38,6 +40,13 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const chatInstance = new AIChat({
     id,
     messages: initialMessages,
+    // Lokaler Modus: Die KI-Einstellungen liegen im localStorage des Geräts,
+    // nicht in einer Server-Datenbank. Sie werden deshalb bei jeder Anfrage
+    // mitgeschickt, damit die API-Route den konfigurierten Anbieter nutzen kann.
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: async () => ({ aiSettings: await loadAiSettings() })
+    }),
     onError: (error) => {
       console.error('Chat error:', error)
     }

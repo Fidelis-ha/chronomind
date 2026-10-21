@@ -32,16 +32,41 @@ function authHeaders(config: CloudConfig): HeadersInit {
   }
 }
 
+/**
+ * CalDAV-Anfrage ueber den Server-Proxy (/api/calendar/dav).
+ *
+ * Direkte Browser-Anfragen an die Nextcloud scheitern an fehlenden
+ * CORS-Headern ("Failed to fetch"). Der Proxy setzt die Anfrage serverseitig
+ * ab; die Zugangsdaten werden pro Anfrage mitgegeben und nicht gespeichert.
+ */
 async function davRequest(
   config: CloudConfig,
   url: string,
   method: string,
-  body?: string
+  body?: string,
+  depth = '1'
 ): Promise<Response> {
-  return fetch(url, {
-    method,
-    headers: authHeaders(config),
-    body
+  const res = await fetch('/api/calendar/dav', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url,
+      method,
+      username: config.username,
+      password: config.password,
+      body,
+      contentType: 'application/xml',
+      depth
+    })
+  })
+  const json = (await res.json()) as { status?: number; body?: string; error?: string }
+  if (!res.ok || json.error) {
+    throw new Error(json.error || `CalDAV-Anfrage fehlgeschlagen (HTTP ${res.status})`)
+  }
+  // Antwort des Zielservers nachbilden, damit die Aufrufer unveraendert bleiben
+  return new Response(json.body ?? '', {
+    status: json.status ?? 500,
+    headers: { 'Content-Type': 'application/xml' }
   })
 }
 
@@ -207,16 +232,24 @@ function icsUtc(date: Date): string {
 /** Ein VEVENT in den Nextcloud-Kalender legen (PUT, stabile UID = Dateiname) */
 export async function putRemoteEvent(config: CloudConfig, calendarUrl: string, uid: string, icsText: string): Promise<void> {
   const url = `${calendarUrl.replace(/\/+$/, '')}/${encodeURIComponent(uid)}.ics`
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Basic ${btoa(`${config.username || ''}:${config.password || ''}`)}`,
-      'Content-Type': 'text/calendar; charset=utf-8'
-    },
-    body: icsText
+  // Ueber den Server-Proxy: direkte Browser-PUTs scheitern an CORS.
+  const res = await fetch('/api/calendar/dav', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url,
+      method: 'PUT',
+      username: config.username,
+      password: config.password,
+      body: icsText,
+      contentType: 'text/calendar; charset=utf-8'
+    })
   })
-  if (res.status !== 201 && res.status !== 204) {
-    throw new Error(`Event hochladen fehlgeschlagen (HTTP ${res.status})`)
+  const json = (await res.json()) as { status?: number; error?: string }
+  if (json.error) throw new Error(json.error)
+  const status = json.status ?? 0
+  if (status !== 201 && status !== 204) {
+    throw new Error(`Event hochladen fehlgeschlagen (HTTP ${status})`)
   }
 }
 

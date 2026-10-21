@@ -1,6 +1,6 @@
 import 'server-only'
 import { NextResponse } from 'next/server'
-import { streamText, convertToModelMessages } from 'ai'
+import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createMistral } from '@ai-sdk/mistral'
 import { auth } from '@/auth'
@@ -45,7 +45,13 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const entries = await localDb.timeEntries.findByUserAndDate(userId, today)
+  // Wie oben: fehlende DB-Bindung darf den Chat nicht blockieren.
+  let entries: Awaited<ReturnType<typeof localDb.timeEntries.findByUserAndDate>>
+  try {
+    entries = await localDb.timeEntries.findByUserAndDate(userId, today)
+  } catch {
+    return []
+  }
 
   return entries.map(e => ({
     id: e.id,
@@ -69,7 +75,17 @@ async function getTodayEntries(userId: string): Promise<TimeEntry[]> {
 }
 
 async function getUserSettings(userId: string): Promise<UserSettings | null> {
-  const [settings] = await localDb.settings.findByUserId(userId)
+  // Die Einstellungen liegen im lokalen Modus im localStorage des Geräts und
+  // werden mit der Anfrage übergeben. Die SQLite-Datenbank ist hier nur ein
+  // optionaler Rückfall – wenn ihre native Bindung fehlt, darf der Chat
+  // deswegen nicht mit HTTP 500 abbrechen.
+  let settings: Awaited<ReturnType<typeof localDb.settings.findByUserId>>[number] | undefined
+  try {
+    const rows = await localDb.settings.findByUserId(userId)
+    settings = rows[0]
+  } catch {
+    return null
+  }
 
   if (!settings) return null
 
@@ -90,19 +106,31 @@ async function getUserSettings(userId: string): Promise<UserSettings | null> {
 
 export async function POST(req: Request) {
   const json = await req.json()
-  const { messages } = json
+  const { messages, aiSettings } = json as {
+    messages: Omit<UIMessage, 'id'>[]
+    aiSettings?: {
+      ai_provider?: string
+      ai_model?: string
+      ai_api_key_mistral?: string
+      ai_api_key_routerlab?: string
+      routerlab_base_url?: string
+    }
+  }
 
   const { user } = (await auth()) || {}
 
-  if (!user) {
-    return new Response('Unauthorized', {
-      status: 401
-    })
-  }
+  // Lokaler Modus: Die App speichert alle Daten im localStorage des Geräts,
+  // auth() ist deshalb abgeschaltet und liefert immer null. Die Chat-Route
+  // verlangte dennoch eine Sitzung und antwortete grundsätzlich mit 401.
+  // Fallback auf den lokalen Nutzer, den auch der Rest der App verwendet.
+  const userId = user?.id || 'local-user'
 
-  const userId = user.id
-
-  const userSettings = await getUserSettings(userId)
+  const dbSettings = await getUserSettings(userId)
+  // Die Einstellungen kommen aus dem localStorage des Geräts und haben
+  // Vorrang; die (im lokalen Modus leere) Datenbank dient nur als Rückfall.
+  const userSettings = (aiSettings
+    ? { ...(dbSettings || {}), ...aiSettings }
+    : dbSettings) as typeof dbSettings
   const todayEntries = await getTodayEntries(userId)
 
   const systemPrompt = buildSystemPrompt({
