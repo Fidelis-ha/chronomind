@@ -23,6 +23,27 @@ import {
 import { AppLayout } from '@/components/app-layout'
 import { VIBRATION_PATTERNS, playVibrationPreview } from '@/lib/vibration'
 
+/**
+ * Schickt das gewaehlte Muster an die Android-App (TWA-Wrapper).
+ *
+ * Warum ein Deep-Link: `navigator.vibrate()` liefert in der installierten PWA
+ * `false` — Android verwirft den Aufruf still (chronomind #21). Die
+ * SharedPreferences der App sind von der Web-Seite aus nicht erreichbar, und
+ * androidbrowserhelper 2.7.4 hat keinen postMessage-Handler. Der Deep-Link
+ * `chronomind://vibration?pattern=<id>` ist der einzige Weg.
+ *
+ * Im Browser-Tab passiert nichts Sichtbares — dort ist die Vibration ueber
+ * `navigator.vibrate` bereits gelaufen.
+ */
+function sendPatternToApp(pattern: string, test: boolean) {
+  try {
+    const query = `pattern=${encodeURIComponent(pattern)}${test ? '&test=1' : ''}`
+    window.location.href = `chronomind://vibration?${query}`
+  } catch {
+    /* Kein Handler installiert — Muster bleibt in der App unveraendert. */
+  }
+}
+
 const TIMEZONES = [
   'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'Europe/Zurich',
   'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Shanghai'
@@ -115,7 +136,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ai_api_key_mistral: '',
   ai_api_key_routerlab: '',
   routerlab_base_url: 'https://routerlab.ch/v1',
-  vibration: 'doppelt'
+  vibration: 'herzschlag'
 }
 
 export default function SettingsPage() {
@@ -429,7 +450,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="vibration_pattern">Vibrationsmuster</Label>
               <Select
-                value={settings.vibration ?? 'doppelt'}
+                value={settings.vibration ?? 'herzschlag'}
                 onValueChange={value => {
                   const next = { ...settings, vibration: value }
                   setSettings(next)
@@ -449,18 +470,31 @@ export default function SettingsPage() {
               </Select>
             </div>
 
-            <div>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => playVibrationPreview(settings.vibration ?? 'doppelt')}
+                onClick={() => {
+                  // Erst der Web-Weg (Browser-Tab), dann der native Weg.
+                  playVibrationPreview(settings.vibration ?? 'herzschlag')
+                  sendPatternToApp(settings.vibration ?? 'herzschlag', true)
+                }}
               >
                 Muster testen
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendPatternToApp(settings.vibration ?? 'herzschlag', false)}
+              >
+                An Android-App senden
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Die Vibration läuft über die App. Ist das Gerät gesperrt, kann das System sie unterdrücken; auf iOS ohne Vibrations-Unterstützung entfällt sie.
+              Im Browser-Tab vibriert es direkt. In der installierten App blockiert Android die
+              Vibrations-Schnittstelle des Browsers – dort vibriert die Android-App selbst, mit dem
+              hier gewählten Muster. Nach dem Ändern deshalb „An Android-App senden“ tippen.
             </p>
           </div>
         </div>

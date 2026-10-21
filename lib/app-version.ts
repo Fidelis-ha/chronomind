@@ -4,7 +4,7 @@
 // - Vercel: VERCEL_GIT_COMMIT_SHA des deployten Commits
 // - lokal: git rev-parse HEAD + Build-Zeit
 
-export const APP_VERSION = '1.2.10'
+export const APP_VERSION = '1.2.11'
 
 export interface ChangelogEntry {
   version: string
@@ -13,6 +13,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '1.2.11',
+    date: '21.10.2026',
+    changes: [
+      'Vibration: In der installierten Android-App vibriert jetzt die App selbst mit dem gewählten Muster – Android blockiert die Vibrations-Schnittstelle des Browsers dort grundsätzlich',
+      'Einstellungen: neuer Knopf „An Android-App senden“ überträgt das gewählte Muster in die App',
+      'Standardmuster ist jetzt „Herzschlag“',
+      '„Muster testen“ löst zusätzlich die native Vibration aus'
+    ]
+  },
   {
     version: '1.2.10',
     date: '21.10.2026',

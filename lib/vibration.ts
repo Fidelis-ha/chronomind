@@ -19,7 +19,7 @@ export const VIBRATION_PATTERNS: VibrationPattern[] = [
   { id: 'aus', label: 'Aus', sequence: 0 }
 ]
 
-export const DEFAULT_VIBRATION_PATTERN: VibrationPatternId = 'doppelt'
+export const DEFAULT_VIBRATION_PATTERN: VibrationPatternId = 'herzschlag'
 
 function patternById(id: string | null | undefined): VibrationPattern {
   return (
