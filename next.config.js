@@ -21,10 +21,9 @@ module.exports = {
   // Dev-Tools-Indikator aus: sein Full-Screen-Hit-Area frisst CDP-Maus-Events
   // im Browser-Test und bricht bei Klick die Dev-Seite (verifiziert 20.10.2026)
   devIndicators: false,
-  experimental: {
-    serverActions: true,
-    serverComponentsExternalPackages: ['better-sqlite3', 'drizzle-orm']
-  },
+  // Next.js 15: serverComponentsExternalPackages ist nach oben gewandert,
+  // serverActions ist kein Experiment mehr (seit 14 stabil).
+  serverExternalPackages: ['better-sqlite3', 'drizzle-orm'],
   images: {
     remotePatterns: [
       {

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import type { Viewport } from 'next/dist/lib/metadata/types/extra-types'
+import type { Viewport } from 'next'
 
 import { Toaster } from 'react-hot-toast'
 

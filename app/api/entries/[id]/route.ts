@@ -2,25 +2,29 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth/session'
 import { localDb } from '@/lib/db/local'
 
+// Next.js 15: params ist ein Promise und muss awaitet werden.
+type RouteContext = { params: Promise<{ id: string }> }
+
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
   try {
+    const { id } = await params
     const session = await getSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
     }
 
-    const [existing] = await localDb.timeEntries.findById(params.id)
+    const [existing] = await localDb.timeEntries.findById(id)
     if (!existing || existing.userId !== session.id) {
       return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
     }
 
     const updates = await req.json()
-    await localDb.timeEntries.update(params.id, updates)
+    await localDb.timeEntries.update(id, updates)
 
-    const [updated] = await localDb.timeEntries.findById(params.id)
+    const [updated] = await localDb.timeEntries.findById(id)
 
     const mapped = {
       id: updated.id,
@@ -47,20 +51,21 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
   try {
+    const { id } = await params
     const session = await getSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
     }
 
-    const [existing] = await localDb.timeEntries.findById(params.id)
+    const [existing] = await localDb.timeEntries.findById(id)
     if (!existing || existing.userId !== session.id) {
       return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
     }
 
-    await localDb.timeEntries.delete(params.id)
+    await localDb.timeEntries.delete(id)
 
     return NextResponse.json({ success: true })
   } catch (err) {

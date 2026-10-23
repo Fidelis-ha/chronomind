@@ -70,7 +70,7 @@ export async function createSession(userId: string, email?: string): Promise<str
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
 
   if (!token) return null
@@ -124,7 +124,7 @@ export async function getSession(): Promise<SessionUser | null> {
 }
 
 export async function deleteSession(): Promise<void> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
 
   if (token) {
@@ -139,7 +139,7 @@ export async function deleteSession(): Promise<void> {
 }
 
 export async function setSessionCookie(token: string) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   await cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
       secure: false, // Allow over HTTP for testing
@@ -150,7 +150,7 @@ export async function setSessionCookie(token: string) {
 }
 
 export async function debugSession(): Promise<any> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
   
   if (!token) return { hasCookie: false }

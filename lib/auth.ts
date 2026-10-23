@@ -20,7 +20,7 @@ export interface Session {
 export async function auth({
   cookieStore
 }: {
-  cookieStore: ReturnType<typeof cookies>
+  cookieStore: Awaited<ReturnType<typeof cookies>>
 }): Promise<Session | null> {
   const token = cookieStore.get(COOKIE_NAME)?.value
   if (!token) return null
